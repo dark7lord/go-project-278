@@ -1,0 +1,14 @@
+bin/
+.vscode/
+.DS_Store
+tmp
+
+# Code coverage profiles and other test artifacts
+coverage.out
+*.out
+coverage.*
+*.coverprofile
+profile.cov
+
+# Asciinema recordings
+*.cast

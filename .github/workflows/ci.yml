@@ -1,0 +1,76 @@
+name: ci
+
+on:
+  push:
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
+      - 'docs/**'
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.25.0'
+          cache: true
+      - name: Check build
+        run: make build
+
+  test:
+    needs: build
+    runs-on: ubuntu-slim
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.25.0'
+          cache: true
+      - name: Run tests
+        run: make test
+      - name: Generate coverage report
+        run: make cover
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage
+          path: coverage.out
+
+  lint:
+    needs: build
+    runs-on: ubuntu-slim
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.25.0'
+          cache: true
+      - name: Install golangci-lint
+        uses: golangci/golangci-lint-action@1e7e51e771db61008b38414a730f564565cf7c20
+        with:
+          version: v2.12.2
+      - name: Run linters
+        run: make lint
+
+  sonar:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.25.0'
+          cache: true
+      - name: Download coverage artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: coverage
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@713881670b6b3676cda39549040e2d88c70d582e
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
