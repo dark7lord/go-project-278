@@ -8,7 +8,7 @@ lint-install:
 	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
 
 lint-uninstall:
-	rm $(which golangci-lint)
+	rm -f $(shell which golangci-lint 2>/dev/null)
 
 lint:
 	golangci-lint run
@@ -20,7 +20,7 @@ fmt:
 	golangci-lint fmt
 
 test:
-	go test -race ./... -v 
+	go test -race -coverprofile=coverage.out ./... -v 
 
 cover:
 	go test ./... -coverprofile=coverage.out
