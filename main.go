@@ -10,7 +10,6 @@ import (
 
 func setupRouter() *gin.Engine {
 	router := gin.Default()
-
 	router.GET("/ping", func(c *gin.Context) {
 		c.String(200, "pong")
 	})
