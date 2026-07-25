@@ -4,7 +4,6 @@ package main
 import (
 	"log"
 	"os"
-	"time"
 
 	"github.com/getsentry/sentry-go"
 	sentrygin "github.com/getsentry/sentry-go/gin"
@@ -40,11 +39,11 @@ func main() {
 	}); err != nil {
 		log.Fatalf("sentry.Init: %s", err)
 	}
-	defer sentry.Flush(2 * time.Second)
+	// defer sentry.Flush(2 * time.Second)
 
-	r.GET("/debug-sentry", func(c *gin.Context) {
-		panic("test sentry capture")
-	})
+	// r.GET("/debug-sentry", func(c *gin.Context) {
+	// 	panic("test sentry capture")
+	// })
 
 	if err := r.Run(":8080"); err != nil {
 		log.Fatalf("failed to run server: %v", err)
