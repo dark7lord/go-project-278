@@ -1,8 +1,15 @@
 BIN := bin/webpapp
-GOLANGCI_LINT_VERSION := v2.12.2
 
+.PHONY: build clean
 build:
-	go build -o $(BIN) main.go
+	go build -o $(BIN) cmd/api/main.go
+
+clean:
+	rm -rf $(BIN) coverage.out tmp
+
+# Linters
+.PHONY: lint-install lint-uninstall lint fmt
+GOLANGCI_LINT_VERSION := v2.12.2
 
 lint-install:
 	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
@@ -19,6 +26,8 @@ lint-fix:
 fmt:
 	golangci-lint fmt
 
+# Testing
+.PHONY: test cover cover-html check
 test:
 	go test -race -coverprofile=coverage.out ./... -v 
 
@@ -32,5 +41,19 @@ cover-html: cover
 check: test lint build clean
 	@echo "✅ All checks passed"
 
-clean:
-	rm -rf $(BIN) coverage.out tmp
+
+# Databases
+.PHONY: sqlc-gen goose-up goose-down
+include .env
+export
+
+sqlc-gen:
+	sqlc generate
+
+goose-up:
+	goose -dir migrations postgres $(DATABASE_URL) up
+
+goose-down:
+	goose -dir migrations postgres $(DATABASE_URL) down
+
+db-rebuild: goose-down goose-up
