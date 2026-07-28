@@ -44,7 +44,7 @@ check: test lint build clean
 
 # Databases
 .PHONY: sqlc-gen goose-up goose-down
-include .env
+-include .env
 export
 
 sqlc-gen:
