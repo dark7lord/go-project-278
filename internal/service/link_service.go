@@ -112,7 +112,15 @@ func (s *LinkService) GetLink(ctx context.Context, id int64) (db.Link, error) {
 
 // ListLinks retrieves all links.
 func (s *LinkService) ListLinks(ctx context.Context) ([]db.Link, error) {
-	return s.repo.ListLinks(ctx)
+	links, err := s.repo.ListLinks(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if links == nil {
+		return []db.Link{}, nil
+	}
+
+	return links, nil
 }
 
 // UpdateLink updates an existing link.

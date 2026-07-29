@@ -1,4 +1,4 @@
-BIN := bin/webpapp
+BIN := bin/webapp
 
 .PHONY: build clean
 build:

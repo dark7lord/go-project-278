@@ -35,6 +35,18 @@ func setupRouter(linkHandler *handler.LinkHandler) *gin.Engine {
 	return router
 }
 
+func connectDB(dsn string) (*sql.DB, error) {
+	conn, err := sql.Open("postgres", dsn)
+	if err != nil {
+		return nil, err
+	}
+	if err := conn.Ping(); err != nil {
+		return nil, fmt.Errorf("ping: %w", err)
+	}
+
+	return conn, nil
+}
+
 func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found, using system environment variables")
@@ -60,7 +72,7 @@ func main() {
 		log.Fatal("BASE_URL is not set")
 	}
 
-	dbConn, err := sql.Open("postgres", dbDsn)
+	dbConn, err := connectDB(dbDsn)
 	if err != nil {
 		log.Fatalf("failed to connect to database: %v", err)
 	}
@@ -72,8 +84,6 @@ func main() {
 	linkHandler := handler.NewLinkHandler(linkService)
 
 	router := setupRouter(linkHandler)
-
-	fmt.Println("Hi!")
 
 	if err := router.Run(":8080"); err != nil {
 		log.Fatalf("failed to run server: %v", err)
