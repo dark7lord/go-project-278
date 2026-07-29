@@ -3,7 +3,9 @@ package handler
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
+	"regexp"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -80,15 +82,60 @@ func (h *LinkHandler) GetLink(c *gin.Context) {
 	c.JSON(http.StatusOK, link)
 }
 
+var rangeRe = regexp.MustCompile(`\[(\d+),(\d+)\]`) // captures: [full, start, end]
+
 // ListLinks handles listing all links.
 func (h *LinkHandler) ListLinks(c *gin.Context) {
-	links, err := h.service.ListLinks(c.Request.Context())
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+	rangeParam := c.Query("range")
+
+	if rangeParam == "" {
+		links, err := h.service.ListLinks(c.Request.Context())
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			return
+		}
+
+		c.JSON(http.StatusOK, links)
+
 		return
 	}
 
-	c.JSON(http.StatusOK, links)
+	matches := rangeRe.FindStringSubmatch(rangeParam)
+
+	if len(matches) != 3 {
+		c.JSON(http.StatusBadRequest, errJSON("invalid range, expected [start,end]"))
+		return
+	}
+
+	start, err := strconv.Atoi(matches[1])
+	if err != nil {
+		c.JSON(http.StatusBadRequest, errJSON("invalid start value"))
+		return
+	}
+	end, err := strconv.Atoi(matches[2])
+	if err != nil {
+		c.JSON(http.StatusBadRequest, errJSON("invalid end value"))
+		return
+	}
+
+	if start < 0 || start > end {
+		c.JSON(http.StatusRequestedRangeNotSatisfiable, errJSON("range not satisfiable"))
+		return
+	}
+
+	links, total, err := h.service.ListLinksRange(c.Request.Context(), int64(start), int64(end))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, errJSON(errInternal))
+		return
+	}
+
+	if int64(start) >= total {
+		c.JSON(http.StatusRequestedRangeNotSatisfiable, errJSON("range not satisfiable"))
+		return
+	}
+
+	c.Header("Content-Range", fmt.Sprintf("links %d-%d/%d", start, end, total))
+	c.JSON(http.StatusPartialContent, links)
 }
 
 // UpdateLinkRequest represents a request to update a link.

@@ -32,6 +32,19 @@ func (r *LinkRepository) ListShortNames(ctx context.Context) ([]string, error) {
 	return r.queries.GetShortNames(ctx)
 }
 
+// ListLinksRange retrieves a paginated subset of links.
+func (r *LinkRepository) ListLinksRange(ctx context.Context, limit, offset int64) ([]db.Link, error) {
+	return r.queries.GetLinksRange(ctx, db.GetLinksRangeParams{
+		Limit:  limit,
+		Offset: offset,
+	})
+}
+
+// CountLinks returns the total number of links.
+func (r *LinkRepository) CountLinks(ctx context.Context) (int64, error) {
+	return r.queries.CountLinks(ctx)
+}
+
 // CreateLink inserts a new link.
 func (r *LinkRepository) CreateLink(ctx context.Context, originalURL, shortName, shortURL string) (db.Link, error) {
 	return r.queries.CreateLink(ctx, db.CreateLinkParams{

@@ -123,6 +123,21 @@ func (s *LinkService) ListLinks(ctx context.Context) ([]db.Link, error) {
 	return links, nil
 }
 
+// ListLinksRange retrieves a paginated subset of links.
+func (s *LinkService) ListLinksRange(ctx context.Context, start, end int64) ([]db.Link, int64, error) {
+	totalLinks, err := s.repo.CountLinks(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	limit := (end - start) + 1
+	offset := start
+
+	links, err := s.repo.ListLinksRange(ctx, limit, offset)
+
+	return links, totalLinks, err
+}
+
 // UpdateLink updates an existing link.
 func (s *LinkService) UpdateLink(ctx context.Context, id int64, originalURL, shortName string) (db.Link, error) {
 	// TODO: validation
