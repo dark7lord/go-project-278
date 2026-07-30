@@ -3,6 +3,7 @@
 tmp
 .env
 
+# go build
 bin/webapp
 
 # Code coverage profiles and other test artifacts
@@ -14,3 +15,5 @@ profile.cov
 
 # Asciinema recordings
 *.cast
+# Frontend
+node_modules

@@ -1,11 +1,15 @@
 BIN := bin/webapp
 
-.PHONY: build clean
+# Development
+.PHONY: build clean run
 build:
 	go build -o $(BIN) cmd/api/main.go
 
 clean:
 	rm -rf $(BIN) coverage.out tmp
+
+run: build
+	npm run dev
 
 # Linters
 .PHONY: lint-install lint-uninstall lint fmt

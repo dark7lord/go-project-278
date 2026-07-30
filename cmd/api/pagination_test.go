@@ -59,10 +59,12 @@ func TestLinksPagination(t *testing.T) {
 			wantLen:    15,
 		},
 		{
-			name:       "range not satisfiable",
+			name:       "range beyond total returns empty",
 			rangeQuery: "[100,200]",
 			seedCount:  5,
-			wantStatus: http.StatusRequestedRangeNotSatisfiable,
+			wantStatus: http.StatusPartialContent,
+			wantRange:  "links 100-200/5",
+			wantLen:    0,
 		},
 		{
 			name:       "start > end",

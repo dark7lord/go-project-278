@@ -10,6 +10,7 @@ import (
 
 	"github.com/getsentry/sentry-go"
 	sentrygin "github.com/getsentry/sentry-go/gin"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -23,6 +24,12 @@ import (
 func setupRouter(linkHandler *handler.LinkHandler) *gin.Engine {
 	router := gin.Default()
 	router.Use(sentrygin.New(sentrygin.Options{Repanic: false}))
+	router.Use(cors.New(cors.Config{
+		AllowOrigins: []string{
+			"http://localhost:5173",
+			os.Getenv("FRONTEND_URL"),
+		},
+	}))
 
 	api := router.Group("/api")
 

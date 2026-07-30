@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "@hexlet/project-url-shortener-frontend": "^1.0.0",
+    "concurrently": "^10.0.4"
+  },
+  "scripts": {
+    "dev": "concurrently \"npx start-hexlet-url-shortener-frontend \" \"bin/webapp\""
+  }
+}

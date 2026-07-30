@@ -44,7 +44,7 @@ func (h *LinkHandler) CreateLink(c *gin.Context) {
 		return
 	}
 
-	_, err := h.service.CreateLink(c.Request.Context(), req.OriginalURL, req.ShortName)
+	link, err := h.service.CreateLink(c.Request.Context(), req.OriginalURL, req.ShortName)
 	if err != nil {
 		if errors.Is(err, service.ErrLinkExists) {
 			c.JSON(http.StatusConflict, errJSON(err.Error()))
@@ -55,7 +55,7 @@ func (h *LinkHandler) CreateLink(c *gin.Context) {
 		return
 	}
 
-	c.Status(http.StatusCreated)
+	c.JSON(http.StatusCreated, link)
 }
 
 // GetLink handles link retrieval by ID.
@@ -126,11 +126,6 @@ func (h *LinkHandler) ListLinks(c *gin.Context) {
 	links, total, err := h.service.ListLinksRange(c.Request.Context(), int64(start), int64(end))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, errJSON(errInternal))
-		return
-	}
-
-	if int64(start) >= total {
-		c.JSON(http.StatusRequestedRangeNotSatisfiable, errJSON("range not satisfiable"))
 		return
 	}
 
