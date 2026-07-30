@@ -1,9 +1,9 @@
-BIN := bin/webapp
+BIN := bin/app
 
 # Development
 .PHONY: build clean run
 build:
-	go build -o $(BIN) cmd/api/main.go
+	go build -o $(BIN) .
 
 clean:
 	rm -rf $(BIN) coverage.out tmp
@@ -73,6 +73,7 @@ docker-build:
 docker-run:
 	docker run -d --name $(IMAGE_NAME) \
 		-p 8080:8080 \
+		-p 80:80 \
 		--env-file .env \
 		$(IMAGE_NAME)
 

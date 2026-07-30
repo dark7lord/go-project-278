@@ -5,6 +5,7 @@ go 1.25.7
 require (
 	github.com/getsentry/sentry-go v0.48.0
 	github.com/getsentry/sentry-go/gin v0.48.0
+	github.com/gin-contrib/cors v1.7.7
 	github.com/gin-gonic/gin v1.12.0
 	github.com/moby/moby/api v1.55.0
 	github.com/pressly/goose/v3 v3.27.3
@@ -28,7 +29,6 @@ require (
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/ebitengine/purego v0.10.0 // indirect
 	github.com/felixge/httpsnoop v1.1.0 // indirect
-	github.com/gin-contrib/cors v1.7.7 // indirect
 	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect

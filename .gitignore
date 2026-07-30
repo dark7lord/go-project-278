@@ -4,7 +4,7 @@ tmp
 .env
 
 # go build
-bin/webapp
+bin/app
 
 # Code coverage profiles and other test artifacts
 coverage.out

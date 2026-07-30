@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"time"
 
@@ -24,15 +25,19 @@ import (
 func setupRouter(linkHandler *handler.LinkHandler) *gin.Engine {
 	router := gin.Default()
 	router.Use(sentrygin.New(sentrygin.Options{Repanic: false}))
+	origins := []string{"http://localhost:5173"}
+	if fe := os.Getenv("FRONTEND_URL"); fe != "" {
+		origins = append(origins, fe)
+	}
 	router.Use(cors.New(cors.Config{
-		AllowOrigins: []string{
-			"http://localhost:5173",
-			os.Getenv("FRONTEND_URL"),
-		},
+		AllowOrigins: origins,
 	}))
 
 	api := router.Group("/api")
 
+	api.GET("/ping", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "pong"})
+	})
 	api.POST("/links", linkHandler.CreateLink)
 	api.GET("/links", linkHandler.ListLinks)
 	api.GET("/links/:id", linkHandler.GetLink)
