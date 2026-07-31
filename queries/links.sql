@@ -34,6 +34,7 @@ SET
 WHERE id = @id
 RETURNING id, original_url, short_name, short_url;
 
--- name: DeleteLink :exec
+-- name: DeleteLink :one
 DELETE FROM links
-WHERE id = @id;
+WHERE id = @id
+RETURNING id, original_url, short_name, short_url;

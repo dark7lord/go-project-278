@@ -166,14 +166,14 @@ func (s *Service) UpdateLink(ctx context.Context, id int64, originalURL, shortNa
 }
 
 // DeleteLink deletes a link by its ID.
-func (s *Service) DeleteLink(ctx context.Context, id int64) error {
+func (s *Service) DeleteLink(ctx context.Context, id int64) (db.Link, error) {
 	_, err := s.repo.GetLinkByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return ErrNotFound
+			return db.Link{}, ErrNotFound
 		}
 
-		return fmt.Errorf("delete link: %w", err)
+		return db.Link{}, fmt.Errorf("delete link: %w", err)
 	}
 
 	return s.repo.DeleteLink(ctx, id)

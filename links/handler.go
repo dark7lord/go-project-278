@@ -177,7 +177,8 @@ func (h *Handler) DeleteLink(c *gin.Context) {
 		return
 	}
 
-	if err := h.service.DeleteLink(c.Request.Context(), id); err != nil {
+	link, err := h.service.DeleteLink(c.Request.Context(), id)
+	if err != nil {
 		if errors.Is(err, ErrNotFound) {
 			c.JSON(http.StatusNotFound, errJSON(err.Error()))
 			return
@@ -187,5 +188,5 @@ func (h *Handler) DeleteLink(c *gin.Context) {
 		return
 	}
 
-	c.Status(http.StatusNoContent)
+	c.JSON(http.StatusOK, link)
 }

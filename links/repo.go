@@ -65,6 +65,6 @@ func (r *Repository) UpdateLink(ctx context.Context, id int64, originalURL, shor
 }
 
 // DeleteLink deletes a link by its ID.
-func (r *Repository) DeleteLink(ctx context.Context, id int64) error {
+func (r *Repository) DeleteLink(ctx context.Context, id int64) (db.Link, error) {
 	return r.queries.DeleteLink(ctx, id)
 }
