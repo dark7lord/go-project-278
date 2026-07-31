@@ -3,10 +3,15 @@ INSERT INTO links (original_url, short_name, short_url)
 VALUES (@original_url, @short_name, @short_url)
 RETURNING id, original_url, short_name, short_url;
 
--- name: GetLink :one
+-- name: GetLinkByID :one
 SELECT id, original_url, short_name, short_url
 FROM links
 WHERE id = @id;
+
+-- name: GetLinkByShortName :one
+SELECT id, original_url, short_name, short_url
+FROM links
+WHERE short_name = @short_name;
 
 -- name: GetLinks :many
 SELECT id, original_url, short_name, short_url

@@ -19,7 +19,12 @@ func NewRepository(queries *db.Queries) *Repository {
 
 // GetLinkByID retrieves a link by its ID.
 func (r *Repository) GetLinkByID(ctx context.Context, id int64) (db.Link, error) {
-	return r.queries.GetLink(ctx, id)
+	return r.queries.GetLinkByID(ctx, id)
+}
+
+// GetLinkByShortName retrieves a link by its short name.
+func (r *Repository) GetLinkByShortName(ctx context.Context, shortName string) (db.Link, error) {
+	return r.queries.GetLinkByShortName(ctx, shortName)
 }
 
 // ListLinks retrieves all links.

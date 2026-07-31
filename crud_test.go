@@ -56,6 +56,19 @@ func TestLinksCRUD(t *testing.T) {
 		assertErrorBody(t, w)
 	})
 
+	t.Run("CreateLink / scheme-less url", func(t *testing.T) {
+		tx := setupTestTx(t, td)
+		body := `{"original_url": "example.com", "short_name": "no-scheme"}`
+		w := performRequest(t, tx.router, "POST", "/api/links", body)
+		assert.Equal(t, http.StatusCreated, w.Code)
+
+		var resp db.Link
+		err := json.Unmarshal(w.Body.Bytes(), &resp)
+		require.NoError(t, err)
+		assert.Equal(t, "https://example.com", resp.OriginalURL)
+		assert.Contains(t, resp.ShortURL, "/r/no-scheme")
+	})
+
 	t.Run("CreateLink / invalid json", func(t *testing.T) {
 		tx := setupTestTx(t, td)
 		w := performRequest(t, tx.router, "POST", "/api/links", `{broken`)

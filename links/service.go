@@ -77,11 +77,17 @@ func (s *Service) generateShortLink(ctx context.Context, shortName *string) (str
 		return "", err
 	}
 
-	return s.baseURL + "/" + *shortName, nil
+	return s.baseURL + "/r/" + *shortName, nil
 }
 
 // CreateLink creates a new link with the given URL and optional short name.
 func (s *Service) CreateLink(ctx context.Context, originalURL, shortName string) (db.Link, error) {
+	normalized, err := normalizeURL(originalURL)
+	if err != nil {
+		return db.Link{}, fmt.Errorf("%w: %s", ErrInvalidURL, originalURL)
+	}
+	originalURL = normalized
+
 	if shortName != "" {
 		if err := s.validateShortName(ctx, shortName); err != nil {
 			return db.Link{}, err
@@ -97,9 +103,23 @@ func (s *Service) CreateLink(ctx context.Context, originalURL, shortName string)
 	return s.repo.CreateLink(ctx, originalURL, shortName, shortURL)
 }
 
-// GetLink retrieves a link by its ID.
-func (s *Service) GetLink(ctx context.Context, id int64) (db.Link, error) {
+// GetLinkByID retrieves a link by its ID.
+func (s *Service) GetLinkByID(ctx context.Context, id int64) (db.Link, error) {
 	link, err := s.repo.GetLinkByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return db.Link{}, ErrNotFound
+		}
+
+		return db.Link{}, fmt.Errorf("get link: %w", err)
+	}
+
+	return link, nil
+}
+
+// GetLinkByShortName retrieves a link by its short name.
+func (s *Service) GetLinkByShortName(ctx context.Context, shortName string) (db.Link, error) {
+	link, err := s.repo.GetLinkByShortName(ctx, shortName)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return db.Link{}, ErrNotFound
@@ -141,7 +161,11 @@ func (s *Service) ListLinksRange(ctx context.Context, start, end int64) ([]db.Li
 
 // UpdateLink updates an existing link.
 func (s *Service) UpdateLink(ctx context.Context, id int64, originalURL, shortName string) (db.Link, error) {
-	// TODO: validation
+	normalized, err := normalizeURL(originalURL)
+	if err != nil {
+		return db.Link{}, fmt.Errorf("%w: %s", ErrInvalidURL, originalURL)
+	}
+	originalURL = normalized
 
 	shortURL, err := s.generateShortLink(ctx, &shortName)
 	if err != nil {

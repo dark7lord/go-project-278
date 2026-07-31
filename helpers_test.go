@@ -72,7 +72,7 @@ func setupTestDB(t *testing.T) *testDB {
 	linkRepo := links.NewRepository(queries)
 	linkSvc := links.NewService(linkRepo, "http://localhost:8080")
 	linkHandler := links.NewHandler(linkSvc)
-	router := setupRouter(linkHandler, "")
+	router := setupRouter(linkHandler)
 
 	return &testDB{
 		conn:    conn,
@@ -94,7 +94,7 @@ func setupTestTx(t *testing.T, td *testDB) *testDB {
 	txRepo := links.NewRepository(txQueries)
 	txSvc := links.NewService(txRepo, "http://localhost:8080")
 	txHandler := links.NewHandler(txSvc)
-	router := setupRouter(txHandler, "")
+	router := setupRouter(txHandler)
 
 	return &testDB{
 		conn:    td.conn,

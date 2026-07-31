@@ -62,14 +62,32 @@ func (q *Queries) DeleteLink(ctx context.Context, id int64) (Link, error) {
 	return i, err
 }
 
-const getLink = `-- name: GetLink :one
+const getLinkByID = `-- name: GetLinkByID :one
 SELECT id, original_url, short_name, short_url
 FROM links
 WHERE id = $1
 `
 
-func (q *Queries) GetLink(ctx context.Context, id int64) (Link, error) {
-	row := q.db.QueryRowContext(ctx, getLink, id)
+func (q *Queries) GetLinkByID(ctx context.Context, id int64) (Link, error) {
+	row := q.db.QueryRowContext(ctx, getLinkByID, id)
+	var i Link
+	err := row.Scan(
+		&i.ID,
+		&i.OriginalURL,
+		&i.ShortName,
+		&i.ShortURL,
+	)
+	return i, err
+}
+
+const getLinkByShortName = `-- name: GetLinkByShortName :one
+SELECT id, original_url, short_name, short_url
+FROM links
+WHERE short_name = $1
+`
+
+func (q *Queries) GetLinkByShortName(ctx context.Context, shortName string) (Link, error) {
+	row := q.db.QueryRowContext(ctx, getLinkByShortName, shortName)
 	var i Link
 	err := row.Scan(
 		&i.ID,

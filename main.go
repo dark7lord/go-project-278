@@ -49,7 +49,7 @@ func run() error {
 	linkService := links.NewService(linkRepo, cfg.BaseURL)
 	linkHandler := links.NewHandler(linkService)
 
-	router := setupRouter(linkHandler, cfg.FrontendURL)
+	router := setupRouter(linkHandler)
 
 	if err := router.Run(":8080"); err != nil {
 		return fmt.Errorf("failed to run server: %w", err)

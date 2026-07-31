@@ -10,7 +10,6 @@ type Config struct {
 	SentryDSN   string
 	DatabaseURL string
 	BaseURL     string
-	FrontendURL string
 }
 
 func loadConfig() (*Config, error) {
@@ -18,7 +17,6 @@ func loadConfig() (*Config, error) {
 		SentryDSN:   os.Getenv("SENTRY_DSN"),
 		DatabaseURL: os.Getenv("DATABASE_URL"),
 		BaseURL:     os.Getenv("BASE_URL"),
-		FrontendURL: os.Getenv("FRONTEND_URL"),
 	}
 
 	if cfg.SentryDSN == "" {

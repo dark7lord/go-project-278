@@ -10,22 +10,26 @@ import (
 	"code/links"
 )
 
-func setupRouter(linkHandler *links.Handler, frontendURL string) *gin.Engine {
-	router := gin.Default()
+func setupRouter(linkHandler *links.Handler) *gin.Engine {
+	router := gin.New()
+	router.Use(gin.Logger())
+	router.Use(gin.Recovery())
 	router.Use(sentrygin.New(sentrygin.Options{Repanic: false}))
-	origins := []string{"http://localhost:5173"}
-	if frontendURL != "" {
-		origins = append(origins, frontendURL)
-	}
 	router.Use(cors.New(cors.Config{
-		AllowOrigins: origins,
+		AllowOrigins: []string{"http://localhost:5173"},
 	}))
+
+	router.TrustedPlatform = gin.PlatformCloudflare
+	_ = router.SetTrustedProxies([]string{"127.0.0.1", "::1"})
+
+	router.GET("/ping", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "pong"})
+	})
+
+	router.GET("/r/:code", linkHandler.Redirect)
 
 	api := router.Group("/api")
 
-	api.GET("/ping", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"message": "pong"})
-	})
 	api.POST("/links", linkHandler.CreateLink)
 	api.GET("/links", linkHandler.ListLinks)
 	api.GET("/links/:id", linkHandler.GetLink)

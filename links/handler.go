@@ -64,7 +64,7 @@ func (h *Handler) GetLink(c *gin.Context) {
 		return
 	}
 
-	link, err := h.service.GetLink(c.Request.Context(), id)
+	link, err := h.service.GetLinkByID(c.Request.Context(), id)
 	if err != nil {
 		if errors.Is(err, ErrNotFound) {
 			c.JSON(http.StatusNotFound, errJSON(err.Error()))
@@ -88,7 +88,7 @@ func (h *Handler) ListLinks(c *gin.Context) {
 	if rangeParam == "" {
 		links, err := h.service.ListLinks(c.Request.Context())
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			c.JSON(http.StatusInternalServerError, errJSON("internal server error"))
 			return
 		}
 
@@ -160,6 +160,10 @@ func (h *Handler) UpdateLink(c *gin.Context) {
 			c.JSON(http.StatusConflict, errJSON(err.Error()))
 			return
 		}
+		if errors.Is(err, ErrInvalidURL) {
+			c.JSON(http.StatusBadRequest, errJSON(err.Error()))
+			return
+		}
 		c.JSON(http.StatusInternalServerError, errJSON(errInternal))
 
 		return
@@ -189,4 +193,37 @@ func (h *Handler) DeleteLink(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, link)
+}
+
+// Redirect handles redirecting a short name to its original URL.
+func (h *Handler) Redirect(c *gin.Context) {
+	code := c.Param("code")
+	if code == "" {
+		c.JSON(http.StatusBadRequest, errJSON("invalid code"))
+
+		return
+	}
+
+	ctx := c.Request.Context()
+	link, err := h.service.GetLinkByShortName(ctx, code)
+
+	if err != nil {
+		if errors.Is(err, ErrNotFound) {
+			c.JSON(http.StatusNotFound, errJSON(err.Error()))
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, errJSON(err.Error()))
+
+		return
+	}
+
+	originalURL, err := normalizeURL(link.OriginalURL)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, errJSON(errInternal))
+
+		return
+	}
+
+	c.Redirect(http.StatusTemporaryRedirect, originalURL)
 }
