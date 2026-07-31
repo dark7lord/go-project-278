@@ -3,7 +3,11 @@ package main
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -11,24 +15,23 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/moby/moby/api/types/network"
 	"github.com/pressly/goose/v3"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
 
-	"code/internal/db"
-	"code/internal/handler"
-	"code/internal/repository"
-	"code/internal/service"
+	"code/db"
+	"code/links"
 	"code/migrations"
 )
 
 type testDB struct {
 	conn    *sql.DB
 	queries *db.Queries
-	repo    *repository.LinkRepository
-	svc     *service.LinkService
-	handler *handler.LinkHandler
+	repo    *links.Repository
+	svc     *links.Service
+	handler *links.Handler
 	router  *gin.Engine
 }
 
@@ -66,10 +69,10 @@ func setupTestDB(t *testing.T) *testDB {
 	require.NoError(t, err)
 
 	queries := db.New(conn)
-	linkRepo := repository.NewLinkRepository(queries)
-	linkSvc := service.NewLinkService(linkRepo, "http://localhost:8080")
-	linkHandler := handler.NewLinkHandler(linkSvc)
-	router := setupRouter(linkHandler)
+	linkRepo := links.NewRepository(queries)
+	linkSvc := links.NewService(linkRepo, "http://localhost:8080")
+	linkHandler := links.NewHandler(linkSvc)
+	router := setupRouter(linkHandler, "")
 
 	return &testDB{
 		conn:    conn,
@@ -88,10 +91,10 @@ func setupTestTx(t *testing.T, td *testDB) *testDB {
 	t.Cleanup(func() { _ = tx.Rollback() })
 
 	txQueries := td.queries.WithTx(tx)
-	txRepo := repository.NewLinkRepository(txQueries)
-	txSvc := service.NewLinkService(txRepo, "http://localhost:8080")
-	txHandler := handler.NewLinkHandler(txSvc)
-	router := setupRouter(txHandler)
+	txRepo := links.NewRepository(txQueries)
+	txSvc := links.NewService(txRepo, "http://localhost:8080")
+	txHandler := links.NewHandler(txSvc)
+	router := setupRouter(txHandler, "")
 
 	return &testDB{
 		conn:    td.conn,
@@ -113,4 +116,23 @@ func linkFactory(i int) db.Link {
 		ShortName:   shortName,
 		ShortURL:    shortURL,
 	}
+}
+
+func performRequest(t *testing.T, r *gin.Engine, method, path, body string) *httptest.ResponseRecorder {
+	t.Helper()
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(method, path, strings.NewReader(body))
+	if body != "" {
+		req.Header.Set("Content-Type", "application/json")
+	}
+	r.ServeHTTP(w, req)
+
+	return w
+}
+
+func assertErrorBody(t *testing.T, w *httptest.ResponseRecorder) {
+	t.Helper()
+	var body map[string]string
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &body))
+	assert.NotEmpty(t, body["error"])
 }

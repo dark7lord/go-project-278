@@ -1,5 +1,4 @@
-// Package handler provides HTTP handlers for link management.
-package handler
+package links
 
 import (
 	"errors"
@@ -9,8 +8,6 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-
-	"code/internal/service"
 )
 
 const errInvalidID = "invalid id"
@@ -20,14 +17,14 @@ func errJSON(msg string) gin.H {
 	return gin.H{"error": msg}
 }
 
-// LinkHandler handles HTTP requests for links.
-type LinkHandler struct {
-	service *service.LinkService
+// Handler handles HTTP requests for links.
+type Handler struct {
+	service *Service
 }
 
-// NewLinkHandler creates a new LinkHandler.
-func NewLinkHandler(s *service.LinkService) *LinkHandler {
-	return &LinkHandler{service: s}
+// NewHandler creates a new Handler.
+func NewHandler(s *Service) *Handler {
+	return &Handler{service: s}
 }
 
 // CreateLinkRequest represents a request to create a link.
@@ -37,7 +34,7 @@ type CreateLinkRequest struct {
 }
 
 // CreateLink handles link creation.
-func (h *LinkHandler) CreateLink(c *gin.Context) {
+func (h *Handler) CreateLink(c *gin.Context) {
 	var req CreateLinkRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, errJSON(err.Error()))
@@ -46,7 +43,7 @@ func (h *LinkHandler) CreateLink(c *gin.Context) {
 
 	link, err := h.service.CreateLink(c.Request.Context(), req.OriginalURL, req.ShortName)
 	if err != nil {
-		if errors.Is(err, service.ErrLinkExists) {
+		if errors.Is(err, ErrLinkExists) {
 			c.JSON(http.StatusConflict, errJSON(err.Error()))
 			return
 		}
@@ -59,7 +56,7 @@ func (h *LinkHandler) CreateLink(c *gin.Context) {
 }
 
 // GetLink handles link retrieval by ID.
-func (h *LinkHandler) GetLink(c *gin.Context) {
+func (h *Handler) GetLink(c *gin.Context) {
 	paramID := c.Param("id")
 	id, err := strconv.ParseInt(paramID, 10, 64)
 	if err != nil {
@@ -69,7 +66,7 @@ func (h *LinkHandler) GetLink(c *gin.Context) {
 
 	link, err := h.service.GetLink(c.Request.Context(), id)
 	if err != nil {
-		if errors.Is(err, service.ErrNotFound) {
+		if errors.Is(err, ErrNotFound) {
 			c.JSON(http.StatusNotFound, errJSON(err.Error()))
 			return
 		}
@@ -85,7 +82,7 @@ func (h *LinkHandler) GetLink(c *gin.Context) {
 var rangeRe = regexp.MustCompile(`\[(\d+),(\d+)\]`) // captures: [full, start, end]
 
 // ListLinks handles listing all links.
-func (h *LinkHandler) ListLinks(c *gin.Context) {
+func (h *Handler) ListLinks(c *gin.Context) {
 	rangeParam := c.Query("range")
 
 	if rangeParam == "" {
@@ -140,7 +137,7 @@ type UpdateLinkRequest struct {
 }
 
 // UpdateLink handles link updates.
-func (h *LinkHandler) UpdateLink(c *gin.Context) {
+func (h *Handler) UpdateLink(c *gin.Context) {
 	paramID := c.Param("id")
 	id, err := strconv.ParseInt(paramID, 10, 64)
 	if err != nil {
@@ -155,11 +152,11 @@ func (h *LinkHandler) UpdateLink(c *gin.Context) {
 	}
 
 	if _, err := h.service.UpdateLink(c.Request.Context(), id, req.OriginalURL, req.ShortName); err != nil {
-		if errors.Is(err, service.ErrNotFound) {
+		if errors.Is(err, ErrNotFound) {
 			c.JSON(http.StatusNotFound, errJSON(err.Error()))
 			return
 		}
-		if errors.Is(err, service.ErrLinkExists) {
+		if errors.Is(err, ErrLinkExists) {
 			c.JSON(http.StatusConflict, errJSON(err.Error()))
 			return
 		}
@@ -172,7 +169,7 @@ func (h *LinkHandler) UpdateLink(c *gin.Context) {
 }
 
 // DeleteLink handles link deletion.
-func (h *LinkHandler) DeleteLink(c *gin.Context) {
+func (h *Handler) DeleteLink(c *gin.Context) {
 	paramID := c.Param("id")
 	id, err := strconv.ParseInt(paramID, 10, 64)
 	if err != nil {
@@ -181,7 +178,7 @@ func (h *LinkHandler) DeleteLink(c *gin.Context) {
 	}
 
 	if err := h.service.DeleteLink(c.Request.Context(), id); err != nil {
-		if errors.Is(err, service.ErrNotFound) {
+		if errors.Is(err, ErrNotFound) {
 			c.JSON(http.StatusNotFound, errJSON(err.Error()))
 			return
 		}
