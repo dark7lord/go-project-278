@@ -143,7 +143,12 @@ func (s *Service) ListLinksRange(ctx context.Context, start, end int64) ([]db.Li
 func (s *Service) UpdateLink(ctx context.Context, id int64, originalURL, shortName string) (db.Link, error) {
 	// TODO: validation
 
-	_, err := s.repo.GetLinkByID(ctx, id)
+	shortURL, err := s.generateShortLink(ctx, &shortName)
+	if err != nil {
+		return db.Link{}, err
+	}
+
+	updated, err := s.repo.UpdateLink(ctx, id, originalURL, shortName, shortURL)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return db.Link{}, ErrNotFound
@@ -152,22 +157,12 @@ func (s *Service) UpdateLink(ctx context.Context, id int64, originalURL, shortNa
 		return db.Link{}, fmt.Errorf("update link: %w", err)
 	}
 
-	shortURL, err := s.generateShortLink(ctx, &shortName)
-	if err != nil {
-		return db.Link{}, err
-	}
-
-	updated, err := s.repo.UpdateLink(ctx, id, originalURL, shortName, shortURL)
-	if err != nil {
-		return db.Link{}, err
-	}
-
 	return updated, nil
 }
 
 // DeleteLink deletes a link by its ID.
 func (s *Service) DeleteLink(ctx context.Context, id int64) (db.Link, error) {
-	_, err := s.repo.GetLinkByID(ctx, id)
+	link, err := s.repo.DeleteLink(ctx, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return db.Link{}, ErrNotFound
@@ -176,5 +171,5 @@ func (s *Service) DeleteLink(ctx context.Context, id int64) (db.Link, error) {
 		return db.Link{}, fmt.Errorf("delete link: %w", err)
 	}
 
-	return s.repo.DeleteLink(ctx, id)
+	return link, nil
 }

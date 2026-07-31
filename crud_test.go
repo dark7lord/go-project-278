@@ -128,13 +128,26 @@ func TestLinksCRUD(t *testing.T) {
 		require.NoError(t, err)
 
 		w := performRequest(t, tx.router, "DELETE", fmt.Sprintf("/api/links/%d", created.ID), "")
-		assert.Equal(t, http.StatusNoContent, w.Code)
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		var resp db.Link
+		err = json.Unmarshal(w.Body.Bytes(), &resp)
+		require.NoError(t, err)
+		assert.Equal(t, created.ID, resp.ID)
+		assert.Equal(t, "https://deletetest.com", resp.OriginalURL)
 	})
 
 	t.Run("DeleteLink / invalid id", func(t *testing.T) {
 		tx := setupTestTx(t, td)
 		w := performRequest(t, tx.router, "DELETE", "/api/links/abc", "")
 		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assertErrorBody(t, w)
+	})
+
+	t.Run("DeleteLink / not found", func(t *testing.T) {
+		tx := setupTestTx(t, td)
+		w := performRequest(t, tx.router, "DELETE", "/api/links/999", "")
+		assert.Equal(t, http.StatusNotFound, w.Code)
 		assertErrorBody(t, w)
 	})
 
