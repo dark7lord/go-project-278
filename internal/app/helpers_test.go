@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"context"
@@ -21,17 +21,17 @@ import (
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
 
-	"code/db"
-	"code/links"
+	"code/internal/db"
+	"code/internal/link"
 	"code/migrations"
 )
 
 type testDB struct {
 	conn    *pgxpool.Pool
 	queries *db.Queries
-	repo    *links.Repository
-	svc     *links.Service
-	handler *links.Handler
+	repo    *link.Repository
+	svc     *link.Service
+	handler *link.Handler
 	router  *gin.Engine
 }
 
@@ -70,9 +70,9 @@ func setupTestDB(t *testing.T) *testDB {
 	require.NoError(t, err)
 
 	queries := db.New(pool)
-	linkRepo := links.NewRepository(queries)
-	linkSvc := links.NewService(linkRepo, "http://localhost:8080")
-	linkHandler := links.NewHandler(linkSvc)
+	linkRepo := link.NewRepository(queries)
+	linkSvc := link.NewService(linkRepo, "http://localhost:8080")
+	linkHandler := link.NewHandler(linkSvc)
 	router := setupRouter(linkHandler)
 
 	return &testDB{
@@ -92,9 +92,9 @@ func setupTestTx(t *testing.T, td *testDB) *testDB {
 	t.Cleanup(func() { _ = tx.Rollback(context.Background()) })
 
 	txQueries := td.queries.WithTx(tx)
-	txRepo := links.NewRepository(txQueries)
-	txSvc := links.NewService(txRepo, "http://localhost:8080")
-	txHandler := links.NewHandler(txSvc)
+	txRepo := link.NewRepository(txQueries)
+	txSvc := link.NewService(txRepo, "http://localhost:8080")
+	txHandler := link.NewHandler(txSvc)
 	router := setupRouter(txHandler)
 
 	return &testDB{

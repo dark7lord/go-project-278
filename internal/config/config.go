@@ -1,4 +1,5 @@
-package main
+// Package config provides application configuration from environment variables.
+package config
 
 import (
 	"errors"
@@ -12,7 +13,8 @@ type Config struct {
 	BaseURL     string
 }
 
-func loadConfig() (*Config, error) {
+// Load reads configuration from environment variables.
+func Load() (*Config, error) {
 	cfg := &Config{
 		SentryDSN:   os.Getenv("SENTRY_DSN"),
 		DatabaseURL: os.Getenv("DATABASE_URL"),

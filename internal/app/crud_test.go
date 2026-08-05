@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"code/db"
+	"code/internal/db"
 )
 
 func TestLinksCRUD(t *testing.T) {

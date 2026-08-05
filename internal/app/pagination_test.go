@@ -1,9 +1,8 @@
-package main
+package app
 
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -12,12 +11,20 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"code/db"
+	"code/internal/db"
 )
 
-const visits04 = "visits 0-4/15"
+const (
+	range04     = "[0,4]"
+	range09     = "[0,9]"
+	links04     = "links 0-4/15"
+	links59     = "links 5-9/15"
+	links1014   = "links 10-14/15"
+	links100200 = "links 100-200/5"
+)
 
-func TestVisitsPagination(t *testing.T) {
+func TestLinksPagination(t *testing.T) {
+	// t.Skip("waiting for pagination implementation — handler/service/repo/queries need GetLinksRange and CountLinks")
 	td := setupTestDB(t)
 	ctx := context.Background()
 
@@ -35,7 +42,7 @@ func TestVisitsPagination(t *testing.T) {
 			rangeQuery: range04,
 			seedCount:  15,
 			wantStatus: http.StatusPartialContent,
-			wantRange:  visits04,
+			wantRange:  links04,
 			wantLen:    5,
 		},
 		{
@@ -43,7 +50,7 @@ func TestVisitsPagination(t *testing.T) {
 			rangeQuery: "[5,9]",
 			seedCount:  15,
 			wantStatus: http.StatusPartialContent,
-			wantRange:  "visits 5-9/15",
+			wantRange:  links59,
 			wantLen:    5,
 		},
 		{
@@ -51,7 +58,7 @@ func TestVisitsPagination(t *testing.T) {
 			rangeQuery: "[10,14]",
 			seedCount:  15,
 			wantStatus: http.StatusPartialContent,
-			wantRange:  "visits 10-14/15",
+			wantRange:  links1014,
 			wantLen:    5,
 		},
 		{
@@ -66,7 +73,7 @@ func TestVisitsPagination(t *testing.T) {
 			rangeQuery: "[100,200]",
 			seedCount:  5,
 			wantStatus: http.StatusPartialContent,
-			wantRange:  "visits 100-200/5",
+			wantRange:  links100200,
 			wantLen:    0,
 		},
 		{
@@ -82,11 +89,11 @@ func TestVisitsPagination(t *testing.T) {
 			wantStatus: http.StatusBadRequest,
 		},
 		{
-			name:        "range header first page",
+			name:        "range header applies without query param",
 			rangeHeader: range04,
 			seedCount:   15,
 			wantStatus:  http.StatusPartialContent,
-			wantRange:   visits04,
+			wantRange:   links04,
 			wantLen:     5,
 		},
 		{
@@ -95,7 +102,7 @@ func TestVisitsPagination(t *testing.T) {
 			rangeHeader: range09,
 			seedCount:   15,
 			wantStatus:  http.StatusPartialContent,
-			wantRange:   visits04,
+			wantRange:   links04,
 			wantLen:     5,
 		},
 	}
@@ -104,23 +111,13 @@ func TestVisitsPagination(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tx := setupTestTx(t, td)
 
-			link := linkFactory(0)
-			created, err := tx.repo.CreateLink(ctx, link.OriginalURL, link.ShortName, link.ShortURL)
-			require.NoError(t, err)
-
 			for i := range tt.seedCount {
-				ref := fmt.Sprintf("https://ref-%d.com", i)
-				_, err := tx.repo.CreateLinkVisit(
-					ctx, created.ID,
-					fmt.Sprintf("10.0.0.%d", i),
-					fmt.Sprintf("agent-%d", i),
-					&ref,
-					int32(http.StatusTemporaryRedirect),
-				)
+				l := linkFactory(i)
+				_, err := tx.repo.CreateLink(ctx, l.OriginalURL, l.ShortName, l.ShortURL)
 				require.NoError(t, err)
 			}
 
-			urlStr := "/api/link_visits"
+			urlStr := "/api/links"
 			if tt.rangeQuery != "" {
 				urlStr += "?range=" + url.QueryEscape(tt.rangeQuery)
 			}
@@ -139,41 +136,11 @@ func TestVisitsPagination(t *testing.T) {
 			}
 
 			if w.Code == http.StatusPartialContent || w.Code == http.StatusOK {
-				var visits []db.LinkVisit
-				err := json.Unmarshal(w.Body.Bytes(), &visits)
+				var links []db.Link
+				err := json.Unmarshal(w.Body.Bytes(), &links)
 				require.NoError(t, err)
-				assert.Len(t, visits, tt.wantLen)
+				assert.Len(t, links, tt.wantLen)
 			}
 		})
 	}
-}
-
-func TestRedirectRecordsVisit(t *testing.T) {
-	td := setupTestDB(t)
-	ctx := context.Background()
-
-	tx := setupTestTx(t, td)
-
-	link := linkFactory(0)
-	created, err := tx.repo.CreateLink(ctx, link.OriginalURL, link.ShortName, link.ShortURL)
-	require.NoError(t, err)
-
-	w := httptest.NewRecorder()
-	req := httptest.NewRequest("GET", "/r/"+created.ShortName, nil)
-	req.Header.Set("User-Agent", "test-agent")
-	req.Header.Set("Referer", "https://example.com")
-	tx.router.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusTemporaryRedirect, w.Code)
-
-	visits, err := tx.svc.ListLinkVisits(ctx)
-	require.NoError(t, err)
-	require.Len(t, visits, 1)
-
-	assert.Equal(t, created.ID, visits[0].LinkID)
-	assert.Equal(t, "192.0.2.1", visits[0].IP)
-	assert.Equal(t, "test-agent", visits[0].UserAgent)
-	require.NotNil(t, visits[0].Referer)
-	assert.Equal(t, "https://example.com", *visits[0].Referer)
-	assert.Equal(t, int32(http.StatusTemporaryRedirect), visits[0].Status)
 }

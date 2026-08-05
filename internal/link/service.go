@@ -1,4 +1,4 @@
-package links
+package link
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"code/db"
+	"code/internal/db"
 )
 
 // Service implements link business logic.

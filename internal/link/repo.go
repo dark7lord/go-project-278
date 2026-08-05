@@ -1,10 +1,10 @@
-// Package links implements HTTP handlers, business logic, and data access for links.
-package links
+// Package link implements HTTP handlers, business logic, and data access for links.
+package link
 
 import (
 	"context"
 
-	"code/db"
+	"code/internal/db"
 )
 
 // Repository provides data access for links.
