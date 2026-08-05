@@ -258,7 +258,7 @@ func (h *Handler) Redirect(c *gin.Context) {
 		return
 	}
 
-	c.Redirect(http.StatusTemporaryRedirect, originalURL)
+	c.Redirect(http.StatusFound, originalURL)
 
 	var referer *string
 	if ref := c.Request.Referer(); ref != "" {

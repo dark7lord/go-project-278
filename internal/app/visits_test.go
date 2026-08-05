@@ -115,7 +115,7 @@ func TestVisitsPagination(t *testing.T) {
 					fmt.Sprintf("10.0.0.%d", i),
 					fmt.Sprintf("agent-%d", i),
 					&ref,
-					int32(http.StatusTemporaryRedirect),
+					int32(http.StatusFound),
 				)
 				require.NoError(t, err)
 			}
@@ -164,7 +164,7 @@ func TestRedirectRecordsVisit(t *testing.T) {
 	req.Header.Set("Referer", "https://example.com")
 	tx.router.ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusTemporaryRedirect, w.Code)
+	assert.Equal(t, http.StatusFound, w.Code)
 
 	visits, err := tx.svc.ListLinkVisits(ctx)
 	require.NoError(t, err)
@@ -175,5 +175,5 @@ func TestRedirectRecordsVisit(t *testing.T) {
 	assert.Equal(t, "test-agent", visits[0].UserAgent)
 	require.NotNil(t, visits[0].Referer)
 	assert.Equal(t, "https://example.com", *visits[0].Referer)
-	assert.Equal(t, int32(http.StatusTemporaryRedirect), visits[0].Status)
+	assert.Equal(t, int32(http.StatusFound), visits[0].Status)
 }
