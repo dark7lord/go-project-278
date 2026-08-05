@@ -2,11 +2,12 @@ package links
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"math/rand"
 	"slices"
+
+	"github.com/jackc/pgx/v5"
 
 	"code/db"
 )
@@ -43,12 +44,19 @@ func genRandomName() string {
 }
 
 // validateShortName checks that the short name is non-empty and unique.
-func (s *Service) validateShortName(ctx context.Context, shortName string) error {
+// excludeID, if provided, is excluded from the uniqueness check (for updates).
+func (s *Service) validateShortName(ctx context.Context, shortName string, excludeID *int64) error {
 	if shortName == "" {
 		return ErrEmptyShortName
 	}
 
-	allShortNames, err := s.repo.ListShortNames(ctx)
+	var allShortNames []string
+	var err error
+	if excludeID != nil {
+		allShortNames, err = s.repo.ListShortNamesExcluding(ctx, *excludeID)
+	} else {
+		allShortNames, err = s.repo.ListShortNames(ctx)
+	}
 	if err != nil {
 		return err
 	}
@@ -60,24 +68,9 @@ func (s *Service) validateShortName(ctx context.Context, shortName string) error
 	return nil
 }
 
-// generateShortLink returns the full short URL for the given short name,
-// generating a random unique name if the provided one is empty.
-func (s *Service) generateShortLink(ctx context.Context, shortName *string) (string, error) {
-	err := s.validateShortName(ctx, *shortName)
-
-	if errors.Is(err, ErrEmptyShortName) {
-		isValid := false
-		for !isValid {
-			*shortName = genRandomName()
-			if s.validateShortName(ctx, *shortName) == nil {
-				isValid = true
-			}
-		}
-	} else if err != nil {
-		return "", err
-	}
-
-	return s.baseURL + "/r/" + *shortName, nil
+// generateShortLink returns the full short URL for the given short name.
+func (s *Service) generateShortLink(shortName string) string {
+	return s.baseURL + "/r/" + shortName
 }
 
 // CreateLink creates a new link with the given URL and optional short name.
@@ -88,17 +81,20 @@ func (s *Service) CreateLink(ctx context.Context, originalURL, shortName string)
 	}
 	originalURL = normalized
 
-	if shortName != "" {
-		if err := s.validateShortName(ctx, shortName); err != nil {
+	if shortName == "" {
+		for {
+			shortName = genRandomName()
+			if err := s.validateShortName(ctx, shortName, nil); err == nil {
+				break
+			}
+		}
+	} else {
+		if err := s.validateShortName(ctx, shortName, nil); err != nil {
 			return db.Link{}, err
 		}
 	}
 
-	shortURL, err := s.generateShortLink(ctx, &shortName)
-
-	if err != nil {
-		return db.Link{}, err
-	}
+	shortURL := s.generateShortLink(shortName)
 
 	return s.repo.CreateLink(ctx, originalURL, shortName, shortURL)
 }
@@ -107,7 +103,7 @@ func (s *Service) CreateLink(ctx context.Context, originalURL, shortName string)
 func (s *Service) GetLinkByID(ctx context.Context, id int64) (db.Link, error) {
 	link, err := s.repo.GetLinkByID(ctx, id)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return db.Link{}, ErrNotFound
 		}
 
@@ -121,7 +117,7 @@ func (s *Service) GetLinkByID(ctx context.Context, id int64) (db.Link, error) {
 func (s *Service) GetLinkByShortName(ctx context.Context, shortName string) (db.Link, error) {
 	link, err := s.repo.GetLinkByShortName(ctx, shortName)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return db.Link{}, ErrNotFound
 		}
 
@@ -167,14 +163,15 @@ func (s *Service) UpdateLink(ctx context.Context, id int64, originalURL, shortNa
 	}
 	originalURL = normalized
 
-	shortURL, err := s.generateShortLink(ctx, &shortName)
-	if err != nil {
+	if err := s.validateShortName(ctx, shortName, &id); err != nil {
 		return db.Link{}, err
 	}
 
+	shortURL := s.generateShortLink(shortName)
+
 	updated, err := s.repo.UpdateLink(ctx, id, originalURL, shortName, shortURL)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return db.Link{}, ErrNotFound
 		}
 
@@ -188,7 +185,7 @@ func (s *Service) UpdateLink(ctx context.Context, id int64, originalURL, shortNa
 func (s *Service) DeleteLink(ctx context.Context, id int64) (db.Link, error) {
 	link, err := s.repo.DeleteLink(ctx, id)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return db.Link{}, ErrNotFound
 		}
 
@@ -196,4 +193,37 @@ func (s *Service) DeleteLink(ctx context.Context, id int64) (db.Link, error) {
 	}
 
 	return link, nil
+}
+
+// CreateLinkVisit records a visit for the given link.
+func (s *Service) CreateLinkVisit(ctx context.Context, linkID int64, ip, userAgent string, referer *string, status int32) (db.LinkVisit, error) {
+	return s.repo.CreateLinkVisit(ctx, linkID, ip, userAgent, referer, status)
+}
+
+// ListLinkVisits retrieves all link visits.
+func (s *Service) ListLinkVisits(ctx context.Context) ([]db.LinkVisit, error) {
+	visits, err := s.repo.ListLinkVisits(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if visits == nil {
+		return []db.LinkVisit{}, nil
+	}
+
+	return visits, nil
+}
+
+// ListLinkVisitsRange retrieves a paginated subset of link visits.
+func (s *Service) ListLinkVisitsRange(ctx context.Context, start, end int64) ([]db.LinkVisit, int64, error) {
+	totalVisits, err := s.repo.CountLinkVisits(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	limit := (end - start) + 1
+	offset := start
+
+	visits, err := s.repo.ListLinkVisitsRange(ctx, limit, offset)
+
+	return visits, totalVisits, err
 }

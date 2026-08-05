@@ -135,6 +135,14 @@ func TestLinksCRUD(t *testing.T) {
 		assertErrorBody(t, w)
 	})
 
+	t.Run("UpdateLink / same short_name", func(t *testing.T) {
+		tx := setupTestTx(t, td)
+		created, _ := tx.repo.CreateLink(ctx, "https://a.com", "same", "http://localhost:8080/r/same")
+		body := `{"original_url": "https://b.com", "short_name": "same"}`
+		w := performRequest(t, tx.router, "PUT", fmt.Sprintf("/api/links/%d", created.ID), body)
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
 	t.Run("DeleteLink", func(t *testing.T) {
 		tx := setupTestTx(t, td)
 		created, err := tx.repo.CreateLink(ctx, "https://deletetest.com", "delete-test", "http://localhost:8080/delete-test")

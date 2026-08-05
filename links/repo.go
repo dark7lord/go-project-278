@@ -37,11 +37,16 @@ func (r *Repository) ListShortNames(ctx context.Context) ([]string, error) {
 	return r.queries.GetShortNames(ctx)
 }
 
+// ListShortNamesExcluding retrieves all short names excluding the given ID.
+func (r *Repository) ListShortNamesExcluding(ctx context.Context, excludeID int64) ([]string, error) {
+	return r.queries.GetShortNamesExcluding(ctx, excludeID)
+}
+
 // ListLinksRange retrieves a paginated subset of links.
 func (r *Repository) ListLinksRange(ctx context.Context, limit, offset int64) ([]db.Link, error) {
 	return r.queries.GetLinksRange(ctx, db.GetLinksRangeParams{
-		Limit:  limit,
-		Offset: offset,
+		Limit:  int32(limit),
+		Offset: int32(offset),
 	})
 }
 
@@ -72,4 +77,33 @@ func (r *Repository) UpdateLink(ctx context.Context, id int64, originalURL, shor
 // DeleteLink deletes a link by its ID.
 func (r *Repository) DeleteLink(ctx context.Context, id int64) (db.Link, error) {
 	return r.queries.DeleteLink(ctx, id)
+}
+
+// CreateLinkVisit records a visit for the given link.
+func (r *Repository) CreateLinkVisit(ctx context.Context, linkID int64, ip, userAgent string, referer *string, status int32) (db.LinkVisit, error) {
+	return r.queries.CreateLinkVisit(ctx, db.CreateLinkVisitParams{
+		LinkID:    linkID,
+		IP:        ip,
+		UserAgent: userAgent,
+		Referer:   referer,
+		Status:    status,
+	})
+}
+
+// ListLinkVisits retrieves all link visits.
+func (r *Repository) ListLinkVisits(ctx context.Context) ([]db.LinkVisit, error) {
+	return r.queries.GetLinkVisits(ctx)
+}
+
+// ListLinkVisitsRange retrieves a paginated subset of link visits.
+func (r *Repository) ListLinkVisitsRange(ctx context.Context, limit, offset int64) ([]db.LinkVisit, error) {
+	return r.queries.GetLinkVisitsRange(ctx, db.GetLinkVisitsRangeParams{
+		Limit:  int32(limit),
+		Offset: int32(offset),
+	})
+}
+
+// CountLinkVisits returns the total number of link visits.
+func (r *Repository) CountLinkVisits(ctx context.Context) (int64, error) {
+	return r.queries.CountLinkVisits(ctx)
 }

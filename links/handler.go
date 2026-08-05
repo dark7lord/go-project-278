@@ -3,8 +3,8 @@ package links
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
-	"regexp"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -79,11 +79,27 @@ func (h *Handler) GetLink(c *gin.Context) {
 	c.JSON(http.StatusOK, link)
 }
 
-var rangeRe = regexp.MustCompile(`\[(\d+),(\d+)\]`) // captures: [full, start, end]
+// rangeStatus maps a range parsing error to an HTTP status and message.
+func rangeStatus(err error) (int, string) {
+	if errors.Is(err, ErrRangeNotSatisfiable) {
+		return http.StatusRequestedRangeNotSatisfiable, err.Error()
+	}
+
+	return http.StatusBadRequest, err.Error()
+}
+
+// requestRange returns the range parameter from query string or Range header.
+func requestRange(c *gin.Context) string {
+	if q := c.Query("range"); q != "" {
+		return q
+	}
+
+	return c.GetHeader("Range")
+}
 
 // ListLinks handles listing all links.
 func (h *Handler) ListLinks(c *gin.Context) {
-	rangeParam := c.Query("range")
+	rangeParam := requestRange(c)
 
 	if rangeParam == "" {
 		links, err := h.service.ListLinks(c.Request.Context())
@@ -97,26 +113,10 @@ func (h *Handler) ListLinks(c *gin.Context) {
 		return
 	}
 
-	matches := rangeRe.FindStringSubmatch(rangeParam)
-
-	if len(matches) != 3 {
-		c.JSON(http.StatusBadRequest, errJSON("invalid range, expected [start,end]"))
-		return
-	}
-
-	start, err := strconv.Atoi(matches[1])
+	start, end, err := parseRangeParam(rangeParam)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, errJSON("invalid start value"))
-		return
-	}
-	end, err := strconv.Atoi(matches[2])
-	if err != nil {
-		c.JSON(http.StatusBadRequest, errJSON("invalid end value"))
-		return
-	}
-
-	if start < 0 || start > end {
-		c.JSON(http.StatusRequestedRangeNotSatisfiable, errJSON("range not satisfiable"))
+		status, msg := rangeStatus(err)
+		c.JSON(status, errJSON(msg))
 		return
 	}
 
@@ -128,6 +128,39 @@ func (h *Handler) ListLinks(c *gin.Context) {
 
 	c.Header("Content-Range", fmt.Sprintf("links %d-%d/%d", start, end, total))
 	c.JSON(http.StatusPartialContent, links)
+}
+
+// ListVisits handles listing all link visits.
+func (h *Handler) ListVisits(c *gin.Context) {
+	rangeParam := requestRange(c)
+
+	if rangeParam == "" {
+		visits, err := h.service.ListLinkVisits(c.Request.Context())
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, errJSON(errInternal))
+			return
+		}
+
+		c.JSON(http.StatusOK, visits)
+
+		return
+	}
+
+	start, end, err := parseRangeParam(rangeParam)
+	if err != nil {
+		status, msg := rangeStatus(err)
+		c.JSON(status, errJSON(msg))
+		return
+	}
+
+	visits, total, err := h.service.ListLinkVisitsRange(c.Request.Context(), int64(start), int64(end))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, errJSON(errInternal))
+		return
+	}
+
+	c.Header("Content-Range", fmt.Sprintf("visits %d-%d/%d", start, end, total))
+	c.JSON(http.StatusPartialContent, visits)
 }
 
 // UpdateLinkRequest represents a request to update a link.
@@ -226,4 +259,19 @@ func (h *Handler) Redirect(c *gin.Context) {
 	}
 
 	c.Redirect(http.StatusTemporaryRedirect, originalURL)
+
+	var referer *string
+	if ref := c.Request.Referer(); ref != "" {
+		referer = &ref
+	}
+
+	if _, err := h.service.CreateLinkVisit(
+		c.Request.Context(),
+		link.ID, c.ClientIP(),
+		c.Request.UserAgent(),
+		referer,
+		int32(c.Writer.Status()),
+	); err != nil {
+		log.Printf("failed to record visit for link %d: %v", link.ID, err)
+	}
 }
