@@ -1,20 +1,20 @@
 package main
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
 
-	_ "github.com/lib/pq"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func connectDB(dsn string) (*sql.DB, error) {
-	conn, err := sql.Open("postgres", dsn)
+func connectDB(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
+	pool, err := pgxpool.New(ctx, dsn)
 	if err != nil {
 		return nil, err
 	}
-	if err := conn.Ping(); err != nil {
+	if err := pool.Ping(ctx); err != nil {
 		return nil, fmt.Errorf("ping: %w", err)
 	}
 
-	return conn, nil
+	return pool, nil
 }

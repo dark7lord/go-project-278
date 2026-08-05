@@ -4,9 +4,23 @@
 
 package db
 
+import (
+	"github.com/jackc/pgx/v5/pgtype"
+)
+
 type Link struct {
 	ID          int64  `json:"id"`
 	OriginalURL string `json:"original_url"`
 	ShortName   string `json:"short_name"`
 	ShortURL    string `json:"short_url"`
+}
+
+type LinkVisit struct {
+	ID        int64            `json:"id"`
+	LinkID    int64            `json:"link_id"`
+	CreatedAt pgtype.Timestamp `json:"created_at"`
+	IP        string           `json:"ip"`
+	UserAgent string           `json:"user_agent"`
+	Referer   *string          `json:"referer"`
+	Status    int32            `json:"status"`
 }

@@ -1,7 +1,7 @@
 BIN := bin/app
 
 # Development
-.PHONY: build clean run
+.PHONY: build clean run run-front
 build:
 	go build -o $(BIN) .
 
@@ -10,6 +10,9 @@ clean:
 
 run: build
 	npm run dev
+
+run-front:
+	npm run dev:front
 
 # Linters
 .PHONY: lint-install lint-uninstall lint fmt

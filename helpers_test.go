@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -12,7 +11,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	_ "github.com/lib/pq"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/moby/moby/api/types/network"
 	"github.com/pressly/goose/v3"
 	"github.com/stretchr/testify/assert"
@@ -27,7 +27,7 @@ import (
 )
 
 type testDB struct {
-	conn    *sql.DB
+	conn    *pgxpool.Pool
 	queries *db.Queries
 	repo    *links.Repository
 	svc     *links.Service
@@ -46,7 +46,7 @@ func setupTestDB(t *testing.T) *testDB {
 		postgres.WithPassword("test"),
 		testcontainers.WithWaitStrategyAndDeadline(
 			60*time.Second,
-			wait.ForSQL("5432/tcp", "postgres", func(host string, port network.Port) string {
+			wait.ForSQL("5432/tcp", "pgx", func(host string, port network.Port) string {
 				return fmt.Sprintf("postgres://test:test@%s:%d/test?sslmode=disable", host, port.Num())
 			}),
 		),
@@ -59,23 +59,24 @@ func setupTestDB(t *testing.T) *testDB {
 	connStr, err := pg.ConnectionString(ctx, "sslmode=disable")
 	require.NoError(t, err)
 
-	conn, err := connectDB(connStr)
+	pool, err := connectDB(ctx, connStr)
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = conn.Close() })
+	t.Cleanup(pool.Close)
 
-	provider, err := goose.NewProvider("postgres", conn, migrations.FS)
+	sqlDB := stdlib.OpenDBFromPool(pool)
+	provider, err := goose.NewProvider("postgres", sqlDB, migrations.FS)
 	require.NoError(t, err)
 	_, err = provider.Up(ctx)
 	require.NoError(t, err)
 
-	queries := db.New(conn)
+	queries := db.New(pool)
 	linkRepo := links.NewRepository(queries)
 	linkSvc := links.NewService(linkRepo, "http://localhost:8080")
 	linkHandler := links.NewHandler(linkSvc)
 	router := setupRouter(linkHandler)
 
 	return &testDB{
-		conn:    conn,
+		conn:    pool,
 		queries: queries,
 		repo:    linkRepo,
 		svc:     linkSvc,
@@ -86,9 +87,9 @@ func setupTestDB(t *testing.T) *testDB {
 
 func setupTestTx(t *testing.T, td *testDB) *testDB {
 	t.Helper()
-	tx, err := td.conn.Begin()
+	tx, err := td.conn.Begin(context.Background())
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = tx.Rollback() })
+	t.Cleanup(func() { _ = tx.Rollback(context.Background()) })
 
 	txQueries := td.queries.WithTx(tx)
 	txRepo := links.NewRepository(txQueries)

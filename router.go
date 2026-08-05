@@ -35,6 +35,7 @@ func setupRouter(linkHandler *links.Handler) *gin.Engine {
 	api.GET("/links/:id", linkHandler.GetLink)
 	api.PUT("/links/:id", linkHandler.UpdateLink)
 	api.DELETE("/links/:id", linkHandler.DeleteLink)
+	api.GET("/link_visits", linkHandler.ListVisits)
 
 	return router
 }

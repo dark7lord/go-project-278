@@ -2,6 +2,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"time"
@@ -34,15 +35,13 @@ func run() error {
 	}
 	defer sentry.Flush(2 * time.Second)
 
-	dbConn, err := connectDB(cfg.DatabaseURL)
+	ctx := context.Background()
+
+	dbConn, err := connectDB(ctx, cfg.DatabaseURL)
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
-	defer func() {
-		if err := dbConn.Close(); err != nil {
-			log.Printf("failed to close database connection: %v", err)
-		}
-	}()
+	defer dbConn.Close()
 
 	queries := db.New(dbConn)
 	linkRepo := links.NewRepository(queries)

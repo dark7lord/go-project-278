@@ -14,7 +14,7 @@ SELECT COUNT(id) FROM links
 `
 
 func (q *Queries) CountLinks(ctx context.Context) (int64, error) {
-	row := q.db.QueryRowContext(ctx, countLinks)
+	row := q.db.QueryRow(ctx, countLinks)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -33,7 +33,7 @@ type CreateLinkParams struct {
 }
 
 func (q *Queries) CreateLink(ctx context.Context, arg CreateLinkParams) (Link, error) {
-	row := q.db.QueryRowContext(ctx, createLink, arg.OriginalURL, arg.ShortName, arg.ShortURL)
+	row := q.db.QueryRow(ctx, createLink, arg.OriginalURL, arg.ShortName, arg.ShortURL)
 	var i Link
 	err := row.Scan(
 		&i.ID,
@@ -51,7 +51,7 @@ RETURNING id, original_url, short_name, short_url
 `
 
 func (q *Queries) DeleteLink(ctx context.Context, id int64) (Link, error) {
-	row := q.db.QueryRowContext(ctx, deleteLink, id)
+	row := q.db.QueryRow(ctx, deleteLink, id)
 	var i Link
 	err := row.Scan(
 		&i.ID,
@@ -69,7 +69,7 @@ WHERE id = $1
 `
 
 func (q *Queries) GetLinkByID(ctx context.Context, id int64) (Link, error) {
-	row := q.db.QueryRowContext(ctx, getLinkByID, id)
+	row := q.db.QueryRow(ctx, getLinkByID, id)
 	var i Link
 	err := row.Scan(
 		&i.ID,
@@ -87,7 +87,7 @@ WHERE short_name = $1
 `
 
 func (q *Queries) GetLinkByShortName(ctx context.Context, shortName string) (Link, error) {
-	row := q.db.QueryRowContext(ctx, getLinkByShortName, shortName)
+	row := q.db.QueryRow(ctx, getLinkByShortName, shortName)
 	var i Link
 	err := row.Scan(
 		&i.ID,
@@ -104,7 +104,7 @@ FROM links
 `
 
 func (q *Queries) GetLinks(ctx context.Context) ([]Link, error) {
-	rows, err := q.db.QueryContext(ctx, getLinks)
+	rows, err := q.db.Query(ctx, getLinks)
 	if err != nil {
 		return nil, err
 	}
@@ -121,9 +121,6 @@ func (q *Queries) GetLinks(ctx context.Context) ([]Link, error) {
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -135,17 +132,17 @@ const getLinksRange = `-- name: GetLinksRange :many
 SELECT id, original_url, short_name, short_url
 FROM links
 ORDER BY id
-OFFSET $1::bigint
-LIMIT $2::bigint
+OFFSET $1
+LIMIT $2
 `
 
 type GetLinksRangeParams struct {
-	Offset int64 `json:"offset"`
-	Limit  int64 `json:"limit"`
+	Offset int32 `json:"offset"`
+	Limit  int32 `json:"limit"`
 }
 
 func (q *Queries) GetLinksRange(ctx context.Context, arg GetLinksRangeParams) ([]Link, error) {
-	rows, err := q.db.QueryContext(ctx, getLinksRange, arg.Offset, arg.Limit)
+	rows, err := q.db.Query(ctx, getLinksRange, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
@@ -162,9 +159,6 @@ func (q *Queries) GetLinksRange(ctx context.Context, arg GetLinksRangeParams) ([
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -177,7 +171,7 @@ SELECT short_name FROM links
 `
 
 func (q *Queries) GetShortNames(ctx context.Context) ([]string, error) {
-	rows, err := q.db.QueryContext(ctx, getShortNames)
+	rows, err := q.db.Query(ctx, getShortNames)
 	if err != nil {
 		return nil, err
 	}
@@ -190,8 +184,29 @@ func (q *Queries) GetShortNames(ctx context.Context) ([]string, error) {
 		}
 		items = append(items, short_name)
 	}
-	if err := rows.Close(); err != nil {
+	if err := rows.Err(); err != nil {
 		return nil, err
+	}
+	return items, nil
+}
+
+const getShortNamesExcluding = `-- name: GetShortNamesExcluding :many
+SELECT short_name FROM links WHERE id != $1
+`
+
+func (q *Queries) GetShortNamesExcluding(ctx context.Context, excludeID int64) ([]string, error) {
+	rows, err := q.db.Query(ctx, getShortNamesExcluding, excludeID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var short_name string
+		if err := rows.Scan(&short_name); err != nil {
+			return nil, err
+		}
+		items = append(items, short_name)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -217,7 +232,7 @@ type UpdateLinkParams struct {
 }
 
 func (q *Queries) UpdateLink(ctx context.Context, arg UpdateLinkParams) (Link, error) {
-	row := q.db.QueryRowContext(ctx, updateLink,
+	row := q.db.QueryRow(ctx, updateLink,
 		arg.OriginalURL,
 		arg.ShortName,
 		arg.ShortURL,
