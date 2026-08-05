@@ -4,6 +4,7 @@
     "concurrently": "^10.0.4"
   },
   "scripts": {
-    "dev": "concurrently \"npx start-hexlet-url-shortener-frontend \" \"bin/app\""
+    "dev": "concurrently \"npx start-hexlet-url-shortener-frontend \" \"bin/app\"",
+    "dev:front": "npx start-hexlet-url-shortener-frontend"
   }
 }
