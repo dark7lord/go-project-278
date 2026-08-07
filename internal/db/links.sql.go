@@ -166,54 +166,6 @@ func (q *Queries) GetLinksRange(ctx context.Context, arg GetLinksRangeParams) ([
 	return items, nil
 }
 
-const getShortNames = `-- name: GetShortNames :many
-SELECT short_name FROM links
-`
-
-func (q *Queries) GetShortNames(ctx context.Context) ([]string, error) {
-	rows, err := q.db.Query(ctx, getShortNames)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []string
-	for rows.Next() {
-		var short_name string
-		if err := rows.Scan(&short_name); err != nil {
-			return nil, err
-		}
-		items = append(items, short_name)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getShortNamesExcluding = `-- name: GetShortNamesExcluding :many
-SELECT short_name FROM links WHERE id != $1
-`
-
-func (q *Queries) GetShortNamesExcluding(ctx context.Context, excludeID int64) ([]string, error) {
-	rows, err := q.db.Query(ctx, getShortNamesExcluding, excludeID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []string
-	for rows.Next() {
-		var short_name string
-		if err := rows.Scan(&short_name); err != nil {
-			return nil, err
-		}
-		items = append(items, short_name)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const updateLink = `-- name: UpdateLink :one
 UPDATE links
 SET

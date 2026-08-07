@@ -32,16 +32,6 @@ func (r *Repository) ListLinks(ctx context.Context) ([]db.Link, error) {
 	return r.queries.GetLinks(ctx)
 }
 
-// ListShortNames retrieves all short names.
-func (r *Repository) ListShortNames(ctx context.Context) ([]string, error) {
-	return r.queries.GetShortNames(ctx)
-}
-
-// ListShortNamesExcluding retrieves all short names excluding the given ID.
-func (r *Repository) ListShortNamesExcluding(ctx context.Context, excludeID int64) ([]string, error) {
-	return r.queries.GetShortNamesExcluding(ctx, excludeID)
-}
-
 // ListLinksRange retrieves a paginated subset of links.
 func (r *Repository) ListLinksRange(ctx context.Context, limit, offset int64) ([]db.Link, error) {
 	return r.queries.GetLinksRange(ctx, db.GetLinksRangeParams{

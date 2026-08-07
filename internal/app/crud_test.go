@@ -31,8 +31,8 @@ func TestLinksCRUD(t *testing.T) {
 
 		body := `{"original_url": "https://another.com", "short_name": "dup-link"}`
 		w := performRequest(t, tx.router, "POST", "/api/links", body)
-		assert.Equal(t, http.StatusConflict, w.Code)
-		assertErrorBody(t, w)
+		assert.Equal(t, http.StatusUnprocessableEntity, w.Code)
+		assertFieldErrors(t, w, "short_name")
 	})
 
 	t.Run("CreateLink / empty short name", func(t *testing.T) {
@@ -50,10 +50,26 @@ func TestLinksCRUD(t *testing.T) {
 
 	t.Run("CreateLink / missing original_url", func(t *testing.T) {
 		tx := setupTestTx(t, td)
-		body := `{"short_name": "x"}`
+		body := `{"original_url": "", "short_name": "ok-link"}`
 		w := performRequest(t, tx.router, "POST", "/api/links", body)
-		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assertErrorBody(t, w)
+		assert.Equal(t, http.StatusUnprocessableEntity, w.Code)
+		assertFieldErrors(t, w, "original_url")
+	})
+
+	t.Run("CreateLink / short name too short", func(t *testing.T) {
+		tx := setupTestTx(t, td)
+		body := `{"original_url": "https://short.com", "short_name": "x"}`
+		w := performRequest(t, tx.router, "POST", "/api/links", body)
+		assert.Equal(t, http.StatusUnprocessableEntity, w.Code)
+		assertFieldErrors(t, w, "short_name")
+	})
+
+	t.Run("CreateLink / short name too long", func(t *testing.T) {
+		tx := setupTestTx(t, td)
+		body := `{"original_url": "https://long.com", "short_name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}`
+		w := performRequest(t, tx.router, "POST", "/api/links", body)
+		assert.Equal(t, http.StatusUnprocessableEntity, w.Code)
+		assertFieldErrors(t, w, "short_name")
 	})
 
 	t.Run("CreateLink / scheme-less url", func(t *testing.T) {
@@ -73,7 +89,9 @@ func TestLinksCRUD(t *testing.T) {
 		tx := setupTestTx(t, td)
 		w := performRequest(t, tx.router, "POST", "/api/links", `{broken`)
 		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assertErrorBody(t, w)
+		var body map[string]string
+		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &body))
+		assert.Equal(t, "invalid request", body["error"])
 	})
 
 	t.Run("GetLink / not found", func(t *testing.T) {
@@ -131,8 +149,8 @@ func TestLinksCRUD(t *testing.T) {
 
 		body := `{"original_url": "https://other.com", "short_name": "taken"}`
 		w := performRequest(t, tx.router, "PUT", fmt.Sprintf("/api/links/%d", other.ID), body)
-		assert.Equal(t, http.StatusConflict, w.Code)
-		assertErrorBody(t, w)
+		assert.Equal(t, http.StatusUnprocessableEntity, w.Code)
+		assertFieldErrors(t, w, "short_name")
 	})
 
 	t.Run("UpdateLink / same short_name", func(t *testing.T) {

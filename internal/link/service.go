@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
-	"slices"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 
 	"code/internal/db"
 )
@@ -28,11 +28,44 @@ var colors = []string{"red", "orange", "yellow", "green", "cyan", "blue", "purpl
 var (
 	// ErrNotFound indicates the requested link was not found.
 	ErrNotFound = errors.New("link not found")
-	// ErrLinkExists indicates a link with the given short name already exists.
-	ErrLinkExists = errors.New("link already exists")
-	// ErrEmptyShortName indicates the short name is empty.
-	ErrEmptyShortName = errors.New("short name is empty")
+	// ErrShortNameAlreadyUse indicates a link with the given short name already exists.
+	ErrShortNameAlreadyUse = errors.New("short name already in use")
 )
+
+// FieldError associates a validation error with a request field.
+type FieldError struct {
+	Field string
+	Err   error
+}
+
+const fieldShortName = "short_name"
+const fieldOriginalURL = "original_url"
+const fieldShortURL = "short_url"
+
+// Postgres auto-names UNIQUE constraints as <table>_<column>_key.
+const shortNameConstraint = "links_short_name_key"
+const shortURLConstraint = "links_short_url_key"
+
+// mapUniqueViolation converts a Postgres unique constraint violation into a FieldError.
+func mapUniqueViolation(err error) error {
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+		switch pgErr.ConstraintName {
+		case shortNameConstraint:
+			return &FieldError{Field: fieldShortName, Err: ErrShortNameAlreadyUse}
+		case shortURLConstraint:
+			return &FieldError{Field: fieldShortURL, Err: errors.New("short url already in use")}
+		}
+	}
+
+	return err
+}
+
+// Error returns the underlying error message.
+func (e *FieldError) Error() string { return e.Err.Error() }
+
+// Unwrap returns the underlying error for errors.Is/As.
+func (e *FieldError) Unwrap() error { return e.Err }
 
 func genRandomName() string {
 	l := len(colors)
@@ -41,31 +74,6 @@ func genRandomName() string {
 	suffixNum := rand.Intn(1024)
 
 	return fmt.Sprintf("%s-%s-link-%d", prefixColor, infixColor, suffixNum)
-}
-
-// validateShortName checks that the short name is non-empty and unique.
-// excludeID, if provided, is excluded from the uniqueness check (for updates).
-func (s *Service) validateShortName(ctx context.Context, shortName string, excludeID *int64) error {
-	if shortName == "" {
-		return ErrEmptyShortName
-	}
-
-	var allShortNames []string
-	var err error
-	if excludeID != nil {
-		allShortNames, err = s.repo.ListShortNamesExcluding(ctx, *excludeID)
-	} else {
-		allShortNames, err = s.repo.ListShortNames(ctx)
-	}
-	if err != nil {
-		return err
-	}
-
-	if slices.Contains(allShortNames, shortName) {
-		return ErrLinkExists
-	}
-
-	return nil
 }
 
 // generateShortLink returns the full short URL for the given short name.
@@ -77,26 +85,29 @@ func (s *Service) generateShortLink(shortName string) string {
 func (s *Service) CreateLink(ctx context.Context, originalURL, shortName string) (db.Link, error) {
 	normalized, err := normalizeURL(originalURL)
 	if err != nil {
-		return db.Link{}, fmt.Errorf("%w: %s", ErrInvalidURL, originalURL)
+		return db.Link{}, &FieldError{Field: fieldOriginalURL, Err: fmt.Errorf("%w: %s", ErrInvalidURL, originalURL)}
 	}
 	originalURL = normalized
 
 	if shortName == "" {
 		for {
 			shortName = genRandomName()
-			if err := s.validateShortName(ctx, shortName, nil); err == nil {
-				break
+			link, err := s.repo.CreateLink(ctx, originalURL, shortName, s.generateShortLink(shortName))
+			if err == nil {
+				return link, nil
 			}
-		}
-	} else {
-		if err := s.validateShortName(ctx, shortName, nil); err != nil {
-			return db.Link{}, err
+			if _, ok := mapUniqueViolation(err).(*FieldError); !ok {
+				return db.Link{}, err
+			}
 		}
 	}
 
-	shortURL := s.generateShortLink(shortName)
+	link, err := s.repo.CreateLink(ctx, originalURL, shortName, s.generateShortLink(shortName))
+	if err != nil {
+		return db.Link{}, mapUniqueViolation(err)
+	}
 
-	return s.repo.CreateLink(ctx, originalURL, shortName, shortURL)
+	return link, nil
 }
 
 // GetLinkByID retrieves a link by its ID.
@@ -159,13 +170,9 @@ func (s *Service) ListLinksRange(ctx context.Context, start, end int64) ([]db.Li
 func (s *Service) UpdateLink(ctx context.Context, id int64, originalURL, shortName string) (db.Link, error) {
 	normalized, err := normalizeURL(originalURL)
 	if err != nil {
-		return db.Link{}, fmt.Errorf("%w: %s", ErrInvalidURL, originalURL)
+		return db.Link{}, &FieldError{Field: fieldOriginalURL, Err: fmt.Errorf("%w: %s", ErrInvalidURL, originalURL)}
 	}
 	originalURL = normalized
-
-	if err := s.validateShortName(ctx, shortName, &id); err != nil {
-		return db.Link{}, err
-	}
 
 	shortURL := s.generateShortLink(shortName)
 
@@ -175,7 +182,7 @@ func (s *Service) UpdateLink(ctx context.Context, id int64, originalURL, shortNa
 			return db.Link{}, ErrNotFound
 		}
 
-		return db.Link{}, fmt.Errorf("update link: %w", err)
+		return db.Link{}, mapUniqueViolation(err)
 	}
 
 	return updated, nil

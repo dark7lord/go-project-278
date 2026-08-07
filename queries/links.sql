@@ -27,9 +27,6 @@ LIMIT sqlc.arg('limit');
 -- name: CountLinks :one
 SELECT COUNT(id) FROM links;
 
--- name: GetShortNames :many
-SELECT short_name FROM links;
-
 -- name: UpdateLink :one
 UPDATE links
 SET
@@ -43,6 +40,3 @@ RETURNING id, original_url, short_name, short_url;
 DELETE FROM links
 WHERE id = @id
 RETURNING id, original_url, short_name, short_url;
-
--- name: GetShortNamesExcluding :many
-SELECT short_name FROM links WHERE id != @exclude_id;

@@ -137,3 +137,10 @@ func assertErrorBody(t *testing.T, w *httptest.ResponseRecorder) {
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &body))
 	assert.NotEmpty(t, body["error"])
 }
+
+func assertFieldErrors(t *testing.T, w *httptest.ResponseRecorder, field string) {
+	t.Helper()
+	var body map[string]map[string]string
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &body))
+	assert.NotEmpty(t, body["errors"][field])
+}

@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 )
 
 const errInvalidID = "invalid id"
@@ -15,6 +18,52 @@ const errInternal = "internal error"
 
 func errJSON(msg string) gin.H {
 	return gin.H{"error": msg}
+}
+
+var camelRe = regexp.MustCompile(`([a-z0-9])([A-Z])`)
+
+// toSnakeCase converts "ShortName" to "short_name" and "OriginalURL" to "original_url".
+func toSnakeCase(s string) string {
+	return strings.ToLower(camelRe.ReplaceAllString(s, `${1}_${2}`))
+}
+
+// bindMessage translates a validator tag into a human-readable message.
+func bindMessage(fe validator.FieldError) string {
+	switch fe.Tag() {
+	case "required":
+		return "field is required"
+	case "min":
+		return "must be at least " + fe.Param() + " characters"
+	case "max":
+		return "must be at most " + fe.Param() + " characters"
+	default:
+		return fe.Error()
+	}
+}
+
+// writeBindErrors returns 422 for validator errors, otherwise 400 for invalid JSON.
+func writeBindErrors(c *gin.Context, err error) {
+	var validationErrors validator.ValidationErrors
+	if errors.As(err, &validationErrors) {
+		result := make(map[string]string)
+		for _, fieldErr := range validationErrors {
+			result[toSnakeCase(fieldErr.Field())] = bindMessage(fieldErr)
+		}
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"errors": result})
+
+		return
+	}
+	c.JSON(http.StatusBadRequest, errJSON("invalid request"))
+}
+
+// writeFieldErrors returns 422 for field errors, otherwise 400.
+func writeFieldErrors(c *gin.Context, err error) {
+	var fe *FieldError
+	if errors.As(err, &fe) {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"errors": gin.H{fe.Field: fe.Error()}})
+		return
+	}
+	c.JSON(http.StatusBadRequest, errJSON(err.Error()))
 }
 
 // Handler handles HTTP requests for links.
@@ -30,24 +79,25 @@ func NewHandler(s *Service) *Handler {
 // CreateLinkRequest represents a request to create a link.
 type CreateLinkRequest struct {
 	OriginalURL string `json:"original_url" binding:"required"`
-	ShortName   string `json:"short_name"`
+	ShortName   string `json:"short_name" binding:"omitempty,min=3,max=32"`
 }
 
 // CreateLink handles link creation.
 func (h *Handler) CreateLink(c *gin.Context) {
 	var req CreateLinkRequest
+
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, errJSON(err.Error()))
+		writeBindErrors(c, err)
 		return
 	}
 
 	link, err := h.service.CreateLink(c.Request.Context(), req.OriginalURL, req.ShortName)
 	if err != nil {
-		if errors.Is(err, ErrLinkExists) {
-			c.JSON(http.StatusConflict, errJSON(err.Error()))
+		if errors.Is(err, ErrNotFound) {
+			c.JSON(http.StatusNotFound, errJSON(err.Error()))
 			return
 		}
-		c.JSON(http.StatusBadRequest, errJSON(err.Error()))
+		writeFieldErrors(c, err)
 
 		return
 	}
@@ -166,7 +216,7 @@ func (h *Handler) ListVisits(c *gin.Context) {
 // UpdateLinkRequest represents a request to update a link.
 type UpdateLinkRequest struct {
 	OriginalURL string `json:"original_url"`
-	ShortName   string `json:"short_name"`
+	ShortName   string `json:"short_name" binding:"min=3,max=32"`
 }
 
 // UpdateLink handles link updates.
@@ -180,7 +230,7 @@ func (h *Handler) UpdateLink(c *gin.Context) {
 
 	var req UpdateLinkRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, errJSON(err.Error()))
+		writeBindErrors(c, err)
 		return
 	}
 
@@ -189,15 +239,7 @@ func (h *Handler) UpdateLink(c *gin.Context) {
 			c.JSON(http.StatusNotFound, errJSON(err.Error()))
 			return
 		}
-		if errors.Is(err, ErrLinkExists) {
-			c.JSON(http.StatusConflict, errJSON(err.Error()))
-			return
-		}
-		if errors.Is(err, ErrInvalidURL) {
-			c.JSON(http.StatusBadRequest, errJSON(err.Error()))
-			return
-		}
-		c.JSON(http.StatusInternalServerError, errJSON(errInternal))
+		writeFieldErrors(c, err)
 
 		return
 	}
