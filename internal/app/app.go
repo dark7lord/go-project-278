@@ -64,11 +64,6 @@ func setupRouter(linkHandler *link.Handler) *gin.Engine {
 
 // Run loads config, connects to the database, and starts the HTTP server.
 func Run() error {
-	if err := sentry.Init(sentry.ClientOptions{Dsn: ""}); err != nil {
-		return fmt.Errorf("sentry.Init: %w", err)
-	}
-	defer sentry.Flush(2 * time.Second)
-
 	cfg, err := config.Load()
 	if err != nil {
 		return err
@@ -77,6 +72,7 @@ func Run() error {
 	if err := sentry.Init(sentry.ClientOptions{Dsn: cfg.SentryDSN}); err != nil {
 		return fmt.Errorf("sentry.Init: %w", err)
 	}
+	defer sentry.Flush(2 * time.Second)
 
 	ctx := context.Background()
 

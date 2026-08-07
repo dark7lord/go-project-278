@@ -1,0 +1,23 @@
+# VCS
+.git
+.gitignore
+
+# Go build artifacts
+bin/app
+coverage.out
+*.out
+tmp
+
+# Frontend
+node_modules
+
+# Environment
+.env
+.env.example
+
+# IDE / OS
+.vscode
+.DS_Store
+
+# Docs
+*.md
