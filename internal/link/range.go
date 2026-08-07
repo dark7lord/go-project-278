@@ -35,7 +35,7 @@ func parseRangeParam(rangeParam string) (start, end int, err error) {
 		return 0, 0, ErrRangeEnd
 	}
 
-	if start < 0 || start > end {
+	if start > end {
 		return 0, 0, ErrRangeNotSatisfiable
 	}
 

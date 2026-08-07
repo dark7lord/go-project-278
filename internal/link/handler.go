@@ -273,11 +273,6 @@ func (h *Handler) DeleteLink(c *gin.Context) {
 // Redirect handles redirecting a short name to its original URL.
 func (h *Handler) Redirect(c *gin.Context) {
 	code := c.Param("code")
-	if code == "" {
-		c.JSON(http.StatusBadRequest, errJSON("invalid code"))
-
-		return
-	}
 
 	ctx := c.Request.Context()
 	link, err := h.service.GetLinkByShortName(ctx, code)
@@ -288,7 +283,7 @@ func (h *Handler) Redirect(c *gin.Context) {
 			return
 		}
 
-		c.JSON(http.StatusInternalServerError, errJSON(err.Error()))
+		c.JSON(http.StatusInternalServerError, errJSON(errInternal))
 
 		return
 	}
