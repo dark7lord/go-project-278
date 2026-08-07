@@ -36,10 +36,10 @@ fmt:
 # Testing
 .PHONY: test cover cover-html check
 test:
-	go test -race -coverprofile=coverage.out ./... -v 
+	go test -race -coverpkg=./... -coverprofile=coverage.out ./...
 
 cover:
-	go test ./... -coverprofile=coverage.out
+	go test -coverpkg=./... -coverprofile=coverage.out ./...
 	go tool cover -func=coverage.out
 
 cover-html: cover

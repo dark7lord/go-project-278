@@ -177,3 +177,46 @@ func TestRedirectRecordsVisit(t *testing.T) {
 	assert.Equal(t, "https://example.com", *visits[0].Referer)
 	assert.Equal(t, int32(http.StatusFound), visits[0].Status)
 }
+
+func TestRedirectErrors(t *testing.T) {
+	td := setupTestDB(t)
+	ctx := context.Background()
+
+	t.Run("not found", func(t *testing.T) {
+		tx := setupTestTx(t, td)
+
+		w := httptest.NewRecorder()
+		req := httptest.NewRequest("GET", "/r/nonexistent", nil)
+		tx.router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+		assertErrorBody(t, w)
+	})
+
+	t.Run("stored url fails to normalize", func(t *testing.T) {
+		tx := setupTestTx(t, td)
+
+		_, err := tx.repo.CreateLink(ctx, "ftp://x", "invalid-url", "http://localhost:8080/invalid-url")
+		require.NoError(t, err)
+
+		w := httptest.NewRecorder()
+		req := httptest.NewRequest("GET", "/r/invalid-url", nil)
+		tx.router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		assertErrorBody(t, w)
+	})
+}
+
+func TestListVisitsEmpty(t *testing.T) {
+	td := setupTestDB(t)
+
+	tx := setupTestTx(t, td)
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest("GET", "/api/link_visits", nil)
+	tx.router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, "[]", w.Body.String())
+}
