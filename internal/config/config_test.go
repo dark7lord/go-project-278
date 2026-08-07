@@ -33,8 +33,8 @@ func TestLoadMissingEnv(t *testing.T) {
 
 			_, err := Load()
 			require.Error(t, err)
-			assert.Contains(t, err.Error(), envVar)
-			assert.Contains(t, err.Error(), "is not set")
+			assert.ErrorContains(t, err, envVar)
+			assert.ErrorContains(t, err, "is not set")
 		})
 	}
 }

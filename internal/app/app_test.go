@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -28,9 +27,7 @@ func TestPingRoute(t *testing.T) {
 	svc := link.NewService(repo, "http://localhost:8080")
 	router := setupRouter(link.NewHandler(svc))
 
-	w := httptest.NewRecorder()
-	req := httptest.NewRequest("GET", "/ping", nil)
-	router.ServeHTTP(w, req)
+	w := performRequest(t, router, "GET", "/ping", "")
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.JSONEq(t, `{"message":"pong"}`, w.Body.String())

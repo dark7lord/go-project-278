@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -125,12 +124,11 @@ func TestVisitsPagination(t *testing.T) {
 				urlStr += "?range=" + url.QueryEscape(tt.rangeQuery)
 			}
 
-			w := httptest.NewRecorder()
 			req, _ := http.NewRequest("GET", urlStr, nil)
 			if tt.rangeHeader != "" {
 				req.Header.Set("Range", tt.rangeHeader)
 			}
-			tx.router.ServeHTTP(w, req)
+			w := serve(t, tx.router, req)
 
 			assert.Equal(t, tt.wantStatus, w.Code)
 
@@ -140,8 +138,7 @@ func TestVisitsPagination(t *testing.T) {
 
 			if w.Code == http.StatusPartialContent || w.Code == http.StatusOK {
 				var visits []db.LinkVisit
-				err := json.Unmarshal(w.Body.Bytes(), &visits)
-				require.NoError(t, err)
+				decode(t, w, &visits)
 				assert.Len(t, visits, tt.wantLen)
 			}
 		})
@@ -158,11 +155,10 @@ func TestRedirectRecordsVisit(t *testing.T) {
 	created, err := tx.repo.CreateLink(ctx, link.OriginalURL, link.ShortName, link.ShortURL)
 	require.NoError(t, err)
 
-	w := httptest.NewRecorder()
 	req := httptest.NewRequest("GET", "/r/"+created.ShortName, nil)
 	req.Header.Set("User-Agent", "test-agent")
 	req.Header.Set("Referer", "https://example.com")
-	tx.router.ServeHTTP(w, req)
+	w := serve(t, tx.router, req)
 
 	assert.Equal(t, http.StatusFound, w.Code)
 
@@ -185,9 +181,7 @@ func TestRedirectErrors(t *testing.T) {
 	t.Run("not found", func(t *testing.T) {
 		tx := setupTestTx(t, td)
 
-		w := httptest.NewRecorder()
-		req := httptest.NewRequest("GET", "/r/nonexistent", nil)
-		tx.router.ServeHTTP(w, req)
+		w := performRequest(t, tx.router, "GET", "/r/nonexistent", "")
 
 		assert.Equal(t, http.StatusNotFound, w.Code)
 		assertErrorBody(t, w)
@@ -199,9 +193,7 @@ func TestRedirectErrors(t *testing.T) {
 		_, err := tx.repo.CreateLink(ctx, "ftp://x", "invalid-url", "http://localhost:8080/invalid-url")
 		require.NoError(t, err)
 
-		w := httptest.NewRecorder()
-		req := httptest.NewRequest("GET", "/r/invalid-url", nil)
-		tx.router.ServeHTTP(w, req)
+		w := performRequest(t, tx.router, "GET", "/r/invalid-url", "")
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
 		assertErrorBody(t, w)
@@ -213,9 +205,7 @@ func TestListVisitsEmpty(t *testing.T) {
 
 	tx := setupTestTx(t, td)
 
-	w := httptest.NewRecorder()
-	req := httptest.NewRequest("GET", "/api/link_visits", nil)
-	tx.router.ServeHTTP(w, req)
+	w := performRequest(t, tx.router, "GET", "/api/link_visits", "")
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "[]", w.Body.String())

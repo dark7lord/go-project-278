@@ -2,9 +2,7 @@ package app
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
-	"net/http/httptest"
 	"net/url"
 	"testing"
 
@@ -122,12 +120,11 @@ func TestLinksPagination(t *testing.T) {
 				urlStr += "?range=" + url.QueryEscape(tt.rangeQuery)
 			}
 
-			w := httptest.NewRecorder()
 			req, _ := http.NewRequest("GET", urlStr, nil)
 			if tt.rangeHeader != "" {
 				req.Header.Set("Range", tt.rangeHeader)
 			}
-			tx.router.ServeHTTP(w, req)
+			w := serve(t, tx.router, req)
 
 			assert.Equal(t, tt.wantStatus, w.Code)
 
@@ -137,8 +134,7 @@ func TestLinksPagination(t *testing.T) {
 
 			if w.Code == http.StatusPartialContent || w.Code == http.StatusOK {
 				var links []db.Link
-				err := json.Unmarshal(w.Body.Bytes(), &links)
-				require.NoError(t, err)
+				decode(t, w, &links)
 				assert.Len(t, links, tt.wantLen)
 			}
 		})
