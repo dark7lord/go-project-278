@@ -13,6 +13,9 @@ type Config struct {
 	BaseURL     string
 }
 
+// defaultBaseURL is used when BASE_URL is not set.
+const defaultBaseURL = "http://localhost:8080"
+
 // Load reads configuration from environment variables.
 func Load() (*Config, error) {
 	cfg := &Config{
@@ -21,14 +24,11 @@ func Load() (*Config, error) {
 		BaseURL:     os.Getenv("BASE_URL"),
 	}
 
-	if cfg.SentryDSN == "" {
-		return nil, errors.New("SENTRY_DSN is not set")
-	}
 	if cfg.DatabaseURL == "" {
 		return nil, errors.New("DATABASE_URL is not set")
 	}
 	if cfg.BaseURL == "" {
-		return nil, errors.New("BASE_URL is not set")
+		cfg.BaseURL = defaultBaseURL
 	}
 
 	return cfg, nil

@@ -20,21 +20,25 @@ func TestLoad(t *testing.T) {
 	assert.Equal(t, "https://short.example.com", cfg.BaseURL)
 }
 
-func TestLoadMissingEnv(t *testing.T) {
-	t.Setenv("SENTRY_DSN", "https://sentry.example.com/1")
+func TestLoadDefaults(t *testing.T) {
+	t.Setenv("SENTRY_DSN", "")
 	t.Setenv("DATABASE_URL", "postgres://user:pass@localhost/db")
-	t.Setenv("BASE_URL", "https://short.example.com")
+	t.Setenv("BASE_URL", "")
 
-	envVars := []string{"SENTRY_DSN", "DATABASE_URL", "BASE_URL"}
+	cfg, err := Load()
+	require.NoError(t, err)
 
-	for _, envVar := range envVars {
-		t.Run("missing "+envVar, func(t *testing.T) {
-			t.Setenv(envVar, "")
+	assert.Empty(t, cfg.SentryDSN)
+	assert.Equal(t, "postgres://user:pass@localhost/db", cfg.DatabaseURL)
+	assert.Equal(t, "http://localhost:8080", cfg.BaseURL)
+}
 
-			_, err := Load()
-			require.Error(t, err)
-			assert.ErrorContains(t, err, envVar)
-			assert.ErrorContains(t, err, "is not set")
-		})
-	}
+func TestLoadMissingEnv(t *testing.T) {
+	t.Setenv("SENTRY_DSN", "")
+	t.Setenv("DATABASE_URL", "")
+	t.Setenv("BASE_URL", "")
+
+	_, err := Load()
+	require.Error(t, err)
+	assert.ErrorContains(t, err, "DATABASE_URL")
 }
