@@ -6,7 +6,7 @@ import (
 	"strconv"
 )
 
-var rangeRe = regexp.MustCompile(`\[(\d+),(\d+)\]`) // captures: [full, start, end]
+var rangeRe = regexp.MustCompile(`\[\s*(\d+)\s*,\s*(\d+)\s*\]`) // captures: [full, start, end]
 
 var (
 	// ErrRangeFormat indicates the range value does not match [start,end].

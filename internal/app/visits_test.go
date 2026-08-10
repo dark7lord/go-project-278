@@ -33,7 +33,7 @@ func TestVisitsPagination(t *testing.T) {
 			name:       "first page",
 			rangeQuery: range04,
 			seedCount:  15,
-			wantStatus: http.StatusPartialContent,
+			wantStatus: http.StatusOK,
 			wantRange:  visits04,
 			wantLen:    5,
 		},
@@ -41,7 +41,7 @@ func TestVisitsPagination(t *testing.T) {
 			name:       "middle page",
 			rangeQuery: "[5,9]",
 			seedCount:  15,
-			wantStatus: http.StatusPartialContent,
+			wantStatus: http.StatusOK,
 			wantRange:  "visits 5-9/15",
 			wantLen:    5,
 		},
@@ -49,7 +49,7 @@ func TestVisitsPagination(t *testing.T) {
 			name:       "last partial page",
 			rangeQuery: "[10,14]",
 			seedCount:  15,
-			wantStatus: http.StatusPartialContent,
+			wantStatus: http.StatusOK,
 			wantRange:  "visits 10-14/15",
 			wantLen:    5,
 		},
@@ -64,7 +64,7 @@ func TestVisitsPagination(t *testing.T) {
 			name:       "range beyond total returns empty",
 			rangeQuery: "[100,200]",
 			seedCount:  5,
-			wantStatus: http.StatusPartialContent,
+			wantStatus: http.StatusOK,
 			wantRange:  "visits 100-200/5",
 			wantLen:    0,
 		},
@@ -84,7 +84,7 @@ func TestVisitsPagination(t *testing.T) {
 			name:        "range header first page",
 			rangeHeader: range04,
 			seedCount:   15,
-			wantStatus:  http.StatusPartialContent,
+			wantStatus:  http.StatusOK,
 			wantRange:   visits04,
 			wantLen:     5,
 		},
@@ -93,7 +93,7 @@ func TestVisitsPagination(t *testing.T) {
 			rangeQuery:  range04,
 			rangeHeader: range09,
 			seedCount:   15,
-			wantStatus:  http.StatusPartialContent,
+			wantStatus:  http.StatusOK,
 			wantRange:   visits04,
 			wantLen:     5,
 		},
@@ -136,7 +136,7 @@ func TestVisitsPagination(t *testing.T) {
 				assert.Equal(t, tt.wantRange, w.Header().Get("Content-Range"))
 			}
 
-			if w.Code == http.StatusPartialContent || w.Code == http.StatusOK {
+			if w.Code == http.StatusOK {
 				var visits []db.LinkVisit
 				decode(t, w, &visits)
 				assert.Len(t, visits, tt.wantLen)

@@ -177,7 +177,7 @@ func (h *Handler) ListLinks(c *gin.Context) {
 	}
 
 	c.Header("Content-Range", fmt.Sprintf("links %d-%d/%d", start, end, total))
-	c.JSON(http.StatusPartialContent, links)
+	c.JSON(http.StatusOK, links)
 }
 
 // ListVisits handles listing all link visits.
@@ -210,7 +210,7 @@ func (h *Handler) ListVisits(c *gin.Context) {
 	}
 
 	c.Header("Content-Range", fmt.Sprintf("visits %d-%d/%d", start, end, total))
-	c.JSON(http.StatusPartialContent, visits)
+	c.JSON(http.StatusOK, visits)
 }
 
 // UpdateLinkRequest represents a request to update a link.
@@ -234,7 +234,8 @@ func (h *Handler) UpdateLink(c *gin.Context) {
 		return
 	}
 
-	if _, err := h.service.UpdateLink(c.Request.Context(), id, req.OriginalURL, req.ShortName); err != nil {
+	updated, err := h.service.UpdateLink(c.Request.Context(), id, req.OriginalURL, req.ShortName)
+	if err != nil {
 		if errors.Is(err, ErrNotFound) {
 			c.JSON(http.StatusNotFound, errJSON(err.Error()))
 			return
@@ -244,7 +245,7 @@ func (h *Handler) UpdateLink(c *gin.Context) {
 		return
 	}
 
-	c.Status(http.StatusOK)
+	c.JSON(http.StatusOK, updated)
 }
 
 // DeleteLink handles link deletion.
@@ -256,7 +257,7 @@ func (h *Handler) DeleteLink(c *gin.Context) {
 		return
 	}
 
-	link, err := h.service.DeleteLink(c.Request.Context(), id)
+	_, err = h.service.DeleteLink(c.Request.Context(), id)
 	if err != nil {
 		if errors.Is(err, ErrNotFound) {
 			c.JSON(http.StatusNotFound, errJSON(err.Error()))
@@ -267,7 +268,7 @@ func (h *Handler) DeleteLink(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, link)
+	c.Status(http.StatusNoContent)
 }
 
 // Redirect handles redirecting a short name to its original URL.

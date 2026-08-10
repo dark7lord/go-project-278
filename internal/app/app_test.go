@@ -30,5 +30,5 @@ func TestPingRoute(t *testing.T) {
 	w := performRequest(t, router, "GET", "/ping", "")
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.JSONEq(t, `{"message":"pong"}`, w.Body.String())
+	assert.Equal(t, "pong", w.Body.String())
 }

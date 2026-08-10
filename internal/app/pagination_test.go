@@ -39,7 +39,7 @@ func TestLinksPagination(t *testing.T) {
 			name:       "first page",
 			rangeQuery: range04,
 			seedCount:  15,
-			wantStatus: http.StatusPartialContent,
+			wantStatus: http.StatusOK,
 			wantRange:  links04,
 			wantLen:    5,
 		},
@@ -47,7 +47,7 @@ func TestLinksPagination(t *testing.T) {
 			name:       "middle page",
 			rangeQuery: "[5,9]",
 			seedCount:  15,
-			wantStatus: http.StatusPartialContent,
+			wantStatus: http.StatusOK,
 			wantRange:  links59,
 			wantLen:    5,
 		},
@@ -55,8 +55,16 @@ func TestLinksPagination(t *testing.T) {
 			name:       "last partial page",
 			rangeQuery: "[10,14]",
 			seedCount:  15,
-			wantStatus: http.StatusPartialContent,
+			wantStatus: http.StatusOK,
 			wantRange:  links1014,
+			wantLen:    5,
+		},
+		{
+			name:       "range with spaces",
+			rangeQuery: "[0, 4]",
+			seedCount:  15,
+			wantStatus: http.StatusOK,
+			wantRange:  links04,
 			wantLen:    5,
 		},
 		{
@@ -70,7 +78,7 @@ func TestLinksPagination(t *testing.T) {
 			name:       "range beyond total returns empty",
 			rangeQuery: "[100,200]",
 			seedCount:  5,
-			wantStatus: http.StatusPartialContent,
+			wantStatus: http.StatusOK,
 			wantRange:  links100200,
 			wantLen:    0,
 		},
@@ -90,7 +98,7 @@ func TestLinksPagination(t *testing.T) {
 			name:        "range header applies without query param",
 			rangeHeader: range04,
 			seedCount:   15,
-			wantStatus:  http.StatusPartialContent,
+			wantStatus:  http.StatusOK,
 			wantRange:   links04,
 			wantLen:     5,
 		},
@@ -99,7 +107,7 @@ func TestLinksPagination(t *testing.T) {
 			rangeQuery:  range04,
 			rangeHeader: range09,
 			seedCount:   15,
-			wantStatus:  http.StatusPartialContent,
+			wantStatus:  http.StatusOK,
 			wantRange:   links04,
 			wantLen:     5,
 		},
@@ -132,7 +140,7 @@ func TestLinksPagination(t *testing.T) {
 				assert.Equal(t, tt.wantRange, w.Header().Get("Content-Range"))
 			}
 
-			if w.Code == http.StatusPartialContent || w.Code == http.StatusOK {
+			if w.Code == http.StatusOK {
 				var links []db.Link
 				decode(t, w, &links)
 				assert.Len(t, links, tt.wantLen)

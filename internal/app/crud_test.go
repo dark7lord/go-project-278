@@ -176,11 +176,8 @@ func TestDeleteLink(t *testing.T) {
 		require.NoError(t, err)
 
 		w := performRequest(t, tx.router, "DELETE", fmt.Sprintf("/api/links/%d", created.ID), "")
-		assert.Equal(t, http.StatusOK, w.Code)
-
-		expected, err := json.Marshal(created)
-		require.NoError(t, err)
-		assert.JSONEq(t, string(expected), w.Body.String())
+		assert.Equal(t, http.StatusNoContent, w.Code)
+		assert.Empty(t, w.Body.String())
 	})
 }
 

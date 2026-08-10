@@ -45,7 +45,7 @@ func setupRouter(linkHandler *link.Handler) *gin.Engine {
 	_ = router.SetTrustedProxies([]string{"127.0.0.1", "::1"})
 
 	router.GET("/ping", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"message": "pong"})
+		c.String(http.StatusOK, "pong")
 	})
 
 	router.GET("/r/:code", linkHandler.Redirect)
