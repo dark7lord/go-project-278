@@ -58,10 +58,10 @@ sqlc-gen:
 	sqlc generate
 
 goose-up:
-	goose -dir migrations postgres $(DATABASE_URL) up
+	goose -dir db/migrations postgres $(DATABASE_URL) up
 
 goose-down:
-	goose -dir migrations postgres $(DATABASE_URL) down
+	goose -dir db/migrations postgres $(DATABASE_URL) down
 
 db-rebuild: goose-down goose-up
 

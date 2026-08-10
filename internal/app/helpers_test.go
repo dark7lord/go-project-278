@@ -22,9 +22,9 @@ import (
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
 
+	"code/db/migrations"
 	"code/internal/db"
 	"code/internal/link"
-	"code/migrations"
 )
 
 var testDBInst *testDB
