@@ -13,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"code/internal/adapters/postgres"
 	"code/internal/config"
 	"code/internal/db"
 	"code/internal/link"
@@ -83,7 +84,7 @@ func Run() error {
 	defer dbConn.Close()
 
 	queries := db.New(dbConn)
-	linkRepo := link.NewRepository(queries)
+	linkRepo := postgres.NewLinkRepository(queries)
 	linkService := link.NewService(linkRepo, cfg.BaseURL)
 	linkHandler := link.NewHandler(linkService)
 

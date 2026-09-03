@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	postgresadapter "code/internal/adapters/postgres"
 	"code/internal/db"
 	"code/internal/link"
 )
@@ -23,7 +24,7 @@ func TestConnectDBUnreachable(t *testing.T) {
 }
 
 func TestPingRoute(t *testing.T) {
-	repo := link.NewRepository(db.New(nil))
+	repo := postgresadapter.NewLinkRepository(db.New(nil))
 	svc := link.NewService(repo, "http://localhost:8080")
 	router := setupRouter(link.NewHandler(svc))
 

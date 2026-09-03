@@ -9,17 +9,18 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 
-	"code/internal/db"
+	"code/internal/application"
+	domainlinks "code/internal/domain/links"
 )
 
 // Service implements link business logic.
 type Service struct {
-	repo    *Repository
+	repo    application.LinkRepository
 	baseURL string
 }
 
 // NewService creates a new Service.
-func NewService(repo *Repository, baseURL string) *Service {
+func NewService(repo application.LinkRepository, baseURL string) *Service {
 	return &Service{repo: repo, baseURL: baseURL}
 }
 
@@ -54,7 +55,7 @@ func mapUniqueViolation(err error) error {
 		case shortNameConstraint:
 			return &FieldError{Field: fieldShortName, Err: ErrShortNameAlreadyUse}
 		case shortURLConstraint:
-			return &FieldError{Field: fieldShortURL, Err: errors.New("short url already in use")}
+			return &FieldError{Field: fieldShortURL, Err: errors.New("short url already in use")} // TODO: может вынести наверх к другим ошибкам?
 		}
 	}
 
@@ -82,77 +83,84 @@ func (s *Service) generateShortLink(shortName string) string {
 }
 
 // CreateLink creates a new link with the given URL and optional short name.
-func (s *Service) CreateLink(ctx context.Context, originalURL, shortName string) (db.Link, error) {
+func (s *Service) CreateLink(ctx context.Context, originalURL, shortName string) (application.LinkView, error) {
 	normalized, err := normalizeURL(originalURL)
 	if err != nil {
-		return db.Link{}, &FieldError{Field: fieldOriginalURL, Err: fmt.Errorf("%w: %s", ErrInvalidURL, originalURL)}
+		return application.LinkView{}, &FieldError{Field: fieldOriginalURL, Err: fmt.Errorf("%w: %s", domainlinks.ErrInvalidURL, originalURL)}
 	}
 	originalURL = normalized
 
 	if shortName == "" {
 		for {
 			shortName = genRandomName()
+			if _, err := domainlinks.NewShortCode(shortName); err != nil {
+				continue
+			}
 			link, err := s.repo.CreateLink(ctx, originalURL, shortName, s.generateShortLink(shortName))
 			if err == nil {
 				return link, nil
 			}
 			if _, ok := mapUniqueViolation(err).(*FieldError); !ok {
-				return db.Link{}, err
+				return application.LinkView{}, err
 			}
 		}
 	}
 
+	if _, err := domainlinks.NewShortCode(shortName); err != nil {
+		return application.LinkView{}, &FieldError{Field: fieldShortName, Err: fmt.Errorf("%w: %s", domainlinks.ErrInvalidShortCode, shortName)}
+	}
+
 	link, err := s.repo.CreateLink(ctx, originalURL, shortName, s.generateShortLink(shortName))
 	if err != nil {
-		return db.Link{}, mapUniqueViolation(err)
+		return application.LinkView{}, mapUniqueViolation(err)
 	}
 
 	return link, nil
 }
 
 // GetLinkByID retrieves a link by its ID.
-func (s *Service) GetLinkByID(ctx context.Context, id int64) (db.Link, error) {
+func (s *Service) GetLinkByID(ctx context.Context, id int64) (application.LinkView, error) {
 	link, err := s.repo.GetLinkByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return db.Link{}, ErrNotFound
+			return application.LinkView{}, ErrNotFound
 		}
 
-		return db.Link{}, fmt.Errorf("get link: %w", err)
+		return application.LinkView{}, fmt.Errorf("get link: %w", err) // TODO: ошибка не очень согласованна с теми, что наверху
 	}
 
 	return link, nil
 }
 
 // GetLinkByShortName retrieves a link by its short name.
-func (s *Service) GetLinkByShortName(ctx context.Context, shortName string) (db.Link, error) {
+func (s *Service) GetLinkByShortName(ctx context.Context, shortName string) (application.LinkView, error) {
 	link, err := s.repo.GetLinkByShortName(ctx, shortName)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return db.Link{}, ErrNotFound
+			return application.LinkView{}, ErrNotFound
 		}
 
-		return db.Link{}, fmt.Errorf("get link: %w", err)
+		return application.LinkView{}, fmt.Errorf("get link: %w", err)
 	}
 
 	return link, nil
 }
 
 // ListLinks retrieves all links.
-func (s *Service) ListLinks(ctx context.Context) ([]db.Link, error) {
+func (s *Service) ListLinks(ctx context.Context) ([]application.LinkView, error) {
 	links, err := s.repo.ListLinks(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if links == nil {
-		return []db.Link{}, nil
+		return []application.LinkView{}, nil
 	}
 
 	return links, nil
 }
 
 // ListLinksRange retrieves a paginated subset of links.
-func (s *Service) ListLinksRange(ctx context.Context, start, end int64) ([]db.Link, int64, error) {
+func (s *Service) ListLinksRange(ctx context.Context, start, end int64) ([]application.LinkView, int64, error) {
 	totalLinks, err := s.repo.CountLinks(ctx)
 	if err != nil {
 		return nil, 0, err
@@ -167,61 +175,65 @@ func (s *Service) ListLinksRange(ctx context.Context, start, end int64) ([]db.Li
 }
 
 // UpdateLink updates an existing link.
-func (s *Service) UpdateLink(ctx context.Context, id int64, originalURL, shortName string) (db.Link, error) {
+func (s *Service) UpdateLink(ctx context.Context, id int64, originalURL, shortName string) (application.LinkView, error) {
 	normalized, err := normalizeURL(originalURL)
 	if err != nil {
-		return db.Link{}, &FieldError{Field: fieldOriginalURL, Err: fmt.Errorf("%w: %s", ErrInvalidURL, originalURL)}
+		return application.LinkView{}, &FieldError{Field: fieldOriginalURL, Err: fmt.Errorf("%w: %s", domainlinks.ErrInvalidURL, originalURL)}
 	}
 	originalURL = normalized
+
+	if _, err := domainlinks.NewShortCode(shortName); err != nil {
+		return application.LinkView{}, &FieldError{Field: fieldShortName, Err: fmt.Errorf("%w: %s", domainlinks.ErrInvalidShortCode, shortName)}
+	}
 
 	shortURL := s.generateShortLink(shortName)
 
 	updated, err := s.repo.UpdateLink(ctx, id, originalURL, shortName, shortURL)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return db.Link{}, ErrNotFound
+			return application.LinkView{}, ErrNotFound
 		}
 
-		return db.Link{}, mapUniqueViolation(err)
+		return application.LinkView{}, mapUniqueViolation(err)
 	}
 
 	return updated, nil
 }
 
 // DeleteLink deletes a link by its ID.
-func (s *Service) DeleteLink(ctx context.Context, id int64) (db.Link, error) {
+func (s *Service) DeleteLink(ctx context.Context, id int64) (application.LinkView, error) {
 	link, err := s.repo.DeleteLink(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return db.Link{}, ErrNotFound
+			return application.LinkView{}, ErrNotFound
 		}
 
-		return db.Link{}, fmt.Errorf("delete link: %w", err)
+		return application.LinkView{}, fmt.Errorf("delete link: %w", err)
 	}
 
 	return link, nil
 }
 
 // CreateLinkVisit records a visit for the given link.
-func (s *Service) CreateLinkVisit(ctx context.Context, linkID int64, ip, userAgent string, referer *string, status int32) (db.LinkVisit, error) {
+func (s *Service) CreateLinkVisit(ctx context.Context, linkID int64, ip, userAgent string, referer *string, status int32) (application.VisitView, error) {
 	return s.repo.CreateLinkVisit(ctx, linkID, ip, userAgent, referer, status)
 }
 
 // ListLinkVisits retrieves all link visits.
-func (s *Service) ListLinkVisits(ctx context.Context) ([]db.LinkVisit, error) {
+func (s *Service) ListLinkVisits(ctx context.Context) ([]application.VisitView, error) {
 	visits, err := s.repo.ListLinkVisits(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if visits == nil {
-		return []db.LinkVisit{}, nil
+		return []application.VisitView{}, nil
 	}
 
 	return visits, nil
 }
 
 // ListLinkVisitsRange retrieves a paginated subset of link visits.
-func (s *Service) ListLinkVisitsRange(ctx context.Context, start, end int64) ([]db.LinkVisit, int64, error) {
+func (s *Service) ListLinkVisitsRange(ctx context.Context, start, end int64) ([]application.VisitView, int64, error) {
 	totalVisits, err := s.repo.CountLinkVisits(ctx)
 	if err != nil {
 		return nil, 0, err
