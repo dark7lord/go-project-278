@@ -1,3 +1,4 @@
+// Package link provides the HTTP transport and link use cases.
 package link
 
 import (

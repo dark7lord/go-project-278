@@ -2,12 +2,8 @@ package link
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"math/rand"
-
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 
 	"code/internal/application"
 	domainlinks "code/internal/domain/links"
@@ -28,45 +24,16 @@ var colors = []string{"red", "orange", "yellow", "green", "cyan", "blue", "purpl
 
 var (
 	// ErrNotFound indicates the requested link was not found.
-	ErrNotFound = errors.New("link not found")
+	ErrNotFound = application.ErrNotFound
 	// ErrShortNameAlreadyUse indicates a link with the given short name already exists.
-	ErrShortNameAlreadyUse = errors.New("short name already in use")
+	ErrShortNameAlreadyUse = application.ErrShortNameAlreadyUse
 )
 
 // FieldError associates a validation error with a request field.
-type FieldError struct {
-	Field string
-	Err   error
-}
+type FieldError = application.FieldError
 
 const fieldShortName = "short_name"
 const fieldOriginalURL = "original_url"
-const fieldShortURL = "short_url"
-
-// Postgres auto-names UNIQUE constraints as <table>_<column>_key.
-const shortNameConstraint = "links_short_name_key"
-const shortURLConstraint = "links_short_url_key"
-
-// mapUniqueViolation converts a Postgres unique constraint violation into a FieldError.
-func mapUniqueViolation(err error) error {
-	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-		switch pgErr.ConstraintName {
-		case shortNameConstraint:
-			return &FieldError{Field: fieldShortName, Err: ErrShortNameAlreadyUse}
-		case shortURLConstraint:
-			return &FieldError{Field: fieldShortURL, Err: errors.New("short url already in use")} // TODO: может вынести наверх к другим ошибкам?
-		}
-	}
-
-	return err
-}
-
-// Error returns the underlying error message.
-func (e *FieldError) Error() string { return e.Err.Error() }
-
-// Unwrap returns the underlying error for errors.Is/As.
-func (e *FieldError) Unwrap() error { return e.Err }
 
 func genRandomName() string {
 	l := len(colors)
@@ -100,7 +67,7 @@ func (s *Service) CreateLink(ctx context.Context, originalURL, shortName string)
 			if err == nil {
 				return link, nil
 			}
-			if _, ok := mapUniqueViolation(err).(*FieldError); !ok {
+			if _, ok := err.(*FieldError); !ok {
 				return application.LinkView{}, err
 			}
 		}
@@ -112,7 +79,7 @@ func (s *Service) CreateLink(ctx context.Context, originalURL, shortName string)
 
 	link, err := s.repo.CreateLink(ctx, originalURL, shortName, s.generateShortLink(shortName))
 	if err != nil {
-		return application.LinkView{}, mapUniqueViolation(err)
+		return application.LinkView{}, err
 	}
 
 	return link, nil
@@ -122,10 +89,6 @@ func (s *Service) CreateLink(ctx context.Context, originalURL, shortName string)
 func (s *Service) GetLinkByID(ctx context.Context, id int64) (application.LinkView, error) {
 	link, err := s.repo.GetLinkByID(ctx, id)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return application.LinkView{}, ErrNotFound
-		}
-
 		return application.LinkView{}, fmt.Errorf("get link: %w", err) // TODO: ошибка не очень согласованна с теми, что наверху
 	}
 
@@ -136,10 +99,6 @@ func (s *Service) GetLinkByID(ctx context.Context, id int64) (application.LinkVi
 func (s *Service) GetLinkByShortName(ctx context.Context, shortName string) (application.LinkView, error) {
 	link, err := s.repo.GetLinkByShortName(ctx, shortName)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return application.LinkView{}, ErrNotFound
-		}
-
 		return application.LinkView{}, fmt.Errorf("get link: %w", err)
 	}
 
@@ -190,11 +149,7 @@ func (s *Service) UpdateLink(ctx context.Context, id int64, originalURL, shortNa
 
 	updated, err := s.repo.UpdateLink(ctx, id, originalURL, shortName, shortURL)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return application.LinkView{}, ErrNotFound
-		}
-
-		return application.LinkView{}, mapUniqueViolation(err)
+		return application.LinkView{}, err
 	}
 
 	return updated, nil
@@ -204,10 +159,6 @@ func (s *Service) UpdateLink(ctx context.Context, id int64, originalURL, shortNa
 func (s *Service) DeleteLink(ctx context.Context, id int64) (application.LinkView, error) {
 	link, err := s.repo.DeleteLink(ctx, id)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return application.LinkView{}, ErrNotFound
-		}
-
 		return application.LinkView{}, fmt.Errorf("delete link: %w", err)
 	}
 

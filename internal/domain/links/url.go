@@ -30,14 +30,17 @@ func init() {
 		if err != nil {
 			return false
 		}
+
 		return (u.Scheme == "http" || u.Scheme == "https") && u.Host != ""
 	})
 }
 
+// URL is a validated HTTP or HTTPS URL.
 type URL struct {
 	value string
 }
 
+// NewURL creates a URL after normalizing and validating its value.
 func NewURL(raw string) (URL, error) {
 	input := urlInput{Value: raw}
 	if err := urlValidator.Struct(input); err != nil {

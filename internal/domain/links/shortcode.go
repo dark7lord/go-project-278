@@ -24,10 +24,12 @@ func newShortCodeValidator() *validator.Validate {
 	return v
 }
 
+// ShortCode is a validated, URL-safe link identifier.
 type ShortCode struct {
 	value string
 }
 
+// NewShortCode creates a short code after validating and trimming its value.
 func NewShortCode(raw string) (ShortCode, error) {
 	code := strings.TrimSpace(raw)
 	v := newShortCodeValidator()
