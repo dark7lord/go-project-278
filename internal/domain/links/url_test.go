@@ -1,4 +1,4 @@
-package link
+package links
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestNormalizeURL(t *testing.T) {
+func TestNewURL(t *testing.T) {
 	tests := []struct {
 		name    string
 		input   string
@@ -29,13 +29,13 @@ func TestNormalizeURL(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := normalizeURL(tt.input)
+			got, err := NewURL(tt.input)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
 			}
 			require.NoError(t, err)
-			assert.Equal(t, tt.want, got)
+			assert.Equal(t, tt.want, got.String())
 		})
 	}
 }

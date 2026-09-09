@@ -1,0 +1,130 @@
+package app
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"code/internal/db"
+)
+
+func TestCreateLink(t *testing.T) {
+	td := setupTestDB(t)
+	ctx := context.Background()
+
+	t.Run("ok", func(t *testing.T) {
+		tx := setupTestTx(t, td)
+		body := `{"original_url": "https://example.com", "short_name": "my-link"}`
+		w := performRequest(t, tx.router, "POST", "/api/links", body)
+		assert.Equal(t, http.StatusCreated, w.Code)
+	})
+
+	t.Run("duplicate short name", func(t *testing.T) {
+		tx := setupTestTx(t, td)
+		_, err := tx.repo.CreateLink(ctx, "https://dup.com", "dup-link", "http://localhost:8080/dup-link")
+		require.NoError(t, err)
+
+		body := `{"original_url": "https://another.com", "short_name": "dup-link"}`
+		w := performRequest(t, tx.router, "POST", "/api/links", body)
+		assert.Equal(t, http.StatusUnprocessableEntity, w.Code)
+		assertFieldErrors(t, w, "short_name")
+	})
+}
+
+func TestGetLink(t *testing.T) {
+	td := setupTestDB(t)
+	ctx := context.Background()
+
+	tx := setupTestTx(t, td)
+	created, err := tx.repo.CreateLink(ctx, "https://gettest.com", "get-test", "http://localhost:8080/get-test")
+	require.NoError(t, err)
+
+	w := performRequest(t, tx.router, "GET", fmt.Sprintf("/api/links/%d", created.ID), "")
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	expected, err := json.Marshal(created)
+	require.NoError(t, err)
+	assert.JSONEq(t, string(expected), w.Body.String())
+}
+
+func TestUpdateLink(t *testing.T) {
+	td := setupTestDB(t)
+	ctx := context.Background()
+
+	t.Run("ok", func(t *testing.T) {
+		tx := setupTestTx(t, td)
+		created, err := tx.repo.CreateLink(ctx, "https://updatetest.com", "update-test", "http://localhost:8080/update-test")
+		require.NoError(t, err)
+
+		body := `{"original_url": "https://updated.com", "short_name": "updated-link"}`
+		w := performRequest(t, tx.router, "PUT", fmt.Sprintf("/api/links/%d", created.ID), body)
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("duplicate short name", func(t *testing.T) {
+		tx := setupTestTx(t, td)
+		_, err := tx.repo.CreateLink(ctx, "https://taken.com", "taken", "http://localhost:8080/taken")
+		require.NoError(t, err)
+		other, err := tx.repo.CreateLink(ctx, "https://other.com", "other", "http://localhost:8080/other")
+		require.NoError(t, err)
+
+		body := `{"original_url": "https://other.com", "short_name": "taken"}`
+		w := performRequest(t, tx.router, "PUT", fmt.Sprintf("/api/links/%d", other.ID), body)
+		assert.Equal(t, http.StatusUnprocessableEntity, w.Code)
+		assertFieldErrors(t, w, "short_name")
+	})
+
+	t.Run("same short_name", func(t *testing.T) {
+		tx := setupTestTx(t, td)
+		created, _ := tx.repo.CreateLink(ctx, "https://a.com", "same", "http://localhost:8080/r/same")
+		body := `{"original_url": "https://b.com", "short_name": "same"}`
+		w := performRequest(t, tx.router, "PUT", fmt.Sprintf("/api/links/%d", created.ID), body)
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+}
+
+func TestDeleteLink(t *testing.T) {
+	td := setupTestDB(t)
+	ctx := context.Background()
+
+	tx := setupTestTx(t, td)
+	created, err := tx.repo.CreateLink(ctx, "https://deletetest.com", "delete-test", "http://localhost:8080/delete-test")
+	require.NoError(t, err)
+
+	w := performRequest(t, tx.router, "DELETE", fmt.Sprintf("/api/links/%d", created.ID), "")
+	assert.Equal(t, http.StatusNoContent, w.Code)
+	assert.Empty(t, w.Body.String())
+}
+
+func TestListLinks(t *testing.T) {
+	td := setupTestDB(t)
+	ctx := context.Background()
+
+	t.Run("returns all", func(t *testing.T) {
+		tx := setupTestTx(t, td)
+		for i := range 10 {
+			l := linkFactory(i)
+			_, err := tx.repo.CreateLink(ctx, l.OriginalURL, l.ShortName, l.ShortURL)
+			require.NoError(t, err)
+		}
+
+		w := performRequest(t, tx.router, "GET", "/api/links", "")
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		var links []db.Link
+		decode(t, w, &links)
+		assert.Len(t, links, 10)
+	})
+
+	t.Run("empty returns []", func(t *testing.T) {
+		tx := setupTestTx(t, td)
+		w := performRequest(t, tx.router, "GET", "/api/links", "")
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Equal(t, "[]", w.Body.String())
+	})
+}

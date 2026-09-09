@@ -13,10 +13,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	httpadapter "code/internal/adapters/http"
 	"code/internal/adapters/postgres"
+	shortcodeadapter "code/internal/adapters/shortcode"
+	"code/internal/application"
 	"code/internal/config"
 	"code/internal/db"
-	"code/internal/link"
 )
 
 // connectDB creates a new pgxpool connection and pings the database.
@@ -33,7 +35,7 @@ func connectDB(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
 }
 
 // setupRouter creates and configures the gin engine with all routes.
-func setupRouter(linkHandler *link.Handler) *gin.Engine {
+func setupRouter(linkHandler *httpadapter.Handler) *gin.Engine {
 	router := gin.New()
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
@@ -63,6 +65,31 @@ func setupRouter(linkHandler *link.Handler) *gin.Engine {
 	return router
 }
 
+func newLinkService(cfg *config.Config, linkRepo *postgres.LinkRepository) *application.Service {
+	shortCodeGenerator := shortcodeadapter.NewGenerator()
+
+	return application.NewServiceWithGenerator(application.ServiceDeps{
+		LinkReader:    linkRepo,
+		LinkWriter:    linkRepo,
+		VisitReader:   linkRepo,
+		VisitRecorder: linkRepo,
+	}, cfg.BaseURL, shortCodeGenerator)
+}
+
+func newLinkHandler(linkService application.LinkUseCase, visitService application.VisitUseCase) *httpadapter.Handler {
+	return httpadapter.NewHandler(linkService, visitService)
+}
+
+// buildApp assembles the application dependencies and HTTP router in one explicit composition root.
+func buildApp(cfg *config.Config, dbConn *pgxpool.Pool) *gin.Engine {
+	queries := db.New(dbConn)
+	linkRepo := postgres.NewLinkRepository(queries)
+	linkService := newLinkService(cfg, linkRepo)
+	linkHandler := newLinkHandler(linkService, linkService)
+
+	return setupRouter(linkHandler)
+}
+
 // Run loads config, connects to the database, and starts the HTTP server.
 func Run() error {
 	cfg, err := config.Load()
@@ -83,12 +110,7 @@ func Run() error {
 	}
 	defer dbConn.Close()
 
-	queries := db.New(dbConn)
-	linkRepo := postgres.NewLinkRepository(queries)
-	linkService := link.NewService(linkRepo, cfg.BaseURL)
-	linkHandler := link.NewHandler(linkService)
-
-	router := setupRouter(linkHandler)
+	router := buildApp(cfg, dbConn)
 
 	if err := router.Run(":8080"); err != nil {
 		return fmt.Errorf("failed to run server: %w", err)

@@ -1,10 +1,9 @@
-// Package link provides the HTTP transport and link use cases.
-package link
+// Package httpadapter provides the Gin HTTP transport for link use cases.
+package httpadapter
 
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -12,6 +11,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+
+	"code/internal/application"
 )
 
 const errInvalidID = "invalid id"
@@ -59,7 +60,7 @@ func writeBindErrors(c *gin.Context, err error) {
 
 // writeFieldErrors returns 422 for field errors, otherwise 400.
 func writeFieldErrors(c *gin.Context, err error) {
-	var fe *FieldError
+	var fe *application.FieldError
 	if errors.As(err, &fe) {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{"errors": gin.H{fe.Field: fe.Error()}})
 		return
@@ -69,12 +70,13 @@ func writeFieldErrors(c *gin.Context, err error) {
 
 // Handler handles HTTP requests for links.
 type Handler struct {
-	service *Service
+	linkService  application.LinkUseCase
+	visitService application.VisitUseCase
 }
 
-// NewHandler creates a new Handler.
-func NewHandler(s *Service) *Handler {
-	return &Handler{service: s}
+// NewHandler creates a new Handler from separate link and visit use cases.
+func NewHandler(linkService application.LinkUseCase, visitService application.VisitUseCase) *Handler {
+	return &Handler{linkService: linkService, visitService: visitService}
 }
 
 // CreateLinkRequest represents a request to create a link.
@@ -92,9 +94,10 @@ func (h *Handler) CreateLink(c *gin.Context) {
 		return
 	}
 
-	link, err := h.service.CreateLink(c.Request.Context(), req.OriginalURL, req.ShortName)
+	cmd := application.CreateLinkCommand{OriginalURL: req.OriginalURL, ShortName: req.ShortName}
+	link, err := h.linkService.CreateLink(c.Request.Context(), cmd)
 	if err != nil {
-		if errors.Is(err, ErrNotFound) {
+		if errors.Is(err, application.ErrNotFound) {
 			c.JSON(http.StatusNotFound, errJSON(err.Error()))
 			return
 		}
@@ -115,9 +118,9 @@ func (h *Handler) GetLink(c *gin.Context) {
 		return
 	}
 
-	link, err := h.service.GetLinkByID(c.Request.Context(), id)
+	link, err := h.linkService.GetLinkByID(c.Request.Context(), id)
 	if err != nil {
-		if errors.Is(err, ErrNotFound) {
+		if errors.Is(err, application.ErrNotFound) {
 			c.JSON(http.StatusNotFound, errJSON(err.Error()))
 			return
 		}
@@ -153,7 +156,7 @@ func (h *Handler) ListLinks(c *gin.Context) {
 	rangeParam := requestRange(c)
 
 	if rangeParam == "" {
-		links, err := h.service.ListLinks(c.Request.Context())
+		links, err := h.linkService.ListLinks(c.Request.Context())
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, errJSON("internal server error"))
 			return
@@ -171,7 +174,7 @@ func (h *Handler) ListLinks(c *gin.Context) {
 		return
 	}
 
-	links, total, err := h.service.ListLinksRange(c.Request.Context(), int64(start), int64(end))
+	links, total, err := h.linkService.ListLinksRange(c.Request.Context(), application.ListLinksQuery{Start: int64(start), End: int64(end)})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, errJSON(errInternal))
 		return
@@ -179,39 +182,6 @@ func (h *Handler) ListLinks(c *gin.Context) {
 
 	c.Header("Content-Range", fmt.Sprintf("links %d-%d/%d", start, end, total))
 	c.JSON(http.StatusOK, links)
-}
-
-// ListVisits handles listing all link visits.
-func (h *Handler) ListVisits(c *gin.Context) {
-	rangeParam := requestRange(c)
-
-	if rangeParam == "" {
-		visits, err := h.service.ListLinkVisits(c.Request.Context())
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, errJSON(errInternal))
-			return
-		}
-
-		c.JSON(http.StatusOK, visits)
-
-		return
-	}
-
-	start, end, err := parseRangeParam(rangeParam)
-	if err != nil {
-		status, msg := rangeStatus(err)
-		c.JSON(status, errJSON(msg))
-		return
-	}
-
-	visits, total, err := h.service.ListLinkVisitsRange(c.Request.Context(), int64(start), int64(end))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, errJSON(errInternal))
-		return
-	}
-
-	c.Header("Content-Range", fmt.Sprintf("visits %d-%d/%d", start, end, total))
-	c.JSON(http.StatusOK, visits)
 }
 
 // UpdateLinkRequest represents a request to update a link.
@@ -235,9 +205,10 @@ func (h *Handler) UpdateLink(c *gin.Context) {
 		return
 	}
 
-	updated, err := h.service.UpdateLink(c.Request.Context(), id, req.OriginalURL, req.ShortName)
+	cmd := application.UpdateLinkCommand{OriginalURL: req.OriginalURL, ShortName: req.ShortName}
+	updated, err := h.linkService.UpdateLink(c.Request.Context(), id, cmd)
 	if err != nil {
-		if errors.Is(err, ErrNotFound) {
+		if errors.Is(err, application.ErrNotFound) {
 			c.JSON(http.StatusNotFound, errJSON(err.Error()))
 			return
 		}
@@ -258,9 +229,9 @@ func (h *Handler) DeleteLink(c *gin.Context) {
 		return
 	}
 
-	_, err = h.service.DeleteLink(c.Request.Context(), id)
+	_, err = h.linkService.DeleteLink(c.Request.Context(), id)
 	if err != nil {
-		if errors.Is(err, ErrNotFound) {
+		if errors.Is(err, application.ErrNotFound) {
 			c.JSON(http.StatusNotFound, errJSON(err.Error()))
 			return
 		}
@@ -277,10 +248,22 @@ func (h *Handler) Redirect(c *gin.Context) {
 	code := c.Param("code")
 
 	ctx := c.Request.Context()
-	link, err := h.service.GetLinkByShortName(ctx, code)
+	var referer *string
+	if ref := c.Request.Referer(); ref != "" {
+		referer = &ref
+	}
+
+	link, err := h.linkService.Redirect(ctx, application.RedirectCommand{
+		ShortName: code,
+		VisitMeta: application.VisitMeta{
+			IP:        c.ClientIP(),
+			UserAgent: c.Request.UserAgent(),
+			Referer:   referer,
+		},
+	})
 
 	if err != nil {
-		if errors.Is(err, ErrNotFound) {
+		if errors.Is(err, application.ErrNotFound) {
 			c.JSON(http.StatusNotFound, errJSON(err.Error()))
 			return
 		}
@@ -290,27 +273,5 @@ func (h *Handler) Redirect(c *gin.Context) {
 		return
 	}
 
-	originalURL, err := normalizeURL(link.OriginalURL)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, errJSON(errInternal))
-
-		return
-	}
-
-	c.Redirect(http.StatusFound, originalURL)
-
-	var referer *string
-	if ref := c.Request.Referer(); ref != "" {
-		referer = &ref
-	}
-
-	if _, err := h.service.CreateLinkVisit(
-		c.Request.Context(),
-		link.ID, c.ClientIP(),
-		c.Request.UserAgent(),
-		referer,
-		int32(c.Writer.Status()),
-	); err != nil {
-		log.Printf("failed to record visit for link %d: %v", link.ID, err)
-	}
+	c.Redirect(http.StatusFound, link.OriginalURL)
 }

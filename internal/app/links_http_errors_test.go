@@ -1,0 +1,99 @@
+package app
+
+import (
+	"net/http"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestCreateLinkValidation(t *testing.T) {
+	td := setupTestDB(t)
+
+	tests := []struct {
+		name       string
+		body       string
+		wantStatus int
+		wantField  string
+		wantError  string
+	}{
+		{
+			name:       "missing original_url",
+			body:       `{"original_url": "", "short_name": "ok-link"}`,
+			wantStatus: http.StatusUnprocessableEntity,
+			wantField:  "original_url",
+		},
+		{
+			name:       "short name too short",
+			body:       `{"original_url": "https://short.com", "short_name": "x"}`,
+			wantStatus: http.StatusUnprocessableEntity,
+			wantField:  "short_name",
+		},
+		{
+			name:       "short name too long",
+			body:       `{"original_url": "https://long.com", "short_name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}`,
+			wantStatus: http.StatusUnprocessableEntity,
+			wantField:  "short_name",
+		},
+		{
+			name:       "invalid json",
+			body:       `{broken`,
+			wantStatus: http.StatusBadRequest,
+			wantError:  "invalid request",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tx := setupTestTx(t, td)
+
+			w := performRequest(t, tx.router, "POST", "/api/links", tt.body)
+
+			if tt.wantField != "" {
+				assertFieldErrors(t, w, tt.wantField)
+			} else {
+				assert.JSONEq(t, `{"error": "`+tt.wantError+`"}`, w.Body.String())
+			}
+			if w.Code != tt.wantStatus {
+				t.Errorf("status = %d, want %d", w.Code, tt.wantStatus)
+			}
+		})
+	}
+}
+
+func TestLinkErrors(t *testing.T) {
+	td := setupTestDB(t)
+
+	const missingLinkPath = "/api/links/999"
+
+	tests := []struct {
+		name       string
+		method     string
+		path       string
+		body       string
+		wantStatus int
+	}{
+		{name: "GetLink / invalid id", method: "GET", path: "/api/links/abc", wantStatus: http.StatusBadRequest},
+		{name: "GetLink / not found", method: "GET", path: missingLinkPath, wantStatus: http.StatusNotFound},
+		{
+			name:       "UpdateLink / not found",
+			method:     "PUT",
+			path:       missingLinkPath,
+			body:       `{"original_url": "https://nowhere.com", "short_name": "ghost"}`,
+			wantStatus: http.StatusNotFound,
+		},
+		{name: "DeleteLink / invalid id", method: "DELETE", path: "/api/links/abc", wantStatus: http.StatusBadRequest},
+		{name: "DeleteLink / not found", method: "DELETE", path: missingLinkPath, wantStatus: http.StatusNotFound},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tx := setupTestTx(t, td)
+
+			w := performRequest(t, tx.router, tt.method, tt.path, tt.body)
+
+			assert.Equal(t, tt.wantStatus, w.Code)
+			assertErrorBody(t, w)
+		})
+	}
+}

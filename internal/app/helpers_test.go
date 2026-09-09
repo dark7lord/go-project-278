@@ -23,9 +23,10 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 
 	"code/db/migrations"
+	httpadapter "code/internal/adapters/http"
 	postgresadapter "code/internal/adapters/postgres"
+	"code/internal/application"
 	"code/internal/db"
-	"code/internal/link"
 )
 
 var testDBInst *testDB
@@ -51,8 +52,8 @@ type testDB struct {
 	conn    *pgxpool.Pool
 	queries *db.Queries
 	repo    *postgresadapter.LinkRepository
-	svc     *link.Service
-	handler *link.Handler
+	svc     *application.Service
+	handler *httpadapter.Handler
 	router  *gin.Engine
 }
 
@@ -104,8 +105,13 @@ func startTestDB(ctx context.Context) (*testDB, error) {
 func newTestDB(pg testcontainers.Container, pool *pgxpool.Pool) *testDB {
 	queries := db.New(pool)
 	linkRepo := postgresadapter.NewLinkRepository(queries)
-	linkSvc := link.NewService(linkRepo, "http://localhost:8080")
-	linkHandler := link.NewHandler(linkSvc)
+	linkSvc := application.NewService(application.ServiceDeps{
+		LinkReader:    linkRepo,
+		LinkWriter:    linkRepo,
+		VisitReader:   linkRepo,
+		VisitRecorder: linkRepo,
+	}, "http://localhost:8080")
+	linkHandler := httpadapter.NewHandler(linkSvc, linkSvc)
 	router := setupRouter(linkHandler)
 
 	return &testDB{
@@ -132,8 +138,13 @@ func setupTestTx(t *testing.T, td *testDB) *testDB {
 
 	txQueries := td.queries.WithTx(tx)
 	txRepo := postgresadapter.NewLinkRepository(txQueries)
-	txSvc := link.NewService(txRepo, "http://localhost:8080")
-	txHandler := link.NewHandler(txSvc)
+	txSvc := application.NewService(application.ServiceDeps{
+		LinkReader:    txRepo,
+		LinkWriter:    txRepo,
+		VisitReader:   txRepo,
+		VisitRecorder: txRepo,
+	}, "http://localhost:8080")
+	txHandler := httpadapter.NewHandler(txSvc, txSvc)
 	router := setupRouter(txHandler)
 
 	return &testDB{

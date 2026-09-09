@@ -17,10 +17,16 @@ const (
 	shortURLConstraint  = "links_short_url_key"
 )
 
-// LinkRepository adapts generated SQL queries to the application repository port.
+// LinkRepository adapts generated SQL queries to the application persistence ports.
 type LinkRepository struct {
 	queries *db.Queries
 }
+
+// Compile-time checks that the adapter implements the application ports.
+var _ application.LinkReader = (*LinkRepository)(nil)
+var _ application.LinkWriter = (*LinkRepository)(nil)
+var _ application.VisitReader = (*LinkRepository)(nil)
+var _ application.VisitRecorder = (*LinkRepository)(nil)
 
 // NewLinkRepository creates a PostgreSQL link repository.
 func NewLinkRepository(queries *db.Queries) *LinkRepository {

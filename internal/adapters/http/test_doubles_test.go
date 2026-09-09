@@ -1,0 +1,68 @@
+package httpadapter
+
+import (
+	"context"
+
+	"github.com/stretchr/testify/mock"
+
+	"code/internal/application"
+)
+
+type mockLinkUseCase struct{ mock.Mock }
+
+func (m *mockLinkUseCase) CreateLink(ctx context.Context, cmd application.CreateLinkCommand) (application.LinkView, error) {
+	args := m.Called(ctx, cmd)
+	return args.Get(0).(application.LinkView), args.Error(1)
+}
+
+func (m *mockLinkUseCase) Redirect(ctx context.Context, cmd application.RedirectCommand) (application.LinkView, error) {
+	args := m.Called(ctx, cmd)
+	return args.Get(0).(application.LinkView), args.Error(1)
+}
+
+func (m *mockLinkUseCase) GetLinkByID(ctx context.Context, id int64) (application.LinkView, error) {
+	args := m.Called(ctx, id)
+	return args.Get(0).(application.LinkView), args.Error(1)
+}
+
+func (m *mockLinkUseCase) GetLinkByShortName(ctx context.Context, shortName string) (application.LinkView, error) {
+	args := m.Called(ctx, shortName)
+	return args.Get(0).(application.LinkView), args.Error(1)
+}
+
+func (m *mockLinkUseCase) ListLinks(ctx context.Context) ([]application.LinkView, error) {
+	args := m.Called(ctx)
+	return args.Get(0).([]application.LinkView), args.Error(1)
+}
+
+func (m *mockLinkUseCase) ListLinksRange(ctx context.Context, q application.ListLinksQuery) ([]application.LinkView, int64, error) {
+	args := m.Called(ctx, q)
+	return args.Get(0).([]application.LinkView), args.Get(1).(int64), args.Error(2)
+}
+
+func (m *mockLinkUseCase) UpdateLink(ctx context.Context, id int64, cmd application.UpdateLinkCommand) (application.LinkView, error) {
+	args := m.Called(ctx, id, cmd)
+	return args.Get(0).(application.LinkView), args.Error(1)
+}
+
+func (m *mockLinkUseCase) DeleteLink(ctx context.Context, id int64) (application.LinkView, error) {
+	args := m.Called(ctx, id)
+	return args.Get(0).(application.LinkView), args.Error(1)
+}
+
+type mockVisitUseCase struct{ mock.Mock }
+
+func (m *mockVisitUseCase) CreateLinkVisit(ctx context.Context, linkID int64, ip, userAgent string, referer *string, status int32) (application.VisitView, error) {
+	args := m.Called(ctx, linkID, ip, userAgent, referer, status)
+	return args.Get(0).(application.VisitView), args.Error(1)
+}
+
+func (m *mockVisitUseCase) ListLinkVisits(ctx context.Context) ([]application.VisitView, error) {
+	args := m.Called(ctx)
+	return args.Get(0).([]application.VisitView), args.Error(1)
+}
+
+func (m *mockVisitUseCase) ListLinkVisitsRange(ctx context.Context, q application.ListLinkVisitsQuery) ([]application.VisitView, int64, error) {
+	args := m.Called(ctx, q)
+	return args.Get(0).([]application.VisitView), args.Get(1).(int64), args.Error(2)
+}

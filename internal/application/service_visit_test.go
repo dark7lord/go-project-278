@@ -1,0 +1,41 @@
+package application
+
+import (
+	"context"
+	"errors"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func TestServiceListVisitsReturnsEmptySlice(t *testing.T) {
+	svc := NewService(serviceDeps(nil, nil, &fakeVisitReader{}, nil), "http://localhost:8080")
+
+	visits, err := svc.ListLinkVisits(context.Background())
+
+	require.NoError(t, err)
+	assert.NotNil(t, visits)
+	assert.Empty(t, visits)
+}
+
+func TestServiceListVisitsRange(t *testing.T) {
+	expected := []VisitView{{ID: 3, LinkID: 1}}
+	reader := &fakeVisitReader{visitCount: 10, visitsRange: expected}
+	svc := NewService(serviceDeps(nil, nil, reader, nil), "http://localhost:8080")
+
+	visits, total, err := svc.ListLinkVisitsRange(context.Background(), ListLinkVisitsQuery{Start: 5, End: 9})
+
+	require.NoError(t, err)
+	assert.Equal(t, expected, visits)
+	assert.Equal(t, int64(10), total)
+}
+
+func TestServiceListVisitsRangePropagatesCountError(t *testing.T) {
+	repoErr := errors.New("count visits failed")
+	svc := NewService(serviceDeps(nil, nil, &fakeVisitReader{visitCountError: repoErr}, nil), "http://localhost:8080")
+
+	_, _, err := svc.ListLinkVisitsRange(context.Background(), ListLinkVisitsQuery{Start: 0, End: 4})
+
+	assert.ErrorIs(t, err, repoErr)
+}
