@@ -4,25 +4,9 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-
-	"github.com/go-playground/validator/v10"
 )
 
-func newShortCodeValidator() *validator.Validate {
-	v := validator.New()
-	if err := v.RegisterValidation("safe_short_code", func(fl validator.FieldLevel) bool {
-		code := strings.TrimSpace(fl.Field().String())
-		if code == "" || len(code) < 3 || len(code) > 32 {
-			return false
-		}
-
-		return regexp.MustCompile(`^[a-zA-Z0-9-]+$`).MatchString(code)
-	}); err != nil {
-		panic(err)
-	}
-
-	return v
-}
+var shortCodeRe = regexp.MustCompile(`^[a-zA-Z0-9-]{3,32}$`)
 
 // ShortCode is a validated, URL-safe link identifier.
 type ShortCode struct {
@@ -32,9 +16,8 @@ type ShortCode struct {
 // NewShortCode creates a short code after validating and trimming its value.
 func NewShortCode(raw string) (ShortCode, error) {
 	code := strings.TrimSpace(raw)
-	v := newShortCodeValidator()
-	if err := v.Var(code, "required,safe_short_code"); err != nil {
-		return ShortCode{}, fmt.Errorf("%w: %v", ErrInvalidShortCode, err)
+	if !shortCodeRe.MatchString(code) {
+		return ShortCode{}, fmt.Errorf("%w: %q", ErrInvalidShortCode, code)
 	}
 
 	return ShortCode{value: code}, nil
