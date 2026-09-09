@@ -10,7 +10,7 @@ import (
 )
 
 func TestServiceListVisitsReturnsEmptySlice(t *testing.T) {
-	svc := NewService(serviceDeps(nil, nil, &fakeVisitReader{}, nil), "http://localhost:8080")
+	svc := NewServiceWithGenerator(serviceDeps(nil, nil, &fakeVisitReader{}, nil), "http://localhost:8080", &fakeShortCodeGenerator{value: testShortCode})
 
 	visits, err := svc.ListLinkVisits(context.Background())
 
@@ -22,7 +22,7 @@ func TestServiceListVisitsReturnsEmptySlice(t *testing.T) {
 func TestServiceListVisitsRange(t *testing.T) {
 	expected := []VisitView{{ID: 3, LinkID: 1}}
 	reader := &fakeVisitReader{visitCount: 10, visitsRange: expected}
-	svc := NewService(serviceDeps(nil, nil, reader, nil), "http://localhost:8080")
+	svc := NewServiceWithGenerator(serviceDeps(nil, nil, reader, nil), "http://localhost:8080", &fakeShortCodeGenerator{value: testShortCode})
 
 	visits, total, err := svc.ListLinkVisitsRange(context.Background(), ListLinkVisitsQuery{Start: 5, End: 9})
 
@@ -33,7 +33,7 @@ func TestServiceListVisitsRange(t *testing.T) {
 
 func TestServiceListVisitsRangePropagatesCountError(t *testing.T) {
 	repoErr := errors.New("count visits failed")
-	svc := NewService(serviceDeps(nil, nil, &fakeVisitReader{visitCountError: repoErr}, nil), "http://localhost:8080")
+	svc := NewServiceWithGenerator(serviceDeps(nil, nil, &fakeVisitReader{visitCountError: repoErr}, nil), "http://localhost:8080", &fakeShortCodeGenerator{value: testShortCode})
 
 	_, _, err := svc.ListLinkVisitsRange(context.Background(), ListLinkVisitsQuery{Start: 0, End: 4})
 

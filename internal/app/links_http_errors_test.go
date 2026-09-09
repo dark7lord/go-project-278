@@ -1,11 +1,63 @@
 package app
 
 import (
+	"context"
+	"fmt"
 	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+const (
+	testFieldOriginalURL = "original_url"
+	testFieldShortName   = "short_name"
+)
+
+func TestUpdateLinkValidation(t *testing.T) {
+	td := setupTestDB(t)
+
+	tests := []struct {
+		name       string
+		body       string
+		wantStatus int
+		wantField  string
+	}{
+		{
+			name:       "missing original_url",
+			body:       `{"original_url": "", "short_name": "ok-link"}`,
+			wantStatus: http.StatusUnprocessableEntity,
+			wantField:  testFieldOriginalURL,
+		},
+		{
+			name:       "short name too short",
+			body:       `{"original_url": "https://short.com", "short_name": "x"}`,
+			wantStatus: http.StatusUnprocessableEntity,
+			wantField:  testFieldShortName,
+		},
+		{
+			name:       "short name too long",
+			body:       `{"original_url": "https://long.com", "short_name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}`,
+			wantStatus: http.StatusUnprocessableEntity,
+			wantField:  testFieldShortName,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tx := setupTestTx(t, td)
+			ctx := context.Background()
+			created, err := tx.repo.CreateLink(ctx, "https://update-validation.com", "update-validation", "http://localhost:8080/update-validation")
+			require.NoError(t, err)
+
+			w := performRequest(t, tx.router, "PUT", fmt.Sprintf("/api/links/%d", created.ID), tt.body)
+
+			assert.Equal(t, tt.wantStatus, w.Code)
+			assertFieldErrors(t, w, tt.wantField)
+		})
+	}
+}
 
 func TestCreateLinkValidation(t *testing.T) {
 	td := setupTestDB(t)
@@ -21,19 +73,19 @@ func TestCreateLinkValidation(t *testing.T) {
 			name:       "missing original_url",
 			body:       `{"original_url": "", "short_name": "ok-link"}`,
 			wantStatus: http.StatusUnprocessableEntity,
-			wantField:  "original_url",
+			wantField:  testFieldOriginalURL,
 		},
 		{
 			name:       "short name too short",
 			body:       `{"original_url": "https://short.com", "short_name": "x"}`,
 			wantStatus: http.StatusUnprocessableEntity,
-			wantField:  "short_name",
+			wantField:  testFieldShortName,
 		},
 		{
 			name:       "short name too long",
 			body:       `{"original_url": "https://long.com", "short_name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}`,
 			wantStatus: http.StatusUnprocessableEntity,
-			wantField:  "short_name",
+			wantField:  testFieldShortName,
 		},
 		{
 			name:       "invalid json",

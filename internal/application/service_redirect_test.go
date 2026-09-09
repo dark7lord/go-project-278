@@ -15,7 +15,7 @@ func TestServiceRedirectRecordsVisit(t *testing.T) {
 	link := LinkView{ID: 42, OriginalURL: testExampleURL, ShortName: testTargetName}
 	reader := &fakeLinkReader{gotLink: link}
 	recorder := &mockVisitRecorder{}
-	svc := NewService(serviceDeps(reader, nil, nil, recorder), "http://localhost:8080")
+	svc := NewServiceWithGenerator(serviceDeps(reader, nil, nil, recorder), "http://localhost:8080", &fakeShortCodeGenerator{value: testShortCode})
 	recorder.On("CreateLinkVisit", mock.Anything, int64(42), "192.0.2.1", "test-agent", &referer, int32(302)).
 		Return(VisitView{}, nil).Once()
 
@@ -35,7 +35,7 @@ func TestServiceRedirectRecordsVisit(t *testing.T) {
 
 func TestServiceRedirectRejectsInvalidStoredURL(t *testing.T) {
 	recorder := &mockVisitRecorder{}
-	svc := NewService(serviceDeps(&fakeLinkReader{gotLink: LinkView{ID: 1, OriginalURL: "ftp://example.com"}}, nil, nil, recorder), "http://localhost:8080")
+	svc := NewServiceWithGenerator(serviceDeps(&fakeLinkReader{gotLink: LinkView{ID: 1, OriginalURL: "ftp://example.com"}}, nil, nil, recorder), "http://localhost:8080", &fakeShortCodeGenerator{value: testShortCode})
 
 	_, err := svc.Redirect(context.Background(), RedirectCommand{ShortName: testTargetName})
 
@@ -49,7 +49,7 @@ func TestServiceRedirectReturnsVisitError(t *testing.T) {
 		gotLink: LinkView{ID: 1, OriginalURL: testExampleURL},
 	}
 	recorder := &mockVisitRecorder{}
-	svc := NewService(serviceDeps(reader, nil, nil, recorder), "http://localhost:8080")
+	svc := NewServiceWithGenerator(serviceDeps(reader, nil, nil, recorder), "http://localhost:8080", &fakeShortCodeGenerator{value: testShortCode})
 	recorder.On("CreateLinkVisit", mock.Anything, int64(1), "", "", (*string)(nil), int32(302)).
 		Return(VisitView{}, visitErr).Once()
 

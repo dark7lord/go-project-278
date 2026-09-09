@@ -109,7 +109,7 @@ func TestServiceCreateLinkRejectsInvalidInput(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			writer := &mockLinkWriter{}
-			svc := NewService(serviceDeps(nil, writer, nil, nil), "http://localhost:8080")
+			svc := NewServiceWithGenerator(serviceDeps(nil, writer, nil, nil), "http://localhost:8080", &fakeShortCodeGenerator{value: testShortCode})
 
 			_, err := svc.CreateLink(context.Background(), tt.command)
 
@@ -124,7 +124,7 @@ func TestServiceCreateLinkRejectsInvalidInput(t *testing.T) {
 func TestServiceCreateLinkReturnsRepositoryError(t *testing.T) {
 	repoErr := errors.New("database unavailable")
 	writer := &mockLinkWriter{}
-	svc := NewService(serviceDeps(nil, writer, nil, nil), "http://localhost:8080")
+	svc := NewServiceWithGenerator(serviceDeps(nil, writer, nil, nil), "http://localhost:8080", &fakeShortCodeGenerator{value: testShortCode})
 	writer.On("CreateLink", mock.Anything, testExampleURL, testShortName, "http://localhost:8080/r/"+testShortName).
 		Return(LinkView{}, repoErr).Once()
 

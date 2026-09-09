@@ -1,9 +1,6 @@
 package application
 
 import (
-	"fmt"
-	"math/rand"
-
 	domainlinks "code/internal/domain/links"
 )
 
@@ -22,21 +19,10 @@ var _ LinkUseCase = (*Service)(nil)
 var _ VisitUseCase = (*Service)(nil)
 var _ UseCase = (*Service)(nil)
 
-type defaultShortCodeGenerator struct{}
-
-func (defaultShortCodeGenerator) Generate() string {
-	return genRandomName()
-}
-
-// NewService creates a link application service.
-func NewService(deps ServiceDeps, baseURL string) *Service {
-	return NewServiceWithGenerator(deps, baseURL, defaultShortCodeGenerator{})
-}
-
 // NewServiceWithGenerator creates a link application service with an injected short-code generator.
 func NewServiceWithGenerator(deps ServiceDeps, baseURL string, generator ShortCodeGenerator) *Service {
 	if generator == nil {
-		generator = defaultShortCodeGenerator{}
+		panic("application: NewServiceWithGenerator called with nil generator")
 	}
 
 	return &Service{
@@ -48,8 +34,6 @@ func NewServiceWithGenerator(deps ServiceDeps, baseURL string, generator ShortCo
 		shortCodeGenerator: generator,
 	}
 }
-
-var colors = []string{"red", "orange", "yellow", "green", "cyan", "blue", "purple"}
 
 const (
 	fieldShortName   = "short_name"
@@ -63,14 +47,6 @@ func normalizeURL(raw string) (string, error) {
 	}
 
 	return parsed.String(), nil
-}
-
-func genRandomName() string {
-	prefixColor := colors[rand.Intn(len(colors))]
-	infixColor := colors[rand.Intn(len(colors))]
-	suffixNum := rand.Intn(1024)
-
-	return fmt.Sprintf("%s-%s-link-%d", prefixColor, infixColor, suffixNum)
 }
 
 func (s *Service) generateShortLink(shortName string) string {

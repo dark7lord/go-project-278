@@ -132,14 +132,32 @@ func (s *Service) UpdateLink(ctx context.Context, id int64, cmd UpdateLinkComman
 		}
 	}
 
-	if _, err := domainlinks.NewShortCode(cmd.ShortName); err != nil {
-		return LinkView{}, &FieldError{
-			Field: fieldShortName,
-			Err:   fmt.Errorf("%w: %s", domainlinks.ErrInvalidShortCode, cmd.ShortName),
+	shortName := cmd.ShortName
+	if shortName == "" {
+		for {
+			shortName = s.generateShortCode()
+			if _, err := domainlinks.NewShortCode(shortName); err != nil {
+				continue
+			}
+			updated, err := s.linkWriter.UpdateLink(ctx, id, normalized, shortName, s.generateShortLink(shortName))
+			if err == nil {
+				return updated, nil
+			}
+			var fieldErr *FieldError
+			if !errors.As(err, &fieldErr) {
+				return LinkView{}, err
+			}
 		}
 	}
 
-	updated, err := s.linkWriter.UpdateLink(ctx, id, normalized, cmd.ShortName, s.generateShortLink(cmd.ShortName))
+	if _, err := domainlinks.NewShortCode(shortName); err != nil {
+		return LinkView{}, &FieldError{
+			Field: fieldShortName,
+			Err:   fmt.Errorf("%w: %s", domainlinks.ErrInvalidShortCode, shortName),
+		}
+	}
+
+	updated, err := s.linkWriter.UpdateLink(ctx, id, normalized, shortName, s.generateShortLink(shortName))
 	if err != nil {
 		return LinkView{}, err
 	}

@@ -14,6 +14,8 @@ type fakeShortCodeGenerator struct {
 	calls int
 }
 
+const testShortCode = "test-code"
+
 func (g *fakeShortCodeGenerator) Generate() string {
 	g.calls++
 	return g.value

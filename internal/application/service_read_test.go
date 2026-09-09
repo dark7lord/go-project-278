@@ -11,7 +11,7 @@ import (
 
 func TestServiceReadLinks(t *testing.T) {
 	expected := []LinkView{{ID: 1, ShortName: "first"}}
-	svc := NewService(serviceDeps(&fakeLinkReader{links: expected}, nil, nil, nil), "http://localhost:8080")
+	svc := NewServiceWithGenerator(serviceDeps(&fakeLinkReader{links: expected}, nil, nil, nil), "http://localhost:8080", &fakeShortCodeGenerator{value: testShortCode})
 
 	links, err := svc.ListLinks(context.Background())
 
@@ -20,7 +20,7 @@ func TestServiceReadLinks(t *testing.T) {
 }
 
 func TestServiceReadLinksReturnsEmptySlice(t *testing.T) {
-	svc := NewService(serviceDeps(&fakeLinkReader{}, nil, nil, nil), "http://localhost:8080")
+	svc := NewServiceWithGenerator(serviceDeps(&fakeLinkReader{}, nil, nil, nil), "http://localhost:8080", &fakeShortCodeGenerator{value: testShortCode})
 
 	links, err := svc.ListLinks(context.Background())
 
@@ -32,7 +32,7 @@ func TestServiceReadLinksReturnsEmptySlice(t *testing.T) {
 func TestServiceReadLinksRange(t *testing.T) {
 	expected := []LinkView{{ID: 2, ShortName: "second"}}
 	reader := &fakeLinkReader{linkCount: 10, linkRange: expected}
-	svc := NewService(serviceDeps(reader, nil, nil, nil), "http://localhost:8080")
+	svc := NewServiceWithGenerator(serviceDeps(reader, nil, nil, nil), "http://localhost:8080", &fakeShortCodeGenerator{value: testShortCode})
 
 	links, total, err := svc.ListLinksRange(context.Background(), ListLinksQuery{Start: 5, End: 9})
 
@@ -43,7 +43,7 @@ func TestServiceReadLinksRange(t *testing.T) {
 
 func TestServiceReadLinksRangePropagatesCountError(t *testing.T) {
 	repoErr := errors.New("count failed")
-	svc := NewService(serviceDeps(&fakeLinkReader{linkCountError: repoErr}, nil, nil, nil), "http://localhost:8080")
+	svc := NewServiceWithGenerator(serviceDeps(&fakeLinkReader{linkCountError: repoErr}, nil, nil, nil), "http://localhost:8080", &fakeShortCodeGenerator{value: testShortCode})
 
 	_, _, err := svc.ListLinksRange(context.Background(), ListLinksQuery{Start: 0, End: 4})
 
@@ -52,7 +52,7 @@ func TestServiceReadLinksRangePropagatesCountError(t *testing.T) {
 
 func TestServiceGetLink(t *testing.T) {
 	expected := LinkView{ID: 7, ShortName: testTargetName}
-	svc := NewService(serviceDeps(&fakeLinkReader{gotLink: expected}, nil, nil, nil), "http://localhost:8080")
+	svc := NewServiceWithGenerator(serviceDeps(&fakeLinkReader{gotLink: expected}, nil, nil, nil), "http://localhost:8080", &fakeShortCodeGenerator{value: testShortCode})
 
 	link, err := svc.GetLinkByID(context.Background(), expected.ID)
 
@@ -62,7 +62,7 @@ func TestServiceGetLink(t *testing.T) {
 
 func TestServiceGetLinkWrapsRepositoryError(t *testing.T) {
 	repoErr := errors.New("read failed")
-	svc := NewService(serviceDeps(&fakeLinkReader{getLinkError: repoErr}, nil, nil, nil), "http://localhost:8080")
+	svc := NewServiceWithGenerator(serviceDeps(&fakeLinkReader{getLinkError: repoErr}, nil, nil, nil), "http://localhost:8080", &fakeShortCodeGenerator{value: testShortCode})
 
 	_, err := svc.GetLinkByShortName(context.Background(), testTargetName)
 

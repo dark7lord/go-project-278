@@ -26,12 +26,12 @@ func TestConnectDBUnreachable(t *testing.T) {
 
 func TestPingRoute(t *testing.T) {
 	repo := postgresadapter.NewLinkRepository(db.New(nil))
-	svc := application.NewService(application.ServiceDeps{
+	svc := application.NewServiceWithGenerator(application.ServiceDeps{
 		LinkReader:    repo,
 		LinkWriter:    repo,
 		VisitReader:   repo,
 		VisitRecorder: repo,
-	}, "http://localhost:8080")
+	}, "http://localhost:8080", stubGenerator{})
 	router := setupRouter(httpadapter.NewHandler(svc, svc))
 
 	w := performRequest(t, router, "GET", "/ping", "")

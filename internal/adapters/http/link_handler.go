@@ -186,8 +186,8 @@ func (h *Handler) ListLinks(c *gin.Context) {
 
 // UpdateLinkRequest represents a request to update a link.
 type UpdateLinkRequest struct {
-	OriginalURL string `json:"original_url"`
-	ShortName   string `json:"short_name" binding:"min=3,max=32"`
+	OriginalURL string `json:"original_url" binding:"required"`
+	ShortName   string `json:"short_name" binding:"omitempty,min=3,max=32"`
 }
 
 // UpdateLink handles link updates.
