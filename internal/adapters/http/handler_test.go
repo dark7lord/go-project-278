@@ -91,7 +91,7 @@ func TestHandlerListVisitsRangeMapsRequest(t *testing.T) {
 	newHandlerRouter(handler).ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Equal(t, "visits 0-4/5", w.Header().Get("Content-Range"))
+	assert.Equal(t, "link_visits 0-4/5", w.Header().Get("Content-Range"))
 	visitService.AssertExpectations(t)
 }
 

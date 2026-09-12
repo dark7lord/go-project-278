@@ -44,6 +44,6 @@ func (h *Handler) ListVisits(c *gin.Context) {
 		return
 	}
 
-	c.Header("Content-Range", fmt.Sprintf("visits %d-%d/%d", start, end, total))
+	c.Header("Content-Range", fmt.Sprintf("link_visits %d-%d/%d", start, end, total))
 	c.JSON(http.StatusOK, visits)
 }

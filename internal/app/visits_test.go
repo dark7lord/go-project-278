@@ -14,7 +14,7 @@ import (
 	"code/internal/db"
 )
 
-const visits04 = "visits 0-4/15"
+const visits04 = "link_visits 0-4/15"
 
 func TestVisitsPagination(t *testing.T) {
 	td := setupTestDB(t)
@@ -42,7 +42,7 @@ func TestVisitsPagination(t *testing.T) {
 			rangeQuery: "[5,9]",
 			seedCount:  15,
 			wantStatus: http.StatusOK,
-			wantRange:  "visits 5-9/15",
+			wantRange:  "link_visits 5-9/15",
 			wantLen:    5,
 		},
 		{
@@ -50,7 +50,7 @@ func TestVisitsPagination(t *testing.T) {
 			rangeQuery: "[10,14]",
 			seedCount:  15,
 			wantStatus: http.StatusOK,
-			wantRange:  "visits 10-14/15",
+			wantRange:  "link_visits 10-14/15",
 			wantLen:    5,
 		},
 		{
@@ -65,7 +65,7 @@ func TestVisitsPagination(t *testing.T) {
 			rangeQuery: "[100,200]",
 			seedCount:  5,
 			wantStatus: http.StatusOK,
-			wantRange:  "visits 100-200/5",
+			wantRange:  "link_visits 100-200/5",
 			wantLen:    0,
 		},
 		{
