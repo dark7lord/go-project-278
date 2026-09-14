@@ -3,7 +3,6 @@ package httpadapter
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -133,15 +132,6 @@ func (h *Handler) GetLink(c *gin.Context) {
 	c.JSON(http.StatusOK, link)
 }
 
-// rangeStatus maps a range parsing error to an HTTP status and message.
-func rangeStatus(err error) (int, string) {
-	if errors.Is(err, ErrRangeNotSatisfiable) {
-		return http.StatusRequestedRangeNotSatisfiable, err.Error()
-	}
-
-	return http.StatusBadRequest, err.Error()
-}
-
 // requestRange returns the range parameter from query string or Range header.
 func requestRange(c *gin.Context) string {
 	if q := c.Query("range"); q != "" {
@@ -169,19 +159,17 @@ func (h *Handler) ListLinks(c *gin.Context) {
 
 	start, end, err := parseRangeParam(rangeParam)
 	if err != nil {
-		status, msg := rangeStatus(err)
-		c.JSON(status, errJSON(msg))
+		c.JSON(http.StatusBadRequest, errJSON(err.Error()))
 		return
 	}
 
-	links, total, err := h.linkService.ListLinksRange(c.Request.Context(), application.ListLinksQuery{Start: int64(start), End: int64(end)})
+	page, err := h.linkService.ListLinksRange(c.Request.Context(), application.ListLinksQuery{Start: start, End: end})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, errJSON(errInternal))
 		return
 	}
 
-	c.Header("Content-Range", fmt.Sprintf("links %d-%d/%d", start, end, total))
-	c.JSON(http.StatusOK, links)
+	writeRangePage(c, "links", page)
 }
 
 // UpdateLinkRequest represents a request to update a link.

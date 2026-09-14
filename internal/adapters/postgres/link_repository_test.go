@@ -12,6 +12,30 @@ import (
 	"code/internal/application"
 )
 
+func TestPageRange(t *testing.T) {
+	tests := []struct {
+		name       string
+		start      int64
+		end        int64
+		wantLimit  int64
+		wantOffset int64
+	}{
+		{name: "full page", start: 5, end: 9, wantLimit: 5, wantOffset: 5},
+		{name: "single item", start: 3, end: 3, wantLimit: 1, wantOffset: 3},
+		{name: "over the cap is clamped", start: 0, end: 5000, wantLimit: maxPageSize, wantOffset: 0},
+		{name: "huge end does not overflow", start: 0, end: int64(^uint64(0) >> 1), wantLimit: maxPageSize, wantOffset: 0},
+		{name: "max page exactly", start: 0, end: maxPageSize - 1, wantLimit: maxPageSize, wantOffset: 0},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			limit, offset := pageRange(tt.start, tt.end)
+			assert.Equal(t, tt.wantLimit, limit)
+			assert.Equal(t, tt.wantOffset, offset)
+		})
+	}
+}
+
 func TestMapStorageError(t *testing.T) {
 	t.Run("not found", func(t *testing.T) {
 		assert.ErrorIs(t, mapStorageError(pgx.ErrNoRows), application.ErrNotFound)

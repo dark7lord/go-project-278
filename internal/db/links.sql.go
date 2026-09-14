@@ -132,13 +132,13 @@ const getLinksRange = `-- name: GetLinksRange :many
 SELECT id, original_url, short_name, short_url
 FROM links
 ORDER BY id
-OFFSET $1
-LIMIT $2
+OFFSET $1::bigint
+LIMIT $2::bigint
 `
 
 type GetLinksRangeParams struct {
-	Offset int32 `json:"offset"`
-	Limit  int32 `json:"limit"`
+	Offset int64 `json:"offset"`
+	Limit  int64 `json:"limit"`
 }
 
 func (q *Queries) GetLinksRange(ctx context.Context, arg GetLinksRangeParams) ([]Link, error) {

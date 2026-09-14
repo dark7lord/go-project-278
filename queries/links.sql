@@ -21,8 +21,8 @@ FROM links;
 SELECT id, original_url, short_name, short_url
 FROM links
 ORDER BY id
-OFFSET sqlc.arg('offset')
-LIMIT sqlc.arg('limit');
+OFFSET sqlc.arg('offset')::bigint
+LIMIT sqlc.arg('limit')::bigint;
 
 -- name: CountLinks :one
 SELECT COUNT(id) FROM links;

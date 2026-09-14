@@ -107,13 +107,13 @@ SELECT
     status
 FROM link_visits
 ORDER BY id
-OFFSET $1
-LIMIT $2
+OFFSET $1::bigint
+LIMIT $2::bigint
 `
 
 type GetLinkVisitsRangeParams struct {
-	Offset int32 `json:"offset"`
-	Limit  int32 `json:"limit"`
+	Offset int64 `json:"offset"`
+	Limit  int64 `json:"limit"`
 }
 
 func (q *Queries) GetLinkVisitsRange(ctx context.Context, arg GetLinkVisitsRangeParams) ([]LinkVisit, error) {

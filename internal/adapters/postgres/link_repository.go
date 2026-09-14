@@ -15,7 +15,18 @@ import (
 const (
 	shortNameConstraint = "links_short_name_key"
 	shortURLConstraint  = "links_short_url_key"
+	maxPageSize         = 1000
 )
+
+// pageRange converts an inclusive [start,end] range into a capped LIMIT/OFFSET pair.
+func pageRange(start, end int64) (limit, offset int64) {
+	offset = start
+	if end-start >= maxPageSize {
+		return maxPageSize, offset
+	}
+
+	return end - start + 1, offset
+}
 
 // LinkRepository adapts generated SQL queries to the application persistence ports.
 type LinkRepository struct {
@@ -98,8 +109,9 @@ func (r *LinkRepository) ListLinks(ctx context.Context) ([]application.LinkView,
 }
 
 // ListLinksRange retrieves a paginated subset of links.
-func (r *LinkRepository) ListLinksRange(ctx context.Context, limit, offset int64) ([]application.LinkView, error) {
-	links, err := r.queries.GetLinksRange(ctx, db.GetLinksRangeParams{Limit: int32(limit), Offset: int32(offset)})
+func (r *LinkRepository) ListLinksRange(ctx context.Context, start, end int64) ([]application.LinkView, error) {
+	limit, offset := pageRange(start, end)
+	links, err := r.queries.GetLinksRange(ctx, db.GetLinksRangeParams{Limit: limit, Offset: offset})
 	views := make([]application.LinkView, len(links))
 	for index, link := range links {
 		views[index] = toLinkView(link)
@@ -168,10 +180,11 @@ func (r *LinkRepository) ListLinkVisits(ctx context.Context) ([]application.Visi
 }
 
 // ListLinkVisitsRange retrieves a paginated subset of link visits.
-func (r *LinkRepository) ListLinkVisitsRange(ctx context.Context, limit, offset int64) ([]application.VisitView, error) {
+func (r *LinkRepository) ListLinkVisitsRange(ctx context.Context, start, end int64) ([]application.VisitView, error) {
+	limit, offset := pageRange(start, end)
 	visits, err := r.queries.GetLinkVisitsRange(ctx, db.GetLinkVisitsRangeParams{
-		Limit:  int32(limit),
-		Offset: int32(offset),
+		Limit:  limit,
+		Offset: offset,
 	})
 	views := make([]application.VisitView, len(visits))
 	for index, visit := range visits {

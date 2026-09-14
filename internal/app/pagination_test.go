@@ -13,12 +13,12 @@ import (
 )
 
 const (
-	range04     = "[0,4]"
-	range09     = "[0,9]"
-	links04     = "links 0-4/15"
-	links59     = "links 5-9/15"
-	links1014   = "links 10-14/15"
-	links100200 = "links 100-200/5"
+	range04          = "[0,4]"
+	range09          = "[0,9]"
+	links04          = "links 0-4/15"
+	links59          = "links 5-9/15"
+	links1014        = "links 10-14/15"
+	linksUnsatisfied = "links */5"
 )
 
 func TestLinksPagination(t *testing.T) {
@@ -75,18 +75,25 @@ func TestLinksPagination(t *testing.T) {
 			wantLen:    15,
 		},
 		{
-			name:       "range beyond total returns empty",
+			name:       "range beyond total returns 416",
 			rangeQuery: "[100,200]",
 			seedCount:  5,
+			wantStatus: http.StatusRequestedRangeNotSatisfiable,
+			wantRange:  linksUnsatisfied,
+		},
+		{
+			name:       "empty collection returns wildcard range",
+			rangeQuery: range04,
+			seedCount:  0,
 			wantStatus: http.StatusOK,
-			wantRange:  links100200,
+			wantRange:  "links */0",
 			wantLen:    0,
 		},
 		{
 			name:       "start > end",
 			rangeQuery: "[10,5]",
 			seedCount:  0,
-			wantStatus: http.StatusRequestedRangeNotSatisfiable,
+			wantStatus: http.StatusBadRequest,
 		},
 		{
 			name:       "bad format",

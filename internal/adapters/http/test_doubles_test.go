@@ -35,9 +35,9 @@ func (m *mockLinkUseCase) ListLinks(ctx context.Context) ([]application.LinkView
 	return args.Get(0).([]application.LinkView), args.Error(1)
 }
 
-func (m *mockLinkUseCase) ListLinksRange(ctx context.Context, q application.ListLinksQuery) ([]application.LinkView, int64, error) {
+func (m *mockLinkUseCase) ListLinksRange(ctx context.Context, q application.ListLinksQuery) (application.RangePage[application.LinkView], error) {
 	args := m.Called(ctx, q)
-	return args.Get(0).([]application.LinkView), args.Get(1).(int64), args.Error(2)
+	return args.Get(0).(application.RangePage[application.LinkView]), args.Error(1)
 }
 
 func (m *mockLinkUseCase) UpdateLink(ctx context.Context, id int64, cmd application.UpdateLinkCommand) (application.LinkView, error) {
@@ -62,7 +62,7 @@ func (m *mockVisitUseCase) ListLinkVisits(ctx context.Context) ([]application.Vi
 	return args.Get(0).([]application.VisitView), args.Error(1)
 }
 
-func (m *mockVisitUseCase) ListLinkVisitsRange(ctx context.Context, q application.ListLinkVisitsQuery) ([]application.VisitView, int64, error) {
+func (m *mockVisitUseCase) ListLinkVisitsRange(ctx context.Context, q application.ListLinkVisitsQuery) (application.RangePage[application.VisitView], error) {
 	args := m.Called(ctx, q)
-	return args.Get(0).([]application.VisitView), args.Get(1).(int64), args.Error(2)
+	return args.Get(0).(application.RangePage[application.VisitView]), args.Error(1)
 }

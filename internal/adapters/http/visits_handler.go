@@ -1,7 +1,6 @@
 package httpadapter
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -27,16 +26,15 @@ func (h *Handler) ListVisits(c *gin.Context) {
 
 	start, end, err := parseRangeParam(rangeParam)
 	if err != nil {
-		status, msg := rangeStatus(err)
-		c.JSON(status, errJSON(msg))
+		c.JSON(http.StatusBadRequest, errJSON(err.Error()))
 		return
 	}
 
-	visits, total, err := h.visitService.ListLinkVisitsRange(
+	page, err := h.visitService.ListLinkVisitsRange(
 		c.Request.Context(),
 		application.ListLinkVisitsQuery{
-			Start: int64(start),
-			End:   int64(end),
+			Start: start,
+			End:   end,
 		},
 	)
 	if err != nil {
@@ -44,6 +42,5 @@ func (h *Handler) ListVisits(c *gin.Context) {
 		return
 	}
 
-	c.Header("Content-Range", fmt.Sprintf("link_visits %d-%d/%d", start, end, total))
-	c.JSON(http.StatusOK, visits)
+	writeRangePage(c, "link_visits", page)
 }

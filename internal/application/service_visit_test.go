@@ -24,18 +24,30 @@ func TestServiceListVisitsRange(t *testing.T) {
 	reader := &fakeVisitReader{visitCount: 10, visitsRange: expected}
 	svc := NewServiceWithGenerator(serviceDeps(nil, nil, reader, nil), "http://localhost:8080", &fakeShortCodeGenerator{value: testShortCode})
 
-	visits, total, err := svc.ListLinkVisitsRange(context.Background(), ListLinkVisitsQuery{Start: 5, End: 9})
+	page, err := svc.ListLinkVisitsRange(context.Background(), ListLinkVisitsQuery{Start: 5, End: 9})
 
 	require.NoError(t, err)
-	assert.Equal(t, expected, visits)
-	assert.Equal(t, int64(10), total)
+	assert.Equal(t, expected, page.Items)
+	assert.Equal(t, int64(10), page.Total)
+	assert.Equal(t, int64(5), page.Start)
+}
+
+func TestServiceListVisitsRangeNormalizesNilItems(t *testing.T) {
+	reader := &fakeVisitReader{visitCount: 10}
+	svc := NewServiceWithGenerator(serviceDeps(nil, nil, reader, nil), "http://localhost:8080", &fakeShortCodeGenerator{value: testShortCode})
+
+	page, err := svc.ListLinkVisitsRange(context.Background(), ListLinkVisitsQuery{Start: 0, End: 4})
+
+	require.NoError(t, err)
+	assert.NotNil(t, page.Items)
+	assert.Empty(t, page.Items)
 }
 
 func TestServiceListVisitsRangePropagatesCountError(t *testing.T) {
 	repoErr := errors.New("count visits failed")
 	svc := NewServiceWithGenerator(serviceDeps(nil, nil, &fakeVisitReader{visitCountError: repoErr}, nil), "http://localhost:8080", &fakeShortCodeGenerator{value: testShortCode})
 
-	_, _, err := svc.ListLinkVisitsRange(context.Background(), ListLinkVisitsQuery{Start: 0, End: 4})
+	_, err := svc.ListLinkVisitsRange(context.Background(), ListLinkVisitsQuery{Start: 0, End: 4})
 
 	assert.ErrorIs(t, err, repoErr)
 }

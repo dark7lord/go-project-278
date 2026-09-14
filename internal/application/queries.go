@@ -11,3 +11,10 @@ type ListLinkVisitsQuery struct {
 	Start int64
 	End   int64
 }
+
+// RangePage is the result of a paginated range query.
+type RangePage[T any] struct {
+	Items []T
+	Start int64
+	Total int64
+}

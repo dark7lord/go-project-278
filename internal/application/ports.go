@@ -10,7 +10,7 @@ type LinkReader interface {
 	GetLinkByID(ctx context.Context, id int64) (LinkView, error)
 	GetLinkByShortName(ctx context.Context, shortName string) (LinkView, error)
 	ListLinks(ctx context.Context) ([]LinkView, error)
-	ListLinksRange(ctx context.Context, limit, offset int64) ([]LinkView, error)
+	ListLinksRange(ctx context.Context, start, end int64) ([]LinkView, error)
 	CountLinks(ctx context.Context) (int64, error)
 }
 
@@ -24,7 +24,7 @@ type LinkWriter interface {
 // VisitReader defines persistence operations for reading visits.
 type VisitReader interface {
 	ListLinkVisits(ctx context.Context) ([]VisitView, error)
-	ListLinkVisitsRange(ctx context.Context, limit, offset int64) ([]VisitView, error)
+	ListLinkVisitsRange(ctx context.Context, start, end int64) ([]VisitView, error)
 	CountLinkVisits(ctx context.Context) (int64, error)
 }
 
@@ -48,7 +48,7 @@ type LinkUseCase interface {
 	GetLinkByID(ctx context.Context, id int64) (LinkView, error)
 	GetLinkByShortName(ctx context.Context, shortName string) (LinkView, error)
 	ListLinks(ctx context.Context) ([]LinkView, error)
-	ListLinksRange(ctx context.Context, q ListLinksQuery) ([]LinkView, int64, error)
+	ListLinksRange(ctx context.Context, q ListLinksQuery) (RangePage[LinkView], error)
 	UpdateLink(ctx context.Context, id int64, cmd UpdateLinkCommand) (LinkView, error)
 	DeleteLink(ctx context.Context, id int64) (LinkView, error)
 }
@@ -57,7 +57,7 @@ type LinkUseCase interface {
 type VisitUseCase interface {
 	CreateLinkVisit(ctx context.Context, linkID int64, ip, userAgent string, referer *string, status int32) (VisitView, error)
 	ListLinkVisits(ctx context.Context) ([]VisitView, error)
-	ListLinkVisitsRange(ctx context.Context, q ListLinkVisitsQuery) ([]VisitView, int64, error)
+	ListLinkVisitsRange(ctx context.Context, q ListLinkVisitsQuery) (RangePage[VisitView], error)
 }
 
 // UseCase combines the application use cases for a single HTTP adapter.

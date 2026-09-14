@@ -41,7 +41,7 @@ func TestHandlerListLinksRangeMapsRequest(t *testing.T) {
 	linkService := &mockLinkUseCase{}
 	linkService.
 		On("ListLinksRange", mock.Anything, application.ListLinksQuery{Start: 5, End: 9}).
-		Return([]application.LinkView{}, int64(10), nil).
+		Return(application.RangePage[application.LinkView]{Items: make([]application.LinkView, 5), Start: 5, Total: 10}, nil).
 		Once()
 	handler := NewHandler(linkService, &mockVisitUseCase{})
 
@@ -51,6 +51,57 @@ func TestHandlerListLinksRangeMapsRequest(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "links 5-9/10", w.Header().Get("Content-Range"))
+	linkService.AssertExpectations(t)
+}
+
+func TestHandlerListLinksRangeUnsatisfiable(t *testing.T) {
+	linkService := &mockLinkUseCase{}
+	linkService.
+		On("ListLinksRange", mock.Anything, application.ListLinksQuery{Start: 100, End: 200}).
+		Return(application.RangePage[application.LinkView]{Items: []application.LinkView{}, Start: 100, Total: 5}, nil).
+		Once()
+	handler := NewHandler(linkService, &mockVisitUseCase{})
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/links?range=%5B100%2C200%5D", nil)
+	newHandlerRouter(handler).ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusRequestedRangeNotSatisfiable, w.Code)
+	assert.Equal(t, "links */5", w.Header().Get("Content-Range"))
+	linkService.AssertExpectations(t)
+}
+
+func TestHandlerListLinksRangeEmptyCollection(t *testing.T) {
+	linkService := &mockLinkUseCase{}
+	linkService.
+		On("ListLinksRange", mock.Anything, application.ListLinksQuery{Start: 0, End: 4}).
+		Return(application.RangePage[application.LinkView]{Items: []application.LinkView{}, Start: 0, Total: 0}, nil).
+		Once()
+	handler := NewHandler(linkService, &mockVisitUseCase{})
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/links?range=%5B0%2C4%5D", nil)
+	newHandlerRouter(handler).ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, "links */0", w.Header().Get("Content-Range"))
+	linkService.AssertExpectations(t)
+}
+
+func TestHandlerListLinksRangeEmptyItems(t *testing.T) {
+	linkService := &mockLinkUseCase{}
+	linkService.
+		On("ListLinksRange", mock.Anything, application.ListLinksQuery{Start: 5, End: 9}).
+		Return(application.RangePage[application.LinkView]{Items: []application.LinkView{}, Start: 5, Total: 10}, nil).
+		Once()
+	handler := NewHandler(linkService, &mockVisitUseCase{})
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/links?range=%5B5%2C9%5D", nil)
+	newHandlerRouter(handler).ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusRequestedRangeNotSatisfiable, w.Code)
+	assert.Equal(t, "links */10", w.Header().Get("Content-Range"))
 	linkService.AssertExpectations(t)
 }
 
@@ -82,7 +133,7 @@ func TestHandlerListVisitsRangeMapsRequest(t *testing.T) {
 	visitService := &mockVisitUseCase{}
 	visitService.
 		On("ListLinkVisitsRange", mock.Anything, application.ListLinkVisitsQuery{Start: 0, End: 4}).
-		Return([]application.VisitView{}, int64(5), nil).
+		Return(application.RangePage[application.VisitView]{Items: make([]application.VisitView, 5), Start: 0, Total: 5}, nil).
 		Once()
 	handler := NewHandler(&mockLinkUseCase{}, visitService)
 

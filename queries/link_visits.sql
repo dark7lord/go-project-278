@@ -29,5 +29,5 @@ SELECT
     status
 FROM link_visits
 ORDER BY id
-OFFSET sqlc.arg('offset')
-LIMIT sqlc.arg('limit');
+OFFSET sqlc.arg('offset')::bigint
+LIMIT sqlc.arg('limit')::bigint;

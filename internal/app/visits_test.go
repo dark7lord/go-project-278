@@ -61,18 +61,17 @@ func TestVisitsPagination(t *testing.T) {
 			wantLen:    15,
 		},
 		{
-			name:       "range beyond total returns empty",
+			name:       "range beyond total returns 416",
 			rangeQuery: "[100,200]",
 			seedCount:  5,
-			wantStatus: http.StatusOK,
-			wantRange:  "link_visits 100-200/5",
-			wantLen:    0,
+			wantStatus: http.StatusRequestedRangeNotSatisfiable,
+			wantRange:  "link_visits */5",
 		},
 		{
 			name:       "start > end",
 			rangeQuery: "[10,5]",
 			seedCount:  0,
-			wantStatus: http.StatusRequestedRangeNotSatisfiable,
+			wantStatus: http.StatusBadRequest,
 		},
 		{
 			name:       "bad format",
