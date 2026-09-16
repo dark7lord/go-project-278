@@ -12,15 +12,6 @@ import (
 	"code/internal/db"
 )
 
-const (
-	range04          = "[0,4]"
-	range09          = "[0,9]"
-	links04          = "links 0-4/15"
-	links59          = "links 5-9/15"
-	links1014        = "links 10-14/15"
-	linksUnsatisfied = "links */5"
-)
-
 func TestLinksPagination(t *testing.T) {
 	// t.Skip("waiting for pagination implementation — handler/service/repo/queries need GetLinksRange and CountLinks")
 	td := setupTestDB(t)
@@ -37,10 +28,10 @@ func TestLinksPagination(t *testing.T) {
 	}{
 		{
 			name:       "first page",
-			rangeQuery: range04,
+			rangeQuery: "[0,4]",
 			seedCount:  15,
 			wantStatus: http.StatusOK,
-			wantRange:  links04,
+			wantRange:  "links 0-4/15",
 			wantLen:    5,
 		},
 		{
@@ -48,7 +39,7 @@ func TestLinksPagination(t *testing.T) {
 			rangeQuery: "[5,9]",
 			seedCount:  15,
 			wantStatus: http.StatusOK,
-			wantRange:  links59,
+			wantRange:  "links 5-9/15",
 			wantLen:    5,
 		},
 		{
@@ -56,15 +47,15 @@ func TestLinksPagination(t *testing.T) {
 			rangeQuery: "[10,14]",
 			seedCount:  15,
 			wantStatus: http.StatusOK,
-			wantRange:  links1014,
+			wantRange:  "links 10-14/15",
 			wantLen:    5,
 		},
 		{
 			name:       "range with spaces",
-			rangeQuery: "[0, 4]",
+			rangeQuery: "[1, 5]",
 			seedCount:  15,
 			wantStatus: http.StatusOK,
-			wantRange:  links04,
+			wantRange:  "links 1-5/15",
 			wantLen:    5,
 		},
 		{
@@ -79,11 +70,11 @@ func TestLinksPagination(t *testing.T) {
 			rangeQuery: "[100,200]",
 			seedCount:  5,
 			wantStatus: http.StatusRequestedRangeNotSatisfiable,
-			wantRange:  linksUnsatisfied,
+			wantRange:  "links */5",
 		},
 		{
 			name:       "empty collection returns wildcard range",
-			rangeQuery: range04,
+			rangeQuery: "[4,8]",
 			seedCount:  0,
 			wantStatus: http.StatusOK,
 			wantRange:  "links */0",
@@ -103,19 +94,19 @@ func TestLinksPagination(t *testing.T) {
 		},
 		{
 			name:        "range header applies without query param",
-			rangeHeader: range04,
+			rangeHeader: "[2,6]",
 			seedCount:   15,
 			wantStatus:  http.StatusOK,
-			wantRange:   links04,
+			wantRange:   "links 2-6/15",
 			wantLen:     5,
 		},
 		{
 			name:        "query param overrides range header",
-			rangeQuery:  range04,
-			rangeHeader: range09,
+			rangeQuery:  "[3,7]",
+			rangeHeader: "[0,9]",
 			seedCount:   15,
 			wantStatus:  http.StatusOK,
-			wantRange:   links04,
+			wantRange:   "links 3-7/15",
 			wantLen:     5,
 		},
 	}

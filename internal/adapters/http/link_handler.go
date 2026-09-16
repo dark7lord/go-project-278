@@ -21,6 +21,16 @@ func errJSON(msg string) gin.H {
 	return gin.H{"error": msg}
 }
 
+// parsePositiveID parses an id path parameter into a positive int64.
+func parsePositiveID(paramID string) (int64, error) {
+	id, err := strconv.ParseInt(paramID, 10, 64)
+	if err != nil || id <= 0 {
+		return 0, errors.New(errInvalidID)
+	}
+
+	return id, nil
+}
+
 var camelRe = regexp.MustCompile(`([a-z0-9])([A-Z])`)
 
 // toSnakeCase converts "ShortName" to "short_name" and "OriginalURL" to "original_url".
@@ -110,10 +120,9 @@ func (h *Handler) CreateLink(c *gin.Context) {
 
 // GetLink handles link retrieval by ID.
 func (h *Handler) GetLink(c *gin.Context) {
-	paramID := c.Param("id")
-	id, err := strconv.ParseInt(paramID, 10, 64)
+	id, err := parsePositiveID(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, errJSON(errInvalidID))
+		c.JSON(http.StatusBadRequest, errJSON(err.Error()))
 		return
 	}
 
@@ -180,10 +189,9 @@ type UpdateLinkRequest struct {
 
 // UpdateLink handles link updates.
 func (h *Handler) UpdateLink(c *gin.Context) {
-	paramID := c.Param("id")
-	id, err := strconv.ParseInt(paramID, 10, 64)
+	id, err := parsePositiveID(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, errJSON(errInvalidID))
+		c.JSON(http.StatusBadRequest, errJSON(err.Error()))
 		return
 	}
 
@@ -210,10 +218,9 @@ func (h *Handler) UpdateLink(c *gin.Context) {
 
 // DeleteLink handles link deletion.
 func (h *Handler) DeleteLink(c *gin.Context) {
-	paramID := c.Param("id")
-	id, err := strconv.ParseInt(paramID, 10, 64)
+	id, err := parsePositiveID(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, errJSON(errInvalidID))
+		c.JSON(http.StatusBadRequest, errJSON(err.Error()))
 		return
 	}
 

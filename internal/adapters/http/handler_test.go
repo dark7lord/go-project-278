@@ -19,6 +19,8 @@ func newHandlerRouter(handler *Handler) *gin.Engine {
 	router.POST("/links", handler.CreateLink)
 	router.GET("/links/:id", handler.GetLink)
 	router.GET("/links", handler.ListLinks)
+	router.PUT("/links/:id", handler.UpdateLink)
+	router.DELETE("/links/:id", handler.DeleteLink)
 	router.GET("/r/:code", handler.Redirect)
 	router.GET("/visits", handler.ListVisits)
 
@@ -35,6 +37,38 @@ func TestHandlerCreateLinkValidationDoesNotCallUseCase(t *testing.T) {
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	linkService.AssertNotCalled(t, "CreateLink", mock.Anything, mock.Anything)
+}
+
+func TestHandlerIDValidationDoesNotCallUseCase(t *testing.T) {
+	for _, tc := range []struct {
+		method string
+		path   string
+	}{
+		{method: http.MethodGet, path: "/links/0"},
+		{method: http.MethodGet, path: "/links/-1"},
+		{method: http.MethodGet, path: "/links/abc"},
+		{method: http.MethodPut, path: "/links/00"},
+		{method: http.MethodPut, path: "/links/-2"},
+		{method: http.MethodPut, path: "/links/xyz"},
+		{method: http.MethodDelete, path: "/links/000"},
+		{method: http.MethodDelete, path: "/links/-3"},
+		{method: http.MethodDelete, path: "/links/12a"},
+	} {
+		t.Run(tc.method+" "+tc.path, func(t *testing.T) {
+			linkService := &mockLinkUseCase{}
+			handler := NewHandler(linkService, &mockVisitUseCase{})
+
+			w := httptest.NewRecorder()
+			req := httptest.NewRequest(tc.method, tc.path, nil)
+			newHandlerRouter(handler).ServeHTTP(w, req)
+
+			assert.Equal(t, http.StatusBadRequest, w.Code)
+			assert.JSONEq(t, `{"error":"invalid id"}`, w.Body.String())
+			linkService.AssertNotCalled(t, "GetLinkByID", mock.Anything, mock.Anything)
+			linkService.AssertNotCalled(t, "UpdateLink", mock.Anything, mock.Anything, mock.Anything)
+			linkService.AssertNotCalled(t, "DeleteLink", mock.Anything, mock.Anything)
+		})
+	}
 }
 
 func TestHandlerListLinksRangeMapsRequest(t *testing.T) {

@@ -93,6 +93,12 @@ func TestCreateLinkValidation(t *testing.T) {
 			wantStatus: http.StatusBadRequest,
 			wantError:  "invalid request",
 		},
+		{
+			name:       "unknown field",
+			body:       `{"original_url": "https://strict.com", "short_name": "ok-link", "short_nam": "zzz"}`,
+			wantStatus: http.StatusBadRequest,
+			wantError:  "invalid request",
+		},
 	}
 
 	for _, tt := range tests {
@@ -113,6 +119,20 @@ func TestCreateLinkValidation(t *testing.T) {
 	}
 }
 
+func TestUpdateLinkRejectsUnknownField(t *testing.T) {
+	td := setupTestDB(t)
+	tx := setupTestTx(t, td)
+	ctx := context.Background()
+	created, err := tx.repo.CreateLink(ctx, "https://strict-update.com", "strict-update", "http://localhost:8080/strict-update")
+	require.NoError(t, err)
+
+	w := performRequest(t, tx.router, "PUT", fmt.Sprintf("/api/links/%d", created.ID),
+		`{"original_url": "https://strict-update.com", "short_name": "ok-link", "short_url": "boom"}`)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.JSONEq(t, `{"error": "invalid request"}`, w.Body.String())
+}
+
 func TestLinkErrors(t *testing.T) {
 	td := setupTestDB(t)
 
@@ -126,6 +146,8 @@ func TestLinkErrors(t *testing.T) {
 		wantStatus int
 	}{
 		{name: "GetLink / invalid id", method: "GET", path: "/api/links/abc", wantStatus: http.StatusBadRequest},
+		{name: "GetLink / zero id", method: http.MethodGet, path: "/api/links/0", wantStatus: http.StatusBadRequest},
+		{name: "GetLink / negative id", method: http.MethodGet, path: "/api/links/-1", wantStatus: http.StatusBadRequest},
 		{name: "GetLink / not found", method: "GET", path: missingLinkPath, wantStatus: http.StatusNotFound},
 		{
 			name:       "UpdateLink / not found",
@@ -134,7 +156,16 @@ func TestLinkErrors(t *testing.T) {
 			body:       `{"original_url": "https://nowhere.com", "short_name": "ghost"}`,
 			wantStatus: http.StatusNotFound,
 		},
+		{
+			name:       "UpdateLink / zero id",
+			method:     http.MethodPut,
+			path:       "/api/links/00",
+			body:       `{"original_url": "https://nowhere.com", "short_name": "ghost"}`,
+			wantStatus: http.StatusBadRequest,
+		},
 		{name: "DeleteLink / invalid id", method: "DELETE", path: "/api/links/abc", wantStatus: http.StatusBadRequest},
+		{name: "DeleteLink / zero id", method: http.MethodDelete, path: "/api/links/000", wantStatus: http.StatusBadRequest},
+		{name: "DeleteLink / negative id", method: http.MethodDelete, path: "/api/links/-3", wantStatus: http.StatusBadRequest},
 		{name: "DeleteLink / not found", method: "DELETE", path: missingLinkPath, wantStatus: http.StatusNotFound},
 	}
 

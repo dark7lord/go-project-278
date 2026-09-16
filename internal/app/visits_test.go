@@ -14,8 +14,6 @@ import (
 	"code/internal/db"
 )
 
-const visits04 = "link_visits 0-4/15"
-
 func TestVisitsPagination(t *testing.T) {
 	td := setupTestDB(t)
 	ctx := context.Background()
@@ -31,10 +29,10 @@ func TestVisitsPagination(t *testing.T) {
 	}{
 		{
 			name:       "first page",
-			rangeQuery: range04,
+			rangeQuery: "[0,4]",
 			seedCount:  15,
 			wantStatus: http.StatusOK,
-			wantRange:  visits04,
+			wantRange:  "link_visits 0-4/15",
 			wantLen:    5,
 		},
 		{
@@ -81,19 +79,19 @@ func TestVisitsPagination(t *testing.T) {
 		},
 		{
 			name:        "range header first page",
-			rangeHeader: range04,
+			rangeHeader: "[2,6]",
 			seedCount:   15,
 			wantStatus:  http.StatusOK,
-			wantRange:   visits04,
+			wantRange:   "link_visits 2-6/15",
 			wantLen:     5,
 		},
 		{
 			name:        "query param overrides range header",
-			rangeQuery:  range04,
-			rangeHeader: range09,
+			rangeQuery:  "[3,7]",
+			rangeHeader: "[0,9]",
 			seedCount:   15,
 			wantStatus:  http.StatusOK,
-			wantRange:   visits04,
+			wantRange:   "link_visits 3-7/15",
 			wantLen:     5,
 		},
 	}

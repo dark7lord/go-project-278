@@ -11,6 +11,7 @@ import (
 	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	httpadapter "code/internal/adapters/http"
@@ -20,6 +21,10 @@ import (
 	"code/internal/config"
 	"code/internal/db"
 )
+
+func init() {
+	binding.EnableDecoderDisallowUnknownFields = true
+}
 
 // connectDB creates a new pgxpool connection and pings the database.
 func connectDB(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
@@ -41,7 +46,11 @@ func setupRouter(linkHandler *httpadapter.Handler) *gin.Engine {
 	router.Use(gin.Recovery())
 	router.Use(sentrygin.New(sentrygin.Options{Repanic: false}))
 	router.Use(cors.New(cors.Config{
-		AllowOrigins: []string{"http://localhost:5173"},
+		AllowOrigins:  []string{"http://localhost:5173"},
+		AllowMethods:  []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodHead, http.MethodDelete, http.MethodOptions},
+		AllowHeaders:  []string{"Content-Type", "Accept", "Range"},
+		ExposeHeaders: []string{"Content-Range"},
+		MaxAge:        12 * time.Hour,
 	}))
 
 	router.TrustedPlatform = gin.PlatformCloudflare
