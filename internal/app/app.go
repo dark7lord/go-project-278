@@ -43,15 +43,9 @@ func connectDB(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
 func setupRouter(linkHandler *httpadapter.Handler) *gin.Engine {
 	router := gin.New()
 	router.Use(gin.Logger())
+	router.Use(sentrygin.New(sentrygin.Options{Repanic: true}))
+	router.Use(newCORS())
 	router.Use(gin.Recovery())
-	router.Use(sentrygin.New(sentrygin.Options{Repanic: false}))
-	router.Use(cors.New(cors.Config{
-		AllowOrigins:  []string{"http://localhost:5173"},
-		AllowMethods:  []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodHead, http.MethodDelete, http.MethodOptions},
-		AllowHeaders:  []string{"Content-Type", "Accept", "Range"},
-		ExposeHeaders: []string{"Content-Range"},
-		MaxAge:        12 * time.Hour,
-	}))
 
 	router.TrustedPlatform = gin.PlatformCloudflare
 	_ = router.SetTrustedProxies([]string{"127.0.0.1", "::1"})
@@ -72,6 +66,16 @@ func setupRouter(linkHandler *httpadapter.Handler) *gin.Engine {
 	api.GET("/link_visits", linkHandler.ListVisits)
 
 	return router
+}
+
+func newCORS() gin.HandlerFunc {
+	return cors.New(cors.Config{
+		AllowOrigins:  []string{"http://localhost:5173"},
+		AllowMethods:  []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodHead, http.MethodDelete, http.MethodOptions},
+		AllowHeaders:  []string{"Content-Type", "Accept", "Range"},
+		ExposeHeaders: []string{"Content-Range"},
+		MaxAge:        12 * time.Hour,
+	})
 }
 
 func newLinkService(cfg *config.Config, linkRepo *postgres.LinkRepository) *application.Service {
