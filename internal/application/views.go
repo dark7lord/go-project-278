@@ -17,6 +17,5 @@ type VisitView struct {
 	CreatedAt time.Time `json:"created_at"`
 	IP        string    `json:"ip"`
 	UserAgent string    `json:"user_agent"`
-	Referer   *string   `json:"referer"`
 	Status    int32     `json:"status"`
 }

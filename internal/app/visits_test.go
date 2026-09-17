@@ -166,9 +166,13 @@ func TestRedirectRecordsVisit(t *testing.T) {
 	assert.Equal(t, created.ID, visits[0].LinkID)
 	assert.Equal(t, "192.0.2.1", visits[0].IP)
 	assert.Equal(t, "test-agent", visits[0].UserAgent)
-	require.NotNil(t, visits[0].Referer)
-	assert.Equal(t, "https://example.com", *visits[0].Referer)
 	assert.Equal(t, int32(http.StatusFound), visits[0].Status)
+
+	stored, err := tx.queries.GetLinkVisits(ctx)
+	require.NoError(t, err)
+	require.Len(t, stored, 1)
+	require.NotNil(t, stored[0].Referer)
+	assert.Equal(t, "https://example.com", *stored[0].Referer)
 }
 
 func TestRedirectErrors(t *testing.T) {
@@ -206,4 +210,34 @@ func TestListVisitsEmpty(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "[]", w.Body.String())
+}
+
+func TestLinkVisitsResponseContract(t *testing.T) {
+	td := setupTestDB(t)
+	ctx := context.Background()
+
+	tx := setupTestTx(t, td)
+
+	link := linkFactory(0)
+	created, err := tx.repo.CreateLink(ctx, link.OriginalURL, link.ShortName, link.ShortURL)
+	require.NoError(t, err)
+
+	referer := "https://example.com"
+	_, err = tx.repo.CreateLinkVisit(ctx, created.ID, "192.0.2.1", "test-agent", &referer, int32(http.StatusFound))
+	require.NoError(t, err)
+
+	w := performRequest(t, tx.router, "GET", "/api/link_visits", "")
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var items []map[string]any
+	decode(t, w, &items)
+	require.Len(t, items, 1)
+
+	keys := make([]string, 0, len(items[0]))
+	for key := range items[0] {
+		keys = append(keys, key)
+	}
+	assert.ElementsMatch(t, []string{"created_at", "id", "ip", "link_id", "status", "user_agent"}, keys)
+	assert.NotContains(t, keys, "referer")
 }
