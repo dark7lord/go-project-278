@@ -22,7 +22,7 @@ func newHandlerRouter(handler *Handler) *gin.Engine {
 	router.PUT("/links/:id", handler.UpdateLink)
 	router.DELETE("/links/:id", handler.DeleteLink)
 	router.GET("/r/:code", handler.Redirect)
-	router.GET("/api/link_visits", handler.ListVisits)
+	router.GET("/link_visits", handler.ListVisits)
 
 	return router
 }
@@ -172,7 +172,7 @@ func TestHandlerListVisitsRangeMapsRequest(t *testing.T) {
 	handler := NewHandler(&mockLinkUseCase{}, visitService)
 
 	w := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "/api/link_visits?range=%5B0%2C4%5D", nil)
+	req := httptest.NewRequest(http.MethodGet, "/link_visits?range=%5B0%2C4%5D", nil)
 	newHandlerRouter(handler).ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
