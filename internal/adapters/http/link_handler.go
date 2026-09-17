@@ -157,7 +157,7 @@ func (h *Handler) ListLinks(c *gin.Context) {
 	if rangeParam == "" {
 		links, err := h.linkService.ListLinks(c.Request.Context())
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, errJSON("internal server error"))
+			c.JSON(http.StatusInternalServerError, errJSON(errInternal))
 			return
 		}
 

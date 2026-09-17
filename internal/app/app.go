@@ -48,7 +48,6 @@ func setupRouter(linkHandler *httpadapter.Handler) *gin.Engine {
 	router.Use(gin.Recovery())
 
 	router.TrustedPlatform = gin.PlatformCloudflare
-	_ = router.SetTrustedProxies([]string{"127.0.0.1", "::1"})
 
 	router.GET("/ping", func(c *gin.Context) {
 		c.String(http.StatusOK, "pong")
