@@ -21,9 +21,11 @@ func TestNewURL(t *testing.T) {
 		{"scheme-less local ip with port", "127.0.0.1:3000", "https://127.0.0.1:3000", false},
 		{"http localhost", "http://localhost:3000/x", "http://localhost:3000/x", false},
 		{"path preserved", "example.com/foo?x=1", "https://example.com/foo?x=1", false},
+		{"surrounding spaces are trimmed", "  ya.ru  ", "https://ya.ru", false},
 		{"unsupported scheme", "ftp://x", "", true},
 		{"javascript scheme", "javascript:alert(1)", "", true},
 		{"empty", "", "", true},
+		{"whitespace only", "   ", "", true},
 		{"no host", "http://", "", true},
 	}
 
