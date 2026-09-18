@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"testing"
@@ -62,9 +61,12 @@ func TestGetLink(t *testing.T) {
 	w := performRequest(t, tx.router, "GET", fmt.Sprintf("/api/links/%d", created.ID), "")
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	expected, err := json.Marshal(created)
-	require.NoError(t, err)
-	assert.JSONEq(t, string(expected), w.Body.String())
+	var got application.LinkView
+	decode(t, w, &got)
+	assert.Equal(t, created.ID, got.ID)
+	assert.Equal(t, created.OriginalURL, got.OriginalURL)
+	assert.Equal(t, created.ShortName, got.ShortName)
+	assert.Equal(t, created.ShortURL, got.ShortURL)
 }
 
 func TestUpdateLink(t *testing.T) {

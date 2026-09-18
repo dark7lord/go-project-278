@@ -48,6 +48,12 @@ func TestUpdateLinkValidation(t *testing.T) {
 			wantStatus: http.StatusUnprocessableEntity,
 			wantField:  testFieldShortName,
 		},
+		{
+			name:       "short name cannot contain slash",
+			body:       `{"original_url": "https://update-slash.com", "short_name": "ab/cd"}`,
+			wantStatus: http.StatusUnprocessableEntity,
+			wantField:  testFieldShortName,
+		},
 	}
 
 	for _, tt := range tests {
@@ -96,6 +102,24 @@ func TestCreateLinkValidation(t *testing.T) {
 		{
 			name:       "short name too long",
 			body:       `{"original_url": "https://long.com", "short_name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}`,
+			wantStatus: http.StatusUnprocessableEntity,
+			wantField:  testFieldShortName,
+		},
+		{
+			name:       "short name cannot contain slash",
+			body:       `{"original_url": "https://slash.com", "short_name": "ab/cd"}`,
+			wantStatus: http.StatusUnprocessableEntity,
+			wantField:  testFieldShortName,
+		},
+		{
+			name:       "short name cannot contain query characters",
+			body:       `{"original_url": "https://query.com", "short_name": "abc?x=1"}`,
+			wantStatus: http.StatusUnprocessableEntity,
+			wantField:  testFieldShortName,
+		},
+		{
+			name:       "short name cannot contain fragment",
+			body:       `{"original_url": "https://frag.com", "short_name": "abc#frag"}`,
 			wantStatus: http.StatusUnprocessableEntity,
 			wantField:  testFieldShortName,
 		},
