@@ -124,7 +124,13 @@ func Run() error {
 
 	router := buildApp(cfg, dbConn)
 
-	if err := router.Run(":8080"); err != nil {
+	server := &http.Server{
+		Addr:              ":8080",
+		Handler:           http.TimeoutHandler(router, cfg.RequestTimeout, `{"error":"request timeout"}`),
+		ReadHeaderTimeout: 5 * time.Second,
+	}
+
+	if err := server.ListenAndServe(); err != nil {
 		return fmt.Errorf("failed to run server: %w", err)
 	}
 

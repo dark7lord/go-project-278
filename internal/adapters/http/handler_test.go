@@ -1,9 +1,12 @@
 package httpadapter
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -191,4 +194,67 @@ func TestHandlerGetLinkRejectsInvalidID(t *testing.T) {
 	var body map[string]string
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &body))
 	assert.Equal(t, errInvalidID, body["error"])
+}
+
+func TestHandlerCreateLinkHidesInternalError(t *testing.T) {
+	rawErr := errors.New("postgres: dial tcp 127.0.0.1:5432: connection refused")
+	linkService := &mockLinkUseCase{}
+	linkService.
+		On("CreateLink", mock.Anything, application.CreateLinkCommand{
+			OriginalURL: "https://boom.example",
+			ShortName:   "boomlink",
+		}).
+		Return(application.LinkView{}, rawErr).
+		Once()
+	handler := NewHandler(linkService, &mockVisitUseCase{})
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/links", strings.NewReader(`{"original_url":"https://boom.example","short_name":"boomlink"}`))
+	req.Header.Set("Content-Type", "application/json")
+	newHandlerRouter(handler).ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	assert.JSONEq(t, `{"error":"internal error"}`, w.Body.String())
+	assert.NotContains(t, w.Body.String(), "connection refused")
+	linkService.AssertExpectations(t)
+}
+
+func TestHandlerContextDeadlineMapsTo504(t *testing.T) {
+	linkService := &mockLinkUseCase{}
+	linkService.
+		On("ListLinks", mock.Anything).
+		Return([]application.LinkView{}, context.DeadlineExceeded).
+		Once()
+	handler := NewHandler(linkService, &mockVisitUseCase{})
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/links", nil)
+	newHandlerRouter(handler).ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusGatewayTimeout, w.Code)
+	assert.JSONEq(t, `{"error":"request timeout"}`, w.Body.String())
+	linkService.AssertExpectations(t)
+}
+
+func TestHandlerUpdateLinkHidesInternalError(t *testing.T) {
+	rawErr := errors.New("postgres: dial tcp 127.0.0.1:5432: connection refused")
+	linkService := &mockLinkUseCase{}
+	linkService.
+		On("UpdateLink", mock.Anything, int64(1), application.UpdateLinkCommand{
+			OriginalURL: "https://boom.example",
+			ShortName:   "boomlink",
+		}).
+		Return(application.LinkView{}, rawErr).
+		Once()
+	handler := NewHandler(linkService, &mockVisitUseCase{})
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPut, "/links/1", strings.NewReader(`{"original_url":"https://boom.example","short_name":"boomlink"}`))
+	req.Header.Set("Content-Type", "application/json")
+	newHandlerRouter(handler).ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	assert.JSONEq(t, `{"error":"internal error"}`, w.Body.String())
+	assert.NotContains(t, w.Body.String(), "connection refused")
+	linkService.AssertExpectations(t)
 }

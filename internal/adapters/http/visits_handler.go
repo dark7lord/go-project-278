@@ -15,7 +15,7 @@ func (h *Handler) ListVisits(c *gin.Context) {
 	if rangeParam == "" {
 		visits, err := h.visitService.ListLinkVisits(c.Request.Context())
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, errJSON(errInternal))
+			writeServiceError(c, err)
 			return
 		}
 
@@ -38,7 +38,7 @@ func (h *Handler) ListVisits(c *gin.Context) {
 		},
 	)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, errJSON(errInternal))
+		writeServiceError(c, err)
 		return
 	}
 

@@ -2,6 +2,7 @@
 package httpadapter
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"regexp"
@@ -67,14 +68,28 @@ func writeBindErrors(c *gin.Context, err error) {
 	c.JSON(http.StatusBadRequest, errJSON("invalid request"))
 }
 
-// writeFieldErrors returns 422 for field errors, otherwise 400.
-func writeFieldErrors(c *gin.Context, err error) {
+// writeServiceError maps an application error to a stable HTTP response.
+// Only classified errors are exposed to the client; everything else is logged
+// and reported as a generic 500 so internal details never leak.
+func writeServiceError(c *gin.Context, err error) {
 	var fe *application.FieldError
 	if errors.As(err, &fe) {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{"errors": gin.H{fe.Field: fe.Error()}})
 		return
 	}
-	c.JSON(http.StatusBadRequest, errJSON(err.Error()))
+
+	if errors.Is(err, application.ErrNotFound) {
+		c.JSON(http.StatusNotFound, errJSON(err.Error()))
+		return
+	}
+
+	if errors.Is(err, context.DeadlineExceeded) {
+		c.JSON(http.StatusGatewayTimeout, errJSON("request timeout"))
+		return
+	}
+
+	_ = c.Error(err)
+	c.JSON(http.StatusInternalServerError, errJSON(errInternal))
 }
 
 // Handler handles HTTP requests for links.
@@ -106,11 +121,7 @@ func (h *Handler) CreateLink(c *gin.Context) {
 	cmd := application.CreateLinkCommand{OriginalURL: req.OriginalURL, ShortName: req.ShortName}
 	link, err := h.linkService.CreateLink(c.Request.Context(), cmd)
 	if err != nil {
-		if errors.Is(err, application.ErrNotFound) {
-			c.JSON(http.StatusNotFound, errJSON(err.Error()))
-			return
-		}
-		writeFieldErrors(c, err)
+		writeServiceError(c, err)
 
 		return
 	}
@@ -128,12 +139,7 @@ func (h *Handler) GetLink(c *gin.Context) {
 
 	link, err := h.linkService.GetLinkByID(c.Request.Context(), id)
 	if err != nil {
-		if errors.Is(err, application.ErrNotFound) {
-			c.JSON(http.StatusNotFound, errJSON(err.Error()))
-			return
-		}
-
-		c.JSON(http.StatusInternalServerError, errJSON(errInternal))
+		writeServiceError(c, err)
 
 		return
 	}
@@ -157,7 +163,7 @@ func (h *Handler) ListLinks(c *gin.Context) {
 	if rangeParam == "" {
 		links, err := h.linkService.ListLinks(c.Request.Context())
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, errJSON(errInternal))
+			writeServiceError(c, err)
 			return
 		}
 
@@ -174,7 +180,7 @@ func (h *Handler) ListLinks(c *gin.Context) {
 
 	page, err := h.linkService.ListLinksRange(c.Request.Context(), application.ListLinksQuery{Start: start, End: end})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, errJSON(errInternal))
+		writeServiceError(c, err)
 		return
 	}
 
@@ -204,11 +210,7 @@ func (h *Handler) UpdateLink(c *gin.Context) {
 	cmd := application.UpdateLinkCommand{OriginalURL: req.OriginalURL, ShortName: req.ShortName}
 	updated, err := h.linkService.UpdateLink(c.Request.Context(), id, cmd)
 	if err != nil {
-		if errors.Is(err, application.ErrNotFound) {
-			c.JSON(http.StatusNotFound, errJSON(err.Error()))
-			return
-		}
-		writeFieldErrors(c, err)
+		writeServiceError(c, err)
 
 		return
 	}
@@ -226,11 +228,7 @@ func (h *Handler) DeleteLink(c *gin.Context) {
 
 	_, err = h.linkService.DeleteLink(c.Request.Context(), id)
 	if err != nil {
-		if errors.Is(err, application.ErrNotFound) {
-			c.JSON(http.StatusNotFound, errJSON(err.Error()))
-			return
-		}
-		c.JSON(http.StatusInternalServerError, errJSON(errInternal))
+		writeServiceError(c, err)
 
 		return
 	}
@@ -258,12 +256,7 @@ func (h *Handler) Redirect(c *gin.Context) {
 	})
 
 	if err != nil {
-		if errors.Is(err, application.ErrNotFound) {
-			c.JSON(http.StatusNotFound, errJSON(err.Error()))
-			return
-		}
-
-		c.JSON(http.StatusInternalServerError, errJSON(errInternal))
+		writeServiceError(c, err)
 
 		return
 	}
