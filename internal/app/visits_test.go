@@ -23,6 +23,7 @@ func TestVisitsPagination(t *testing.T) {
 		rangeQuery  string
 		rangeHeader string
 		seedCount   int
+		start       int
 		wantStatus  int
 		wantRange   string
 		wantLen     int
@@ -31,6 +32,7 @@ func TestVisitsPagination(t *testing.T) {
 			name:       "first page",
 			rangeQuery: "[0,4]",
 			seedCount:  15,
+			start:      0,
 			wantStatus: http.StatusOK,
 			wantRange:  "link_visits 0-4/15",
 			wantLen:    5,
@@ -39,6 +41,7 @@ func TestVisitsPagination(t *testing.T) {
 			name:       "middle page",
 			rangeQuery: "[5,9]",
 			seedCount:  15,
+			start:      5,
 			wantStatus: http.StatusOK,
 			wantRange:  "link_visits 5-9/15",
 			wantLen:    5,
@@ -47,6 +50,7 @@ func TestVisitsPagination(t *testing.T) {
 			name:       "last partial page",
 			rangeQuery: "[10,14]",
 			seedCount:  15,
+			start:      10,
 			wantStatus: http.StatusOK,
 			wantRange:  "link_visits 10-14/15",
 			wantLen:    5,
@@ -81,6 +85,7 @@ func TestVisitsPagination(t *testing.T) {
 			name:        "range header first page",
 			rangeHeader: "[2,6]",
 			seedCount:   15,
+			start:       2,
 			wantStatus:  http.StatusOK,
 			wantRange:   "link_visits 2-6/15",
 			wantLen:     5,
@@ -90,6 +95,7 @@ func TestVisitsPagination(t *testing.T) {
 			rangeQuery:  "[3,7]",
 			rangeHeader: "[0,9]",
 			seedCount:   15,
+			start:       3,
 			wantStatus:  http.StatusOK,
 			wantRange:   "link_visits 3-7/15",
 			wantLen:     5,
@@ -104,9 +110,10 @@ func TestVisitsPagination(t *testing.T) {
 			created, err := tx.repo.CreateLink(ctx, link.OriginalURL, link.ShortName, link.ShortURL)
 			require.NoError(t, err)
 
+			var seeds []application.VisitView
 			for i := range tt.seedCount {
 				ref := fmt.Sprintf("https://ref-%d.com", i)
-				_, err := tx.repo.CreateLinkVisit(
+				visit, err := tx.repo.CreateLinkVisit(
 					ctx, created.ID,
 					fmt.Sprintf("10.0.0.%d", i),
 					fmt.Sprintf("agent-%d", i),
@@ -114,6 +121,7 @@ func TestVisitsPagination(t *testing.T) {
 					int32(http.StatusFound),
 				)
 				require.NoError(t, err)
+				seeds = append(seeds, visit)
 			}
 
 			urlStr := "/api/link_visits"
@@ -125,7 +133,8 @@ func TestVisitsPagination(t *testing.T) {
 			if tt.rangeHeader != "" {
 				req.Header.Set("Range", tt.rangeHeader)
 			}
-			w := serve(t, tx.router, req)
+			w := httptest.NewRecorder()
+			tx.router.ServeHTTP(w, req)
 
 			assert.Equal(t, tt.wantStatus, w.Code)
 
@@ -137,6 +146,13 @@ func TestVisitsPagination(t *testing.T) {
 				var visits []application.VisitView
 				decode(t, w, &visits)
 				assert.Len(t, visits, tt.wantLen)
+
+				if tt.wantLen > 0 {
+					for i, visit := range visits {
+						assert.Equal(t, seeds[tt.start+i].ID, visit.ID)
+						assert.Equal(t, seeds[tt.start+i].IP, visit.IP)
+					}
+				}
 			}
 		})
 	}
@@ -155,7 +171,8 @@ func TestRedirectRecordsVisit(t *testing.T) {
 	req := httptest.NewRequest("GET", "/r/"+created.ShortName, nil)
 	req.Header.Set("User-Agent", "test-agent")
 	req.Header.Set("Referer", "https://example.com")
-	w := serve(t, tx.router, req)
+	w := httptest.NewRecorder()
+	tx.router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusFound, w.Code)
 

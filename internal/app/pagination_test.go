@@ -3,13 +3,14 @@ package app
 import (
 	"context"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"code/internal/db"
+	"code/internal/application"
 )
 
 func TestLinksPagination(t *testing.T) {
@@ -22,6 +23,7 @@ func TestLinksPagination(t *testing.T) {
 		rangeQuery  string
 		rangeHeader string
 		seedCount   int
+		start       int
 		wantStatus  int
 		wantRange   string
 		wantLen     int
@@ -30,6 +32,7 @@ func TestLinksPagination(t *testing.T) {
 			name:       "first page",
 			rangeQuery: "[0,4]",
 			seedCount:  15,
+			start:      0,
 			wantStatus: http.StatusOK,
 			wantRange:  "links 0-4/15",
 			wantLen:    5,
@@ -38,6 +41,7 @@ func TestLinksPagination(t *testing.T) {
 			name:       "middle page",
 			rangeQuery: "[5,9]",
 			seedCount:  15,
+			start:      5,
 			wantStatus: http.StatusOK,
 			wantRange:  "links 5-9/15",
 			wantLen:    5,
@@ -46,6 +50,7 @@ func TestLinksPagination(t *testing.T) {
 			name:       "last partial page",
 			rangeQuery: "[10,14]",
 			seedCount:  15,
+			start:      10,
 			wantStatus: http.StatusOK,
 			wantRange:  "links 10-14/15",
 			wantLen:    5,
@@ -54,6 +59,7 @@ func TestLinksPagination(t *testing.T) {
 			name:       "range with spaces",
 			rangeQuery: "[1, 5]",
 			seedCount:  15,
+			start:      1,
 			wantStatus: http.StatusOK,
 			wantRange:  "links 1-5/15",
 			wantLen:    5,
@@ -96,6 +102,7 @@ func TestLinksPagination(t *testing.T) {
 			name:        "range header applies without query param",
 			rangeHeader: "[2,6]",
 			seedCount:   15,
+			start:       2,
 			wantStatus:  http.StatusOK,
 			wantRange:   "links 2-6/15",
 			wantLen:     5,
@@ -105,6 +112,7 @@ func TestLinksPagination(t *testing.T) {
 			rangeQuery:  "[3,7]",
 			rangeHeader: "[0,9]",
 			seedCount:   15,
+			start:       3,
 			wantStatus:  http.StatusOK,
 			wantRange:   "links 3-7/15",
 			wantLen:     5,
@@ -115,10 +123,12 @@ func TestLinksPagination(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tx := setupTestTx(t, td)
 
+			var seeds []application.LinkView
 			for i := range tt.seedCount {
 				l := linkFactory(i)
-				_, err := tx.repo.CreateLink(ctx, l.OriginalURL, l.ShortName, l.ShortURL)
+				created, err := tx.repo.CreateLink(ctx, l.OriginalURL, l.ShortName, l.ShortURL)
 				require.NoError(t, err)
+				seeds = append(seeds, created)
 			}
 
 			urlStr := "/api/links"
@@ -130,7 +140,8 @@ func TestLinksPagination(t *testing.T) {
 			if tt.rangeHeader != "" {
 				req.Header.Set("Range", tt.rangeHeader)
 			}
-			w := serve(t, tx.router, req)
+			w := httptest.NewRecorder()
+			tx.router.ServeHTTP(w, req)
 
 			assert.Equal(t, tt.wantStatus, w.Code)
 
@@ -139,9 +150,19 @@ func TestLinksPagination(t *testing.T) {
 			}
 
 			if w.Code == http.StatusOK {
-				var links []db.Link
+				var links []application.LinkView
 				decode(t, w, &links)
 				assert.Len(t, links, tt.wantLen)
+
+				if tt.wantLen == 0 {
+					return
+				}
+				if tt.rangeQuery == "" && tt.rangeHeader == "" {
+					assert.ElementsMatch(t, seeds, links)
+
+					return
+				}
+				assert.Equal(t, seeds[tt.start:tt.start+tt.wantLen], links)
 			}
 		})
 	}

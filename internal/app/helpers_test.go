@@ -169,14 +169,6 @@ func linkFactory(i int) db.Link {
 	}
 }
 
-func serve(t *testing.T, r *gin.Engine, req *http.Request) *httptest.ResponseRecorder {
-	t.Helper()
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-
-	return w
-}
-
 func performRequest(t *testing.T, r *gin.Engine, method, path, body string) *httptest.ResponseRecorder {
 	t.Helper()
 	var req *http.Request
@@ -187,7 +179,10 @@ func performRequest(t *testing.T, r *gin.Engine, method, path, body string) *htt
 		req = httptest.NewRequest(method, path, nil)
 	}
 
-	return serve(t, r, req)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	return w
 }
 
 func decode(t *testing.T, w *httptest.ResponseRecorder, v any) {

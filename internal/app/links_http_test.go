@@ -7,9 +7,11 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"code/internal/application"
 	"code/internal/db"
 )
 
@@ -22,6 +24,19 @@ func TestCreateLink(t *testing.T) {
 		body := `{"original_url": "https://example.com", "short_name": "my-link"}`
 		w := performRequest(t, tx.router, "POST", "/api/links", body)
 		assert.Equal(t, http.StatusCreated, w.Code)
+
+		var created application.LinkView
+		decode(t, w, &created)
+		assert.Equal(t, "https://example.com", created.OriginalURL)
+		assert.Equal(t, "my-link", created.ShortName)
+		assert.Equal(t, "http://localhost:8080/r/my-link", created.ShortURL)
+		assert.Greater(t, created.ID, int64(0))
+
+		stored, err := tx.queries.GetLinkByID(ctx, created.ID)
+		require.NoError(t, err)
+		assert.Equal(t, "https://example.com", stored.OriginalURL)
+		assert.Equal(t, "my-link", stored.ShortName)
+		assert.Equal(t, "http://localhost:8080/r/my-link", stored.ShortURL)
 	})
 
 	t.Run("duplicate short name", func(t *testing.T) {
@@ -64,6 +79,19 @@ func TestUpdateLink(t *testing.T) {
 		body := `{"original_url": "https://updated.com", "short_name": "updated-link"}`
 		w := performRequest(t, tx.router, "PUT", fmt.Sprintf("/api/links/%d", created.ID), body)
 		assert.Equal(t, http.StatusOK, w.Code)
+
+		var got application.LinkView
+		decode(t, w, &got)
+		assert.Equal(t, created.ID, got.ID)
+		assert.Equal(t, "https://updated.com", got.OriginalURL)
+		assert.Equal(t, "updated-link", got.ShortName)
+		assert.Equal(t, "http://localhost:8080/r/updated-link", got.ShortURL)
+
+		stored, err := tx.queries.GetLinkByID(ctx, created.ID)
+		require.NoError(t, err)
+		assert.Equal(t, "https://updated.com", stored.OriginalURL)
+		assert.Equal(t, "updated-link", stored.ShortName)
+		assert.Equal(t, "http://localhost:8080/r/updated-link", stored.ShortURL)
 	})
 
 	t.Run("duplicate short name", func(t *testing.T) {
@@ -115,6 +143,9 @@ func TestDeleteLink(t *testing.T) {
 	w := performRequest(t, tx.router, "DELETE", fmt.Sprintf("/api/links/%d", created.ID), "")
 	assert.Equal(t, http.StatusNoContent, w.Code)
 	assert.Empty(t, w.Body.String())
+
+	_, err = tx.queries.GetLinkByID(ctx, created.ID)
+	assert.ErrorIs(t, err, pgx.ErrNoRows)
 }
 
 func TestListLinks(t *testing.T) {

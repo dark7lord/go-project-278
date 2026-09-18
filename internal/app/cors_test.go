@@ -16,7 +16,8 @@ func TestCORSPreflightAllowsHeadersAndMethods(t *testing.T) {
 	req.Header.Set("Access-Control-Request-Method", http.MethodPost)
 	req.Header.Set("Access-Control-Request-Headers", "Content-Type, Range")
 
-	w := serve(t, td.router, req)
+	w := httptest.NewRecorder()
+	td.router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusNoContent, w.Code)
 	assert.Equal(t, "http://localhost:5173", w.Header().Get("Access-Control-Allow-Origin"))
@@ -30,7 +31,8 @@ func TestCORSExposesContentRange(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/api/links", nil)
 	req.Header.Set("Origin", "http://localhost:5173")
 
-	w := serve(t, td.router, req)
+	w := httptest.NewRecorder()
+	td.router.ServeHTTP(w, req)
 
 	assert.Equal(t, "http://localhost:5173", w.Header().Get("Access-Control-Allow-Origin"))
 	assert.Contains(t, w.Header().Get("Access-Control-Expose-Headers"), "Content-Range")

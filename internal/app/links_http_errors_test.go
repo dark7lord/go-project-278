@@ -31,6 +31,12 @@ func TestUpdateLinkValidation(t *testing.T) {
 			wantField:  testFieldOriginalURL,
 		},
 		{
+			name:       "original_url absent",
+			body:       `{"short_name": "ok-link"}`,
+			wantStatus: http.StatusUnprocessableEntity,
+			wantField:  testFieldOriginalURL,
+		},
+		{
 			name:       "short name too short",
 			body:       `{"original_url": "https://short.com", "short_name": "x"}`,
 			wantStatus: http.StatusUnprocessableEntity,
@@ -72,6 +78,12 @@ func TestCreateLinkValidation(t *testing.T) {
 		{
 			name:       "missing original_url",
 			body:       `{"original_url": "", "short_name": "ok-link"}`,
+			wantStatus: http.StatusUnprocessableEntity,
+			wantField:  testFieldOriginalURL,
+		},
+		{
+			name:       "unsupported scheme",
+			body:       `{"original_url": "ftp://example.com", "short_name": "ok-link"}`,
 			wantStatus: http.StatusUnprocessableEntity,
 			wantField:  testFieldOriginalURL,
 		},
