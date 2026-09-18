@@ -9,9 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	httpadapter "code/internal/adapters/http"
-	postgresadapter "code/internal/adapters/postgres"
-	"code/internal/application"
-	"code/internal/db"
 )
 
 func TestConnectDBInvalidDSN(t *testing.T) {
@@ -25,14 +22,7 @@ func TestConnectDBUnreachable(t *testing.T) {
 }
 
 func TestPingRoute(t *testing.T) {
-	repo := postgresadapter.NewLinkRepository(db.New(nil))
-	svc := application.NewServiceWithGenerator(application.ServiceDeps{
-		LinkReader:    repo,
-		LinkWriter:    repo,
-		VisitReader:   repo,
-		VisitRecorder: repo,
-	}, "http://localhost:8080", stubGenerator{})
-	router := setupRouter(httpadapter.NewHandler(svc, svc))
+	router := setupRouter(httpadapter.NewHandler(nil, nil))
 
 	w := performRequest(t, router, "GET", "/ping", "")
 

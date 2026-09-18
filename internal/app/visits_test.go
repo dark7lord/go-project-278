@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"code/internal/db"
+	"code/internal/application"
 )
 
 func TestVisitsPagination(t *testing.T) {
@@ -134,7 +134,7 @@ func TestVisitsPagination(t *testing.T) {
 			}
 
 			if w.Code == http.StatusOK {
-				var visits []db.LinkVisit
+				var visits []application.VisitView
 				decode(t, w, &visits)
 				assert.Len(t, visits, tt.wantLen)
 			}

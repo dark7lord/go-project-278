@@ -3,7 +3,7 @@ package shortcode
 
 import (
 	"fmt"
-	"math/rand"
+	"math/rand/v2"
 )
 
 var colors = []string{"red", "orange", "yellow", "green", "cyan", "blue", "purple"}
@@ -18,9 +18,9 @@ func NewGenerator() *Generator {
 
 // Generate creates a short code in the format color-color-link-number.
 func (g *Generator) Generate() string {
-	prefixColor := colors[rand.Intn(len(colors))]
-	infixColor := colors[rand.Intn(len(colors))]
-	suffixNum := rand.Intn(1024)
+	prefixColor := colors[rand.IntN(len(colors))]
+	infixColor := colors[rand.IntN(len(colors))]
+	suffixNum := rand.IntN(1024)
 
 	return fmt.Sprintf("%s-%s-link-%d", prefixColor, infixColor, suffixNum)
 }
