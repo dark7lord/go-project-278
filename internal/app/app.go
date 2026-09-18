@@ -4,7 +4,11 @@ package app
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/getsentry/sentry-go"
@@ -130,9 +134,37 @@ func Run() error {
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
-	if err := server.ListenAndServe(); err != nil {
-		return fmt.Errorf("failed to run server: %w", err)
-	}
+	return serveUntilSignal(server)
+}
 
-	return nil
+// serveUntilSignal serves HTTP requests until the server crashes on its own
+// or a shutdown signal (SIGINT/SIGTERM) arrives. On a signal it drains
+// in-flight requests via http.Server.Shutdown and returns nil.
+func serveUntilSignal(server *http.Server) error {
+	sigCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	errCh := make(chan error, 1)
+	go func() {
+		log.Printf("[server] listening on 127.0.0.1:8080")
+		errCh <- server.ListenAndServe()
+	}()
+
+	select {
+	case err := <-errCh:
+		return fmt.Errorf("failed to run server: %w", err)
+
+	case <-sigCtx.Done():
+		log.Printf("[server] signal received, shutting down gracefully (timeout 10s)...")
+
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		if err := server.Shutdown(shutdownCtx); err != nil {
+			return fmt.Errorf("graceful shutdown: %w", err)
+		}
+
+		log.Printf("[server] drained in-flight requests, exiting")
+
+		return nil
+	}
 }
