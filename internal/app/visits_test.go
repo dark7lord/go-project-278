@@ -107,7 +107,7 @@ func TestVisitsPagination(t *testing.T) {
 			tx := setupTestTx(t, td)
 
 			link := linkFactory(0)
-			created, err := tx.repo.CreateLink(ctx, link.OriginalURL, link.ShortName, link.ShortURL)
+			created, err := tx.repo.CreateLink(ctx, link.OriginalURL, link.ShortName)
 			require.NoError(t, err)
 
 			var seeds []application.VisitView
@@ -165,7 +165,7 @@ func TestRedirectRecordsVisit(t *testing.T) {
 	tx := setupTestTx(t, td)
 
 	link := linkFactory(0)
-	created, err := tx.repo.CreateLink(ctx, link.OriginalURL, link.ShortName, link.ShortURL)
+	created, err := tx.repo.CreateLink(ctx, link.OriginalURL, link.ShortName)
 	require.NoError(t, err)
 
 	req := httptest.NewRequest("GET", "/r/"+created.ShortName, nil)
@@ -208,7 +208,7 @@ func TestRedirectErrors(t *testing.T) {
 	t.Run("stored url fails to normalize", func(t *testing.T) {
 		tx := setupTestTx(t, td)
 
-		_, err := tx.repo.CreateLink(ctx, "ftp://x", "invalid-url", "http://localhost:8080/invalid-url")
+		_, err := tx.repo.CreateLink(ctx, "ftp://x", "invalid-url")
 		require.NoError(t, err)
 
 		w := performRequest(t, tx.router, "GET", "/r/invalid-url", "")
@@ -236,7 +236,7 @@ func TestLinkVisitsResponseContract(t *testing.T) {
 	tx := setupTestTx(t, td)
 
 	link := linkFactory(0)
-	created, err := tx.repo.CreateLink(ctx, link.OriginalURL, link.ShortName, link.ShortURL)
+	created, err := tx.repo.CreateLink(ctx, link.OriginalURL, link.ShortName)
 	require.NoError(t, err)
 
 	referer := "https://example.com"

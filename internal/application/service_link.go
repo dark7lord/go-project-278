@@ -25,9 +25,9 @@ func (s *Service) CreateLink(ctx context.Context, cmd CreateLinkCommand) (LinkVi
 			if _, err := domainlinks.NewShortCode(shortName); err != nil {
 				continue
 			}
-			link, err := s.linkWriter.CreateLink(ctx, normalized, shortName, s.generateShortLink(shortName))
+			link, err := s.linkWriter.CreateLink(ctx, normalized, shortName)
 			if err == nil {
-				return link, nil
+				return s.withShortURL(link), nil
 			}
 			var fieldErr *FieldError
 			if !errors.As(err, &fieldErr) {
@@ -43,12 +43,12 @@ func (s *Service) CreateLink(ctx context.Context, cmd CreateLinkCommand) (LinkVi
 		}
 	}
 
-	link, err := s.linkWriter.CreateLink(ctx, normalized, shortName, s.generateShortLink(shortName))
+	link, err := s.linkWriter.CreateLink(ctx, normalized, shortName)
 	if err != nil {
 		return LinkView{}, err
 	}
 
-	return link, nil
+	return s.withShortURL(link), nil
 }
 
 // Redirect resolves a short name, validates its destination, and records the visit.
@@ -73,7 +73,7 @@ func (s *Service) Redirect(ctx context.Context, cmd RedirectCommand) (LinkView, 
 		return LinkView{}, fmt.Errorf("record link visit: %w", err)
 	}
 
-	return link, nil
+	return s.withShortURL(link), nil
 }
 
 // GetLinkByID retrieves a link by its ID.
@@ -83,7 +83,7 @@ func (s *Service) GetLinkByID(ctx context.Context, id int64) (LinkView, error) {
 		return LinkView{}, fmt.Errorf("get link: %w", err)
 	}
 
-	return link, nil
+	return s.withShortURL(link), nil
 }
 
 // GetLinkByShortName retrieves a link by its short name.
@@ -93,7 +93,7 @@ func (s *Service) GetLinkByShortName(ctx context.Context, shortName string) (Lin
 		return LinkView{}, fmt.Errorf("get link: %w", err)
 	}
 
-	return link, nil
+	return s.withShortURL(link), nil
 }
 
 // ListLinks retrieves all links.
@@ -104,6 +104,10 @@ func (s *Service) ListLinks(ctx context.Context) ([]LinkView, error) {
 	}
 	if links == nil {
 		return []LinkView{}, nil
+	}
+
+	for i := range links {
+		links[i] = s.withShortURL(links[i])
 	}
 
 	return links, nil
@@ -122,6 +126,10 @@ func (s *Service) ListLinksRange(ctx context.Context, q ListLinksQuery) (RangePa
 	}
 	if links == nil {
 		links = []LinkView{}
+	}
+
+	for i := range links {
+		links[i] = s.withShortURL(links[i])
 	}
 
 	return RangePage[LinkView]{Items: links, Start: q.Start, Total: totalLinks}, nil
@@ -144,9 +152,9 @@ func (s *Service) UpdateLink(ctx context.Context, id int64, cmd UpdateLinkComman
 			if _, err := domainlinks.NewShortCode(shortName); err != nil {
 				continue
 			}
-			updated, err := s.linkWriter.UpdateLink(ctx, id, normalized, shortName, s.generateShortLink(shortName))
+			updated, err := s.linkWriter.UpdateLink(ctx, id, normalized, shortName)
 			if err == nil {
-				return updated, nil
+				return s.withShortURL(updated), nil
 			}
 			var fieldErr *FieldError
 			if !errors.As(err, &fieldErr) {
@@ -162,12 +170,12 @@ func (s *Service) UpdateLink(ctx context.Context, id int64, cmd UpdateLinkComman
 		}
 	}
 
-	updated, err := s.linkWriter.UpdateLink(ctx, id, normalized, shortName, s.generateShortLink(shortName))
+	updated, err := s.linkWriter.UpdateLink(ctx, id, normalized, shortName)
 	if err != nil {
 		return LinkView{}, err
 	}
 
-	return updated, nil
+	return s.withShortURL(updated), nil
 }
 
 // DeleteLink deletes a link by its ID.
@@ -177,5 +185,5 @@ func (s *Service) DeleteLink(ctx context.Context, id int64) (LinkView, error) {
 		return LinkView{}, fmt.Errorf("delete link: %w", err)
 	}
 
-	return link, nil
+	return s.withShortURL(link), nil
 }

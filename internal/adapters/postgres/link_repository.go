@@ -14,7 +14,6 @@ import (
 
 const (
 	shortNameConstraint = "links_short_name_key"
-	shortURLConstraint  = "links_short_url_key"
 	maxPageSize         = 1000
 )
 
@@ -49,7 +48,6 @@ func toLinkView(link db.Link) application.LinkView {
 		ID:          link.ID,
 		OriginalURL: link.OriginalURL,
 		ShortName:   link.ShortName,
-		ShortURL:    link.ShortURL,
 	}
 }
 
@@ -70,13 +68,8 @@ func mapStorageError(err error) error {
 	}
 
 	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-		switch pgErr.ConstraintName {
-		case shortNameConstraint:
-			return &application.FieldError{Field: "short_name", Err: application.ErrShortNameAlreadyUse}
-		case shortURLConstraint:
-			return &application.FieldError{Field: "short_url", Err: application.ErrShortURLAlreadyUse}
-		}
+	if errors.As(err, &pgErr) && pgErr.Code == "23505" && pgErr.ConstraintName == shortNameConstraint {
+		return &application.FieldError{Field: "short_name", Err: application.ErrShortNameAlreadyUse}
 	}
 
 	return err
@@ -125,23 +118,25 @@ func (r *LinkRepository) CountLinks(ctx context.Context) (int64, error) {
 }
 
 // CreateLink inserts a new link.
-func (r *LinkRepository) CreateLink(ctx context.Context, originalURL, shortName, shortURL string) (application.LinkView, error) {
+func (r *LinkRepository) CreateLink(ctx context.Context, originalURL, shortName string) (application.LinkView, error) {
 	link, err := r.queries.CreateLink(ctx, db.CreateLinkParams{
 		OriginalURL: originalURL,
 		ShortName:   shortName,
-		ShortURL:    shortURL,
 	})
 
 	return toLinkView(link), mapStorageError(err)
 }
 
 // UpdateLink updates an existing link.
-func (r *LinkRepository) UpdateLink(ctx context.Context, id int64, originalURL, shortName, shortURL string) (application.LinkView, error) {
+func (r *LinkRepository) UpdateLink(
+	ctx context.Context,
+	id int64,
+	originalURL, shortName string,
+) (application.LinkView, error) {
 	link, err := r.queries.UpdateLink(ctx, db.UpdateLinkParams{
 		ID:          id,
 		OriginalURL: originalURL,
 		ShortName:   shortName,
-		ShortURL:    shortURL,
 	})
 
 	return toLinkView(link), mapStorageError(err)
@@ -155,7 +150,13 @@ func (r *LinkRepository) DeleteLink(ctx context.Context, id int64) (application.
 }
 
 // CreateLinkVisit records a visit for the given link.
-func (r *LinkRepository) CreateLinkVisit(ctx context.Context, linkID int64, ip, userAgent string, referer *string, status int32) (application.VisitView, error) {
+func (r *LinkRepository) CreateLinkVisit(
+	ctx context.Context,
+	linkID int64,
+	ip, userAgent string,
+	referer *string,
+	status int32,
+) (application.VisitView, error) {
 	visit, err := r.queries.CreateLinkVisit(ctx, db.CreateLinkVisitParams{
 		LinkID:    linkID,
 		IP:        ip,

@@ -49,10 +49,15 @@ func normalizeURL(raw string) (string, error) {
 	return parsed.String(), nil
 }
 
-func (s *Service) generateShortLink(shortName string) string {
-	return s.baseURL + "/r/" + shortName
-}
-
 func (s *Service) generateShortCode() string {
 	return s.shortCodeGenerator.Generate()
+}
+
+// withShortURL injects the current short URL into a link view. short_url is
+// derived from the current base URL rather than persisted, so changing the
+// domain never desynchronizes existing records.
+func (s *Service) withShortURL(link LinkView) LinkView {
+	link.ShortURL = s.baseURL + "/r/" + link.ShortName
+
+	return link
 }

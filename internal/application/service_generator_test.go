@@ -26,8 +26,14 @@ func TestServiceCreateLinkUsesInjectedGenerator(t *testing.T) {
 	generator := &fakeShortCodeGenerator{value: testGeneratedCode}
 
 	svc := NewServiceWithGenerator(serviceDeps(nil, writer, nil, nil), "http://localhost:8080", generator)
-	writer.On("CreateLink", mock.Anything, testExampleURL, testGeneratedCode, "http://localhost:8080/r/"+testGeneratedCode).
-		Return(LinkView{OriginalURL: testExampleURL, ShortName: testGeneratedCode, ShortURL: "http://localhost:8080/r/" + testGeneratedCode}, nil).Once()
+	writer.
+		On("CreateLink", mock.Anything, testExampleURL, testGeneratedCode).
+		Return(LinkView{
+			OriginalURL: testExampleURL,
+			ShortName:   testGeneratedCode,
+			ShortURL:    "http://localhost:8080/r/" + testGeneratedCode,
+		}, nil).
+		Once()
 	link, err := svc.CreateLink(context.Background(), CreateLinkCommand{
 		OriginalURL: testExampleURL,
 		ShortName:   "",

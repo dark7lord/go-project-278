@@ -31,5 +31,10 @@ func NewLink(rawURL, code string) (Link, error) {
 }
 
 func (l Link) String() string {
-	return fmt.Sprintf("link{id=%d, original_url=%s, short_name=%s}", l.ID, l.OriginalURL.String(), l.ShortName.String())
+	return fmt.Sprintf(
+		"link{id=%d, original_url=%s, short_name=%s}",
+		l.ID,
+		l.OriginalURL.String(),
+		l.ShortName.String(),
+	)
 }

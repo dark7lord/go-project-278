@@ -170,7 +170,14 @@ func TestHandlerListVisitsRangeMapsRequest(t *testing.T) {
 	visitService := &mockVisitUseCase{}
 	visitService.
 		On("ListLinkVisitsRange", mock.Anything, application.ListLinkVisitsQuery{Start: 0, End: 4}).
-		Return(application.RangePage[application.VisitView]{Items: make([]application.VisitView, 5), Start: 0, Total: 5}, nil).
+		Return(
+			application.RangePage[application.VisitView]{
+				Items: make([]application.VisitView, 5),
+				Start: 0,
+				Total: 5,
+			},
+			nil,
+		).
 		Once()
 	handler := NewHandler(&mockLinkUseCase{}, visitService)
 
@@ -209,7 +216,11 @@ func TestHandlerCreateLinkHidesInternalError(t *testing.T) {
 	handler := NewHandler(linkService, &mockVisitUseCase{})
 
 	w := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodPost, "/links", strings.NewReader(`{"original_url":"https://boom.example","short_name":"boomlink"}`))
+	req := httptest.NewRequest(
+		http.MethodPost,
+		"/links",
+		strings.NewReader(`{"original_url":"https://boom.example","short_name":"boomlink"}`),
+	)
 	req.Header.Set("Content-Type", "application/json")
 	newHandlerRouter(handler).ServeHTTP(w, req)
 
@@ -249,7 +260,11 @@ func TestHandlerUpdateLinkHidesInternalError(t *testing.T) {
 	handler := NewHandler(linkService, &mockVisitUseCase{})
 
 	w := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodPut, "/links/1", strings.NewReader(`{"original_url":"https://boom.example","short_name":"boomlink"}`))
+	req := httptest.NewRequest(
+		http.MethodPut,
+		"/links/1",
+		strings.NewReader(`{"original_url":"https://boom.example","short_name":"boomlink"}`),
+	)
 	req.Header.Set("Content-Type", "application/json")
 	newHandlerRouter(handler).ServeHTTP(w, req)
 

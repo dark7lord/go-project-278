@@ -11,10 +11,11 @@ import (
 )
 
 const (
-	testExampleURL    = "https://example.com"
-	testShortName     = "my-link"
-	testGeneratedCode = "generated-code"
-	testTargetName    = "target"
+	testExampleURL     = "https://example.com"
+	testShortName      = "my-link"
+	testGeneratedCode  = "generated-code"
+	testTargetName     = "target"
+	testTargetShortURL = "http://localhost:8080/r/target"
 )
 
 func TestServiceCreateLink(t *testing.T) {
@@ -64,13 +65,23 @@ func TestServiceCreateLink(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			writer := &mockLinkWriter{}
 			generator := &fakeShortCodeGenerator{value: tt.generator}
-			svc := NewServiceWithGenerator(serviceDeps(nil, writer, nil, nil), "http://localhost:8080", generator)
-			expected := LinkView{OriginalURL: tt.wantURL, ShortName: tt.wantCode, ShortURL: "http://localhost:8080/r/" + tt.wantCode}
-			call := writer.On("CreateLink", mock.Anything, tt.wantURL, tt.wantCode, expected.ShortURL)
+			svc := NewServiceWithGenerator(
+				serviceDeps(nil, writer, nil, nil),
+				"http://localhost:8080",
+				generator,
+			)
+			expected := LinkView{
+				OriginalURL: tt.wantURL,
+				ShortName:   tt.wantCode,
+				ShortURL:    "http://localhost:8080/r/" + tt.wantCode,
+			}
+			call := writer.On("CreateLink", mock.Anything, tt.wantURL, tt.wantCode)
 			if len(tt.repoErrors) > 0 {
 				call.Return(LinkView{}, tt.repoErrors[0]).Once()
-				writer.On("CreateLink", mock.Anything, tt.wantURL, tt.wantCode, expected.ShortURL).
-					Return(expected, nil).Once()
+				writer.
+					On("CreateLink", mock.Anything, tt.wantURL, tt.wantCode).
+					Return(expected, nil).
+					Once()
 			} else {
 				call.Return(expected, nil).Once()
 			}
@@ -109,14 +120,18 @@ func TestServiceCreateLinkRejectsInvalidInput(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			writer := &mockLinkWriter{}
-			svc := NewServiceWithGenerator(serviceDeps(nil, writer, nil, nil), "http://localhost:8080", &fakeShortCodeGenerator{value: testShortCode})
+			svc := NewServiceWithGenerator(
+				serviceDeps(nil, writer, nil, nil),
+				"http://localhost:8080",
+				&fakeShortCodeGenerator{value: testShortCode},
+			)
 
 			_, err := svc.CreateLink(context.Background(), tt.command)
 
 			var fieldErr *FieldError
 			require.ErrorAs(t, err, &fieldErr)
 			assert.Equal(t, tt.wantField, fieldErr.Field)
-			writer.AssertNotCalled(t, "CreateLink", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
+			writer.AssertNotCalled(t, "CreateLink", mock.Anything, mock.Anything, mock.Anything)
 		})
 	}
 }
@@ -124,9 +139,15 @@ func TestServiceCreateLinkRejectsInvalidInput(t *testing.T) {
 func TestServiceCreateLinkReturnsRepositoryError(t *testing.T) {
 	repoErr := errors.New("database unavailable")
 	writer := &mockLinkWriter{}
-	svc := NewServiceWithGenerator(serviceDeps(nil, writer, nil, nil), "http://localhost:8080", &fakeShortCodeGenerator{value: testShortCode})
-	writer.On("CreateLink", mock.Anything, testExampleURL, testShortName, "http://localhost:8080/r/"+testShortName).
-		Return(LinkView{}, repoErr).Once()
+	svc := NewServiceWithGenerator(
+		serviceDeps(nil, writer, nil, nil),
+		"http://localhost:8080",
+		&fakeShortCodeGenerator{value: testShortCode},
+	)
+	writer.
+		On("CreateLink", mock.Anything, testExampleURL, testShortName).
+		Return(LinkView{}, repoErr).
+		Once()
 
 	_, err := svc.CreateLink(context.Background(), CreateLinkCommand{
 		OriginalURL: testExampleURL,

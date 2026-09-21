@@ -50,12 +50,15 @@ check: test lint build clean
 
 
 # Databases
-.PHONY: sqlc-gen goose-up goose-down
+.PHONY: sqlc-gen goose-status goose-up goose-down
 -include .env
 export
 
 sqlc-gen:
 	sqlc generate
+
+goose-status:
+	goose -dir db/migrations postgres $(DATABASE_URL) status
 
 goose-up:
 	goose -dir db/migrations postgres $(DATABASE_URL) up

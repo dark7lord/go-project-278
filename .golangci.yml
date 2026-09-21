@@ -18,9 +18,14 @@ linters:
     - ineffassign
     - unused
     - misspell
+    - lll
   settings:
     nlreturn:
       block-size: 3
+    lll:
+      line-length: 120
+      skip-comments: true
+      tab-width: 1
 
 formatters:
   enable:

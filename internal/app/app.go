@@ -73,8 +73,16 @@ func setupRouter(linkHandler *httpadapter.Handler) *gin.Engine {
 
 func newCORS() gin.HandlerFunc {
 	return cors.New(cors.Config{
-		AllowOrigins:  []string{"http://localhost:5173"},
-		AllowMethods:  []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodHead, http.MethodDelete, http.MethodOptions},
+		AllowOrigins: []string{"http://localhost:5173"},
+		AllowMethods: []string{
+			http.MethodGet,
+			http.MethodPost,
+			http.MethodPut,
+			http.MethodPatch,
+			http.MethodHead,
+			http.MethodDelete,
+			http.MethodOptions,
+		},
 		AllowHeaders:  []string{"Content-Type", "Accept", "Range"},
 		ExposeHeaders: []string{"Content-Range"},
 		MaxAge:        12 * time.Hour,

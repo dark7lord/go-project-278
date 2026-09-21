@@ -3,8 +3,7 @@
 CREATE TABLE IF NOT EXISTS links (
     id              BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     original_url    VARCHAR(2048) NOT NULL,
-    short_name      VARCHAR(50) NOT NULL UNIQUE,
-    short_url       VARCHAR(128) NOT NULL UNIQUE
+    short_name      VARCHAR(50) NOT NULL UNIQUE
 );
 
 CREATE TABLE IF NOT EXISTS link_visits (

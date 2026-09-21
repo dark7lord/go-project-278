@@ -60,7 +60,7 @@ func TestUpdateLinkValidation(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tx := setupTestTx(t, td)
 			ctx := context.Background()
-			created, err := tx.repo.CreateLink(ctx, "https://update-validation.com", "update-validation", "http://localhost:8080/update-validation")
+			created, err := tx.repo.CreateLink(ctx, "https://update-validation.com", "update-validation")
 			require.NoError(t, err)
 
 			w := performRequest(t, tx.router, "PUT", fmt.Sprintf("/api/links/%d", created.ID), tt.body)
@@ -159,7 +159,7 @@ func TestUpdateLinkRejectsUnknownField(t *testing.T) {
 	td := setupTestDB(t)
 	tx := setupTestTx(t, td)
 	ctx := context.Background()
-	created, err := tx.repo.CreateLink(ctx, "https://strict-update.com", "strict-update", "http://localhost:8080/strict-update")
+	created, err := tx.repo.CreateLink(ctx, "https://strict-update.com", "strict-update")
 	require.NoError(t, err)
 
 	w := performRequest(t, tx.router, "PUT", fmt.Sprintf("/api/links/%d", created.ID),
@@ -201,7 +201,12 @@ func TestLinkErrors(t *testing.T) {
 		},
 		{name: "DeleteLink / invalid id", method: "DELETE", path: "/api/links/abc", wantStatus: http.StatusBadRequest},
 		{name: "DeleteLink / zero id", method: http.MethodDelete, path: "/api/links/000", wantStatus: http.StatusBadRequest},
-		{name: "DeleteLink / negative id", method: http.MethodDelete, path: "/api/links/-3", wantStatus: http.StatusBadRequest},
+		{
+			name:       "DeleteLink / negative id",
+			method:     http.MethodDelete,
+			path:       "/api/links/-3",
+			wantStatus: http.StatusBadRequest,
+		},
 		{name: "DeleteLink / not found", method: "DELETE", path: missingLinkPath, wantStatus: http.StatusNotFound},
 	}
 

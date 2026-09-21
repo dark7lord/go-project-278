@@ -7,8 +7,6 @@ var (
 	ErrNotFound = errors.New("link not found")
 	// ErrShortNameAlreadyUse indicates that a short name is already taken.
 	ErrShortNameAlreadyUse = errors.New("short name already in use")
-	// ErrShortURLAlreadyUse indicates that a short URL is already taken.
-	ErrShortURLAlreadyUse = errors.New("short url already in use")
 )
 
 // FieldError associates an application error with a request field.

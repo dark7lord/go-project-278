@@ -14,7 +14,6 @@ import (
 )
 
 func TestLinksPagination(t *testing.T) {
-	// t.Skip("waiting for pagination implementation — handler/service/repo/queries need GetLinksRange and CountLinks")
 	td := setupTestDB(t)
 	ctx := context.Background()
 
@@ -126,8 +125,9 @@ func TestLinksPagination(t *testing.T) {
 			var seeds []application.LinkView
 			for i := range tt.seedCount {
 				l := linkFactory(i)
-				created, err := tx.repo.CreateLink(ctx, l.OriginalURL, l.ShortName, l.ShortURL)
+				created, err := tx.repo.CreateLink(ctx, l.OriginalURL, l.ShortName)
 				require.NoError(t, err)
+				created.ShortURL = "http://localhost:8080/r/" + created.ShortName
 				seeds = append(seeds, created)
 			}
 

@@ -39,8 +39,8 @@ func (f *fakeLinkReader) CountLinks(_ context.Context) (int64, error) {
 
 type mockLinkWriter struct{ mock.Mock }
 
-func (m *mockLinkWriter) CreateLink(ctx context.Context, originalURL, shortName, shortURL string) (LinkView, error) {
-	args := m.Called(ctx, originalURL, shortName, shortURL)
+func (m *mockLinkWriter) CreateLink(ctx context.Context, originalURL, shortName string) (LinkView, error) {
+	args := m.Called(ctx, originalURL, shortName)
 	var link LinkView
 	if value := args.Get(0); value != nil {
 		link = value.(LinkView)
@@ -49,8 +49,8 @@ func (m *mockLinkWriter) CreateLink(ctx context.Context, originalURL, shortName,
 	return link, args.Error(1)
 }
 
-func (m *mockLinkWriter) UpdateLink(ctx context.Context, id int64, originalURL, shortName, shortURL string) (LinkView, error) {
-	args := m.Called(ctx, id, originalURL, shortName, shortURL)
+func (m *mockLinkWriter) UpdateLink(ctx context.Context, id int64, originalURL, shortName string) (LinkView, error) {
+	args := m.Called(ctx, id, originalURL, shortName)
 	var link LinkView
 	if value := args.Get(0); value != nil {
 		link = value.(LinkView)
@@ -98,7 +98,13 @@ func (f *fakeVisitReader) CountLinkVisits(_ context.Context) (int64, error) {
 
 type mockVisitRecorder struct{ mock.Mock }
 
-func (m *mockVisitRecorder) CreateLinkVisit(ctx context.Context, linkID int64, ip, userAgent string, referer *string, status int32) (VisitView, error) {
+func (m *mockVisitRecorder) CreateLinkVisit(
+	ctx context.Context,
+	linkID int64,
+	ip, userAgent string,
+	referer *string,
+	status int32,
+) (VisitView, error) {
 	args := m.Called(ctx, linkID, ip, userAgent, referer, status)
 	var visit VisitView
 	if value := args.Get(0); value != nil {
@@ -108,7 +114,12 @@ func (m *mockVisitRecorder) CreateLinkVisit(ctx context.Context, linkID int64, i
 	return visit, args.Error(1)
 }
 
-func serviceDeps(linkReader LinkReader, linkWriter LinkWriter, visitReader VisitReader, visitRecorder VisitRecorder) ServiceDeps {
+func serviceDeps(
+	linkReader LinkReader,
+	linkWriter LinkWriter,
+	visitReader VisitReader,
+	visitRecorder VisitRecorder,
+) ServiceDeps {
 	return ServiceDeps{
 		LinkReader:    linkReader,
 		LinkWriter:    linkWriter,

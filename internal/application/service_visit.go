@@ -3,7 +3,13 @@ package application
 import "context"
 
 // CreateLinkVisit records a visit for the given link.
-func (s *Service) CreateLinkVisit(ctx context.Context, linkID int64, ip, userAgent string, referer *string, status int32) (VisitView, error) {
+func (s *Service) CreateLinkVisit(
+	ctx context.Context,
+	linkID int64,
+	ip, userAgent string,
+	referer *string,
+	status int32,
+) (VisitView, error) {
 	return s.visitRecorder.CreateLinkVisit(ctx, linkID, ip, userAgent, referer, status)
 }
 

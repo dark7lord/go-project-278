@@ -160,12 +160,10 @@ func setupTestTx(t *testing.T, td *testDB) *testDB {
 func linkFactory(i int) db.Link {
 	originalURL := fmt.Sprintf("https://link-%d.com", i)
 	shortName := fmt.Sprintf("%d-%d-%d", i, i, i)
-	shortURL := fmt.Sprintf("%s/%s", originalURL, shortName)
 
 	return db.Link{
 		OriginalURL: originalURL,
 		ShortName:   shortName,
-		ShortURL:    shortURL,
 	}
 }
 
