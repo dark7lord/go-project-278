@@ -10,7 +10,6 @@ type Service struct {
 	linkWriter         LinkWriter
 	visitReader        VisitReader
 	visitRecorder      VisitRecorder
-	baseURL            string
 	shortCodeGenerator ShortCodeGenerator
 }
 
@@ -20,7 +19,7 @@ var _ VisitUseCase = (*Service)(nil)
 var _ UseCase = (*Service)(nil)
 
 // NewServiceWithGenerator creates a link application service with an injected short-code generator.
-func NewServiceWithGenerator(deps ServiceDeps, baseURL string, generator ShortCodeGenerator) *Service {
+func NewServiceWithGenerator(deps ServiceDeps, generator ShortCodeGenerator) *Service {
 	if generator == nil {
 		panic("application: NewServiceWithGenerator called with nil generator")
 	}
@@ -30,7 +29,6 @@ func NewServiceWithGenerator(deps ServiceDeps, baseURL string, generator ShortCo
 		linkWriter:         deps.LinkWriter,
 		visitReader:        deps.VisitReader,
 		visitRecorder:      deps.VisitRecorder,
-		baseURL:            baseURL,
 		shortCodeGenerator: generator,
 	}
 }
@@ -49,15 +47,6 @@ func normalizeURL(raw string) (string, error) {
 	return parsed.String(), nil
 }
 
-func (s *Service) generateShortCode() string {
+func (s *Service) generateShortCode() (string, error) {
 	return s.shortCodeGenerator.Generate()
-}
-
-// withShortURL injects the current short URL into a link view. short_url is
-// derived from the current base URL rather than persisted, so changing the
-// domain never desynchronizes existing records.
-func (s *Service) withShortURL(link LinkView) LinkView {
-	link.ShortURL = s.baseURL + "/r/" + link.ShortName
-
-	return link
 }

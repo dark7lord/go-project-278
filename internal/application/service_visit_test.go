@@ -12,7 +12,6 @@ import (
 func TestServiceListVisitsReturnsEmptySlice(t *testing.T) {
 	svc := NewServiceWithGenerator(
 		serviceDeps(nil, nil, &fakeVisitReader{}, nil),
-		"http://localhost:8080",
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
@@ -28,7 +27,6 @@ func TestServiceListVisitsRange(t *testing.T) {
 	reader := &fakeVisitReader{visitCount: 10, visitsRange: expected}
 	svc := NewServiceWithGenerator(
 		serviceDeps(nil, nil, reader, nil),
-		"http://localhost:8080",
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
@@ -44,7 +42,6 @@ func TestServiceListVisitsRangeNormalizesNilItems(t *testing.T) {
 	reader := &fakeVisitReader{visitCount: 10}
 	svc := NewServiceWithGenerator(
 		serviceDeps(nil, nil, reader, nil),
-		"http://localhost:8080",
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
@@ -59,7 +56,6 @@ func TestServiceListVisitsRangePropagatesCountError(t *testing.T) {
 	repoErr := errors.New("count visits failed")
 	svc := NewServiceWithGenerator(
 		serviceDeps(nil, nil, &fakeVisitReader{visitCountError: repoErr}, nil),
-		"http://localhost:8080",
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 

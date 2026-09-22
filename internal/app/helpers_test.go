@@ -104,13 +104,14 @@ func startTestDB(ctx context.Context) (*testDB, error) {
 
 func newTestDB(pg testcontainers.Container, pool *pgxpool.Pool) *testDB {
 	queries := db.New(pool)
-	linkRepo := postgresadapter.NewLinkRepository(queries)
+	linkRepo := postgresadapter.NewLinkRepository(queries, "http://localhost:8080")
 	linkSvc := application.NewServiceWithGenerator(application.ServiceDeps{
 		LinkReader:    linkRepo,
 		LinkWriter:    linkRepo,
 		VisitReader:   linkRepo,
 		VisitRecorder: linkRepo,
-	}, "http://localhost:8080", stubGenerator{})
+	},
+		stubGenerator{})
 	linkHandler := httpadapter.NewHandler(linkSvc, linkSvc)
 	router := setupRouter(linkHandler)
 
@@ -137,13 +138,14 @@ func setupTestTx(t *testing.T, td *testDB) *testDB {
 	t.Cleanup(func() { _ = tx.Rollback(context.Background()) })
 
 	txQueries := td.queries.WithTx(tx)
-	txRepo := postgresadapter.NewLinkRepository(txQueries)
+	txRepo := postgresadapter.NewLinkRepository(txQueries, "http://localhost:8080")
 	txSvc := application.NewServiceWithGenerator(application.ServiceDeps{
 		LinkReader:    txRepo,
 		LinkWriter:    txRepo,
 		VisitReader:   txRepo,
 		VisitRecorder: txRepo,
-	}, "http://localhost:8080", stubGenerator{})
+	},
+		stubGenerator{})
 	txHandler := httpadapter.NewHandler(txSvc, txSvc)
 	router := setupRouter(txHandler)
 
@@ -204,6 +206,6 @@ func assertFieldErrors(t *testing.T, w *httptest.ResponseRecorder, field string)
 
 type stubGenerator struct{}
 
-func (stubGenerator) Generate() string {
-	return "test-code"
+func (stubGenerator) Generate() (string, error) {
+	return "test-code", nil
 }

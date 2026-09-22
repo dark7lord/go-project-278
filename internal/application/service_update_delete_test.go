@@ -24,7 +24,6 @@ func TestServiceUpdateLink(t *testing.T) {
 		Once()
 	svc := NewServiceWithGenerator(
 		serviceDeps(nil, writer, nil, nil),
-		"http://localhost:8080",
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
@@ -42,7 +41,6 @@ func TestServiceUpdateLinkRejectsInvalidURL(t *testing.T) {
 	writer := &mockLinkWriter{}
 	svc := NewServiceWithGenerator(
 		serviceDeps(nil, writer, nil, nil),
-		"http://localhost:8080",
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
@@ -62,22 +60,21 @@ func TestServiceUpdateLinkGeneratesShortName(t *testing.T) {
 	generator := &fakeShortCodeGenerator{value: "test-code"}
 	expected := LinkView{
 		ID:          7,
-		OriginalURL: "https://ok.com",
+		OriginalURL: testOKURL,
 		ShortName:   "test-code",
 		ShortURL:    "http://localhost:8080/r/test-code",
 	}
 	writer.
-		On("UpdateLink", mock.Anything, int64(7), "https://ok.com", "test-code").
+		On("UpdateLink", mock.Anything, int64(7), testOKURL, "test-code").
 		Return(expected, nil).
 		Once()
 	svc := NewServiceWithGenerator(
 		serviceDeps(nil, writer, nil, nil),
-		"http://localhost:8080",
 		generator,
 	)
 
 	updated, err := svc.UpdateLink(context.Background(), 7, UpdateLinkCommand{
-		OriginalURL: "https://ok.com",
+		OriginalURL: testOKURL,
 		ShortName:   "",
 	})
 
@@ -85,6 +82,27 @@ func TestServiceUpdateLinkGeneratesShortName(t *testing.T) {
 	assert.Equal(t, expected, updated)
 	assert.Equal(t, 1, generator.calls)
 	writer.AssertExpectations(t)
+}
+
+func TestServiceUpdateLinkExhaustsGeneratedCodes(t *testing.T) {
+	writer := &mockLinkWriter{}
+	generator := &fakeShortCodeGenerator{value: testGeneratedCode}
+	svc := NewServiceWithGenerator(
+		serviceDeps(nil, writer, nil, nil),
+		generator,
+	)
+	writer.
+		On("UpdateLink", mock.Anything, int64(7), testOKURL, testGeneratedCode).
+		Return(LinkView{}, &FieldError{Field: fieldShortName, Err: ErrShortNameAlreadyUse})
+
+	_, err := svc.UpdateLink(context.Background(), 7, UpdateLinkCommand{
+		OriginalURL: testOKURL,
+		ShortName:   "",
+	})
+
+	assert.ErrorIs(t, err, ErrShortCodeGenerationFailed)
+	assert.Equal(t, maxShortCodeAttempts, generator.calls)
+	assert.Equal(t, maxShortCodeAttempts, len(writer.Calls))
 }
 
 func TestServiceDeleteLink(t *testing.T) {
@@ -100,7 +118,6 @@ func TestServiceDeleteLink(t *testing.T) {
 		Once()
 	svc := NewServiceWithGenerator(
 		serviceDeps(nil, writer, nil, nil),
-		"http://localhost:8080",
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
@@ -120,7 +137,6 @@ func TestServiceDeleteLinkWrapsRepositoryError(t *testing.T) {
 		Once()
 	svc := NewServiceWithGenerator(
 		serviceDeps(nil, writer, nil, nil),
-		"http://localhost:8080",
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 

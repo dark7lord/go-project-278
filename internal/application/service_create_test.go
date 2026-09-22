@@ -16,6 +16,7 @@ const (
 	testGeneratedCode  = "generated-code"
 	testTargetName     = "target"
 	testTargetShortURL = "http://localhost:8080/r/target"
+	testOKURL          = "https://ok.com"
 )
 
 func TestServiceCreateLink(t *testing.T) {
@@ -67,7 +68,6 @@ func TestServiceCreateLink(t *testing.T) {
 			generator := &fakeShortCodeGenerator{value: tt.generator}
 			svc := NewServiceWithGenerator(
 				serviceDeps(nil, writer, nil, nil),
-				"http://localhost:8080",
 				generator,
 			)
 			expected := LinkView{
@@ -122,7 +122,6 @@ func TestServiceCreateLinkRejectsInvalidInput(t *testing.T) {
 			writer := &mockLinkWriter{}
 			svc := NewServiceWithGenerator(
 				serviceDeps(nil, writer, nil, nil),
-				"http://localhost:8080",
 				&fakeShortCodeGenerator{value: testShortCode},
 			)
 
@@ -141,7 +140,6 @@ func TestServiceCreateLinkReturnsRepositoryError(t *testing.T) {
 	writer := &mockLinkWriter{}
 	svc := NewServiceWithGenerator(
 		serviceDeps(nil, writer, nil, nil),
-		"http://localhost:8080",
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 	writer.
@@ -156,4 +154,52 @@ func TestServiceCreateLinkReturnsRepositoryError(t *testing.T) {
 
 	assert.ErrorIs(t, err, repoErr)
 	writer.AssertExpectations(t)
+}
+
+func TestServiceCreateLinkExhaustsGeneratedCodes(t *testing.T) {
+	writer := &mockLinkWriter{}
+	generator := &fakeShortCodeGenerator{value: testGeneratedCode}
+	svc := NewServiceWithGenerator(
+		serviceDeps(nil, writer, nil, nil),
+		generator,
+	)
+	writer.
+		On("CreateLink", mock.Anything, testExampleURL, testGeneratedCode).
+		Return(LinkView{}, &FieldError{
+			Field: fieldShortName,
+			Err:   ErrShortNameAlreadyUse,
+		})
+
+	_, err := svc.CreateLink(context.Background(), CreateLinkCommand{
+		OriginalURL: testExampleURL,
+	})
+
+	assert.ErrorIs(t, err, ErrShortCodeGenerationFailed)
+	assert.Equal(t, maxShortCodeAttempts, generator.calls)
+	assert.Equal(t, maxShortCodeAttempts, len(writer.Calls))
+}
+
+func TestServiceCreateLinkDoesNotRetryNonCollisionFieldError(t *testing.T) {
+	writer := &mockLinkWriter{}
+	generator := &fakeShortCodeGenerator{value: testGeneratedCode}
+	svc := NewServiceWithGenerator(
+		serviceDeps(nil, writer, nil, nil),
+		generator,
+	)
+	fieldErr := &FieldError{
+		Field: fieldShortName,
+		Err:   errors.New("storage rejected the name"),
+	}
+	writer.
+		On("CreateLink", mock.Anything, testExampleURL, testGeneratedCode).
+		Return(LinkView{}, fieldErr).
+		Once()
+
+	_, err := svc.CreateLink(context.Background(), CreateLinkCommand{
+		OriginalURL: testExampleURL,
+	})
+
+	assert.ErrorIs(t, err, fieldErr)
+	assert.Equal(t, 1, generator.calls)
+	assert.Equal(t, 1, len(writer.Calls))
 }

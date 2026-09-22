@@ -89,7 +89,7 @@ func newCORS() gin.HandlerFunc {
 	})
 }
 
-func newLinkService(cfg *config.Config, linkRepo *postgres.LinkRepository) *application.Service {
+func newLinkService(_ *config.Config, linkRepo *postgres.LinkRepository) *application.Service {
 	shortCodeGenerator := shortcodeadapter.NewGenerator()
 
 	return application.NewServiceWithGenerator(application.ServiceDeps{
@@ -97,7 +97,7 @@ func newLinkService(cfg *config.Config, linkRepo *postgres.LinkRepository) *appl
 		LinkWriter:    linkRepo,
 		VisitReader:   linkRepo,
 		VisitRecorder: linkRepo,
-	}, cfg.BaseURL, shortCodeGenerator)
+	}, shortCodeGenerator)
 }
 
 func newLinkHandler(linkService application.LinkUseCase, visitService application.VisitUseCase) *httpadapter.Handler {
@@ -107,7 +107,7 @@ func newLinkHandler(linkService application.LinkUseCase, visitService applicatio
 // buildApp assembles the application dependencies and HTTP router in one explicit composition root.
 func buildApp(cfg *config.Config, dbConn *pgxpool.Pool) *gin.Engine {
 	queries := db.New(dbConn)
-	linkRepo := postgres.NewLinkRepository(queries)
+	linkRepo := postgres.NewLinkRepository(queries, cfg.BaseURL)
 	linkService := newLinkService(cfg, linkRepo)
 	linkHandler := newLinkHandler(linkService, linkService)
 

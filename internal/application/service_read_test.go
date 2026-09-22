@@ -17,7 +17,6 @@ func TestServiceReadLinks(t *testing.T) {
 	}}
 	svc := NewServiceWithGenerator(
 		serviceDeps(&fakeLinkReader{links: expected}, nil, nil, nil),
-		"http://localhost:8080",
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
@@ -30,7 +29,6 @@ func TestServiceReadLinks(t *testing.T) {
 func TestServiceReadLinksReturnsEmptySlice(t *testing.T) {
 	svc := NewServiceWithGenerator(
 		serviceDeps(&fakeLinkReader{}, nil, nil, nil),
-		"http://localhost:8080",
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
@@ -50,7 +48,6 @@ func TestServiceReadLinksRange(t *testing.T) {
 	reader := &fakeLinkReader{linkCount: 10, linkRange: expected}
 	svc := NewServiceWithGenerator(
 		serviceDeps(reader, nil, nil, nil),
-		"http://localhost:8080",
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
@@ -66,7 +63,6 @@ func TestServiceReadLinksRangeNormalizesNilItems(t *testing.T) {
 	reader := &fakeLinkReader{linkCount: 10}
 	svc := NewServiceWithGenerator(
 		serviceDeps(reader, nil, nil, nil),
-		"http://localhost:8080",
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
@@ -81,7 +77,6 @@ func TestServiceReadLinksRangePropagatesCountError(t *testing.T) {
 	repoErr := errors.New("count failed")
 	svc := NewServiceWithGenerator(
 		serviceDeps(&fakeLinkReader{linkCountError: repoErr}, nil, nil, nil),
-		"http://localhost:8080",
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
@@ -98,7 +93,6 @@ func TestServiceGetLink(t *testing.T) {
 	}
 	svc := NewServiceWithGenerator(
 		serviceDeps(&fakeLinkReader{gotLink: expected}, nil, nil, nil),
-		"http://localhost:8080",
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
@@ -112,7 +106,6 @@ func TestServiceGetLinkWrapsRepositoryError(t *testing.T) {
 	repoErr := errors.New("read failed")
 	svc := NewServiceWithGenerator(
 		serviceDeps(&fakeLinkReader{getLinkError: repoErr}, nil, nil, nil),
-		"http://localhost:8080",
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 

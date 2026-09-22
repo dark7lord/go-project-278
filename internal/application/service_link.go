@@ -20,20 +20,14 @@ func (s *Service) CreateLink(ctx context.Context, cmd CreateLinkCommand) (LinkVi
 
 	shortName := cmd.ShortName
 	if shortName == "" {
-		for {
-			shortName = s.generateShortCode()
-			if _, err := domainlinks.NewShortCode(shortName); err != nil {
-				continue
-			}
-			link, err := s.linkWriter.CreateLink(ctx, normalized, shortName)
-			if err == nil {
-				return s.withShortURL(link), nil
-			}
-			var fieldErr *FieldError
-			if !errors.As(err, &fieldErr) {
-				return LinkView{}, err
-			}
+		link, err := s.withGeneratedShortName(ctx, func(ctx context.Context, name string) (LinkView, error) {
+			return s.linkWriter.CreateLink(ctx, normalized, name)
+		})
+		if err != nil {
+			return LinkView{}, err
 		}
+
+		return link, nil
 	}
 
 	if _, err := domainlinks.NewShortCode(shortName); err != nil {
@@ -48,7 +42,7 @@ func (s *Service) CreateLink(ctx context.Context, cmd CreateLinkCommand) (LinkVi
 		return LinkView{}, err
 	}
 
-	return s.withShortURL(link), nil
+	return link, nil
 }
 
 // Redirect resolves a short name, validates its destination, and records the visit.
@@ -73,7 +67,7 @@ func (s *Service) Redirect(ctx context.Context, cmd RedirectCommand) (LinkView, 
 		return LinkView{}, fmt.Errorf("record link visit: %w", err)
 	}
 
-	return s.withShortURL(link), nil
+	return link, nil
 }
 
 // GetLinkByID retrieves a link by its ID.
@@ -83,7 +77,7 @@ func (s *Service) GetLinkByID(ctx context.Context, id int64) (LinkView, error) {
 		return LinkView{}, fmt.Errorf("get link: %w", err)
 	}
 
-	return s.withShortURL(link), nil
+	return link, nil
 }
 
 // GetLinkByShortName retrieves a link by its short name.
@@ -93,7 +87,7 @@ func (s *Service) GetLinkByShortName(ctx context.Context, shortName string) (Lin
 		return LinkView{}, fmt.Errorf("get link: %w", err)
 	}
 
-	return s.withShortURL(link), nil
+	return link, nil
 }
 
 // ListLinks retrieves all links.
@@ -104,10 +98,6 @@ func (s *Service) ListLinks(ctx context.Context) ([]LinkView, error) {
 	}
 	if links == nil {
 		return []LinkView{}, nil
-	}
-
-	for i := range links {
-		links[i] = s.withShortURL(links[i])
 	}
 
 	return links, nil
@@ -128,10 +118,6 @@ func (s *Service) ListLinksRange(ctx context.Context, q ListLinksQuery) (RangePa
 		links = []LinkView{}
 	}
 
-	for i := range links {
-		links[i] = s.withShortURL(links[i])
-	}
-
 	return RangePage[LinkView]{Items: links, Start: q.Start, Total: totalLinks}, nil
 }
 
@@ -147,20 +133,14 @@ func (s *Service) UpdateLink(ctx context.Context, id int64, cmd UpdateLinkComman
 
 	shortName := cmd.ShortName
 	if shortName == "" {
-		for {
-			shortName = s.generateShortCode()
-			if _, err := domainlinks.NewShortCode(shortName); err != nil {
-				continue
-			}
-			updated, err := s.linkWriter.UpdateLink(ctx, id, normalized, shortName)
-			if err == nil {
-				return s.withShortURL(updated), nil
-			}
-			var fieldErr *FieldError
-			if !errors.As(err, &fieldErr) {
-				return LinkView{}, err
-			}
+		updated, err := s.withGeneratedShortName(ctx, func(ctx context.Context, name string) (LinkView, error) {
+			return s.linkWriter.UpdateLink(ctx, id, normalized, name)
+		})
+		if err != nil {
+			return LinkView{}, err
 		}
+
+		return updated, nil
 	}
 
 	if _, err := domainlinks.NewShortCode(shortName); err != nil {
@@ -175,7 +155,7 @@ func (s *Service) UpdateLink(ctx context.Context, id int64, cmd UpdateLinkComman
 		return LinkView{}, err
 	}
 
-	return s.withShortURL(updated), nil
+	return updated, nil
 }
 
 // DeleteLink deletes a link by its ID.
@@ -185,5 +165,42 @@ func (s *Service) DeleteLink(ctx context.Context, id int64) (LinkView, error) {
 		return LinkView{}, fmt.Errorf("delete link: %w", err)
 	}
 
-	return s.withShortURL(link), nil
+	return link, nil
+}
+
+// maxShortCodeAttempts bounds retries when a generated short name collides.
+const maxShortCodeAttempts = 10
+
+// withGeneratedShortName keeps proposing generated short names until the
+// storage accepts one or the attempt budget is exhausted. Only short-name
+// collisions are retried; any other error ends the loop immediately.
+func (s *Service) withGeneratedShortName(
+	ctx context.Context,
+	try func(ctx context.Context, shortName string) (LinkView, error),
+) (LinkView, error) {
+	for attempt := 0; attempt < maxShortCodeAttempts; attempt++ {
+		shortName, err := s.generateShortCode()
+		if err != nil {
+			return LinkView{}, fmt.Errorf("generate short code: %w", err)
+		}
+		if _, err := domainlinks.NewShortCode(shortName); err != nil {
+			continue
+		}
+
+		link, err := try(ctx, shortName)
+		if err == nil {
+			return link, nil
+		}
+
+		var fieldErr *FieldError
+		if !errors.As(err, &fieldErr) || !errors.Is(fieldErr.Err, ErrShortNameAlreadyUse) {
+			return LinkView{}, err
+		}
+	}
+
+	return LinkView{}, fmt.Errorf(
+		"%w: exhausted %d attempts",
+		ErrShortCodeGenerationFailed,
+		maxShortCodeAttempts,
+	)
 }

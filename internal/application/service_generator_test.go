@@ -16,16 +16,17 @@ type fakeShortCodeGenerator struct {
 
 const testShortCode = "test-code"
 
-func (g *fakeShortCodeGenerator) Generate() string {
+func (g *fakeShortCodeGenerator) Generate() (string, error) {
 	g.calls++
-	return g.value
+	return g.value, nil
 }
 
 func TestServiceCreateLinkUsesInjectedGenerator(t *testing.T) {
 	writer := &mockLinkWriter{}
 	generator := &fakeShortCodeGenerator{value: testGeneratedCode}
 
-	svc := NewServiceWithGenerator(serviceDeps(nil, writer, nil, nil), "http://localhost:8080", generator)
+	svc := NewServiceWithGenerator(serviceDeps(nil, writer, nil, nil),
+		generator)
 	writer.
 		On("CreateLink", mock.Anything, testExampleURL, testGeneratedCode).
 		Return(LinkView{

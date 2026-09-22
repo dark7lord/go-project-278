@@ -22,7 +22,6 @@ func TestServiceRedirectRecordsVisit(t *testing.T) {
 	recorder := &mockVisitRecorder{}
 	svc := NewServiceWithGenerator(
 		serviceDeps(reader, nil, nil, recorder),
-		"http://localhost:8080",
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 	recorder.
@@ -53,7 +52,6 @@ func TestServiceRedirectRejectsInvalidStoredURL(t *testing.T) {
 			nil,
 			recorder,
 		),
-		"http://localhost:8080",
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
@@ -72,7 +70,6 @@ func TestServiceRedirectReturnsVisitError(t *testing.T) {
 	recorder := &mockVisitRecorder{}
 	svc := NewServiceWithGenerator(
 		serviceDeps(reader, nil, nil, recorder),
-		"http://localhost:8080",
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 	recorder.
