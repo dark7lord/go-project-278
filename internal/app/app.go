@@ -144,6 +144,9 @@ func Run() error {
 		Addr:              ":8080",
 		Handler:           http.TimeoutHandler(router, cfg.RequestTimeout, `{"error":"request timeout"}`),
 		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      10 * time.Second,
+		IdleTimeout:       60 * time.Second,
 	}
 
 	return serveUntilSignal(server)
