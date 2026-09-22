@@ -266,7 +266,7 @@ func TestHandlerCreateLinkHidesInternalError(t *testing.T) {
 	linkService.AssertExpectations(t)
 }
 
-func TestHandlerContextDeadlineMapsTo504(t *testing.T) {
+func TestHandlerContextDeadlineMapsTo503(t *testing.T) {
 	linkService := &mockLinkUseCase{}
 	linkService.
 		On("ListLinks", mock.Anything).
@@ -278,7 +278,7 @@ func TestHandlerContextDeadlineMapsTo504(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/links", nil)
 	newHandlerRouter(handler).ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusGatewayTimeout, w.Code)
+	assert.Equal(t, http.StatusServiceUnavailable, w.Code)
 	assert.JSONEq(t, `{"error":"request timeout"}`, w.Body.String())
 	linkService.AssertExpectations(t)
 }

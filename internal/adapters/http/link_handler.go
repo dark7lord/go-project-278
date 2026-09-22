@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 
@@ -84,11 +85,12 @@ func writeServiceError(c *gin.Context, err error) {
 	}
 
 	if errors.Is(err, context.DeadlineExceeded) {
-		c.JSON(http.StatusGatewayTimeout, errJSON("request timeout"))
+		c.JSON(http.StatusServiceUnavailable, errJSON("request timeout"))
 		return
 	}
 
 	_ = c.Error(err)
+	sentry.CaptureException(err)
 	c.JSON(http.StatusInternalServerError, errJSON(errInternal))
 }
 

@@ -12,7 +12,7 @@ import (
 	"code/internal/application"
 )
 
-var rangeRe = regexp.MustCompile(`\[\s*(\d+)\s*,\s*(\d+)\s*\]`)
+var rangeRe = regexp.MustCompile(`^\s*\[\s*(\d+)\s*,\s*(\d+)\s*\]\s*$`)
 
 const maxPageSize int64 = 1000
 

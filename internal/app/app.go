@@ -158,7 +158,7 @@ func serveUntilSignal(server *http.Server) error {
 
 	errCh := make(chan error, 1)
 	go func() {
-		log.Printf("[server] listening on 127.0.0.1:8080")
+		log.Printf("[server] listening on %s", server.Addr)
 		errCh <- server.ListenAndServe()
 	}()
 
