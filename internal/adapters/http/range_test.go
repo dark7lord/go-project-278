@@ -17,6 +17,7 @@ func TestParseRangeParam(t *testing.T) {
 	}{
 		{name: "valid", input: "[5,9]", wantStart: 5, wantEnd: 9},
 		{name: "valid with spaces", input: "[0, 4]", wantStart: 0, wantEnd: 4},
+		{name: "maximum page", input: "[0,999]", wantStart: 0, wantEnd: 999},
 		{name: "bad format", input: "invalid", wantErr: ErrRangeFormat},
 		{name: "empty brackets", input: "[]", wantErr: ErrRangeFormat},
 		{name: "non-digit start", input: "[abc,5]", wantErr: ErrRangeFormat},
@@ -25,6 +26,7 @@ func TestParseRangeParam(t *testing.T) {
 		{name: "overflow start", input: "[99999999999999999999,5]", wantErr: ErrRangeStart},
 		{name: "overflow end", input: "[5,99999999999999999999]", wantErr: ErrRangeEnd},
 		{name: "start > end", input: "[10,5]", wantErr: ErrRangeInverted},
+		{name: "over maximum page", input: "[0,1000]", wantErr: ErrRangeTooLarge},
 	}
 
 	for _, tt := range tests {

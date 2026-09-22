@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -92,7 +93,7 @@ func TestHandlerListLinksRangeMapsRequest(t *testing.T) {
 	handler := newTestHandler(linkService, &mockVisitUseCase{})
 
 	w := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "/links?range=%5B5%2C9%5D", nil)
+	req := httptest.NewRequest(http.MethodGet, "/links?range="+url.QueryEscape("[5,9]"), nil)
 	newHandlerRouter(handler).ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -109,7 +110,7 @@ func TestHandlerListLinksRangeUnsatisfiable(t *testing.T) {
 	handler := newTestHandler(linkService, &mockVisitUseCase{})
 
 	w := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "/links?range=%5B100%2C200%5D", nil)
+	req := httptest.NewRequest(http.MethodGet, "/links?range="+url.QueryEscape("[100,200]"), nil)
 	newHandlerRouter(handler).ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusRequestedRangeNotSatisfiable, w.Code)
@@ -126,7 +127,7 @@ func TestHandlerListLinksRangeEmptyCollection(t *testing.T) {
 	handler := newTestHandler(linkService, &mockVisitUseCase{})
 
 	w := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "/links?range=%5B0%2C4%5D", nil)
+	req := httptest.NewRequest(http.MethodGet, "/links?range="+url.QueryEscape("[0,4]"), nil)
 	newHandlerRouter(handler).ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -143,12 +144,25 @@ func TestHandlerListLinksRangeEmptyItems(t *testing.T) {
 	handler := newTestHandler(linkService, &mockVisitUseCase{})
 
 	w := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "/links?range=%5B5%2C9%5D", nil)
+	req := httptest.NewRequest(http.MethodGet, "/links?range="+url.QueryEscape("[5,9]"), nil)
 	newHandlerRouter(handler).ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusRequestedRangeNotSatisfiable, w.Code)
 	assert.Equal(t, "links */10", w.Header().Get("Content-Range"))
 	linkService.AssertExpectations(t)
+}
+
+func TestHandlerListLinksRejectsRangeOverMaximumPageSize(t *testing.T) {
+	linkService := &mockLinkUseCase{}
+	handler := newTestHandler(linkService, &mockVisitUseCase{})
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/links?range="+url.QueryEscape("[0,1000]"), nil)
+	newHandlerRouter(handler).ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.JSONEq(t, `{"error":"range exceeds maximum page size of 1000"}`, w.Body.String())
+	linkService.AssertNotCalled(t, "ListLinksRange", mock.Anything, mock.Anything)
 }
 
 func TestHandlerRedirectMapsVisitMetadata(t *testing.T) {
@@ -191,12 +205,25 @@ func TestHandlerListVisitsRangeMapsRequest(t *testing.T) {
 	handler := newTestHandler(&mockLinkUseCase{}, visitService)
 
 	w := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "/link_visits?range=%5B0%2C4%5D", nil)
+	req := httptest.NewRequest(http.MethodGet, "/link_visits?range="+url.QueryEscape("[0,4]"), nil)
 	newHandlerRouter(handler).ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "link_visits 0-4/5", w.Header().Get("Content-Range"))
 	visitService.AssertExpectations(t)
+}
+
+func TestHandlerListVisitsRejectsRangeOverMaximumPageSize(t *testing.T) {
+	visitService := &mockVisitUseCase{}
+	handler := newTestHandler(&mockLinkUseCase{}, visitService)
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/link_visits?range="+url.QueryEscape("[0,1000]"), nil)
+	newHandlerRouter(handler).ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.JSONEq(t, `{"error":"range exceeds maximum page size of 1000"}`, w.Body.String())
+	visitService.AssertNotCalled(t, "ListLinkVisitsRange", mock.Anything, mock.Anything)
 }
 
 func TestHandlerGetLinkRejectsInvalidID(t *testing.T) {

@@ -14,17 +14,11 @@ import (
 
 const (
 	shortNameConstraint = "links_short_name_key"
-	maxPageSize         = 1000
 )
 
-// pageRange converts an inclusive [start,end] range into a capped LIMIT/OFFSET pair.
+// pageRange converts an inclusive [start,end] range into a LIMIT/OFFSET pair.
 func pageRange(start, end int64) (limit, offset int64) {
-	offset = start
-	if end-start >= maxPageSize {
-		return maxPageSize, offset
-	}
-
-	return end - start + 1, offset
+	return end - start + 1, start
 }
 
 // LinkRepository adapts generated SQL queries to the application persistence ports.

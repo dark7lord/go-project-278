@@ -14,6 +14,8 @@ import (
 
 var rangeRe = regexp.MustCompile(`\[\s*(\d+)\s*,\s*(\d+)\s*\]`)
 
+const maxPageSize int64 = 1000
+
 var (
 	// ErrRangeFormat indicates the range value does not match [start,end].
 	ErrRangeFormat = errors.New("invalid range, expected [start,end]")
@@ -23,6 +25,8 @@ var (
 	ErrRangeEnd = errors.New("invalid end value")
 	// ErrRangeInverted indicates end is lower than start.
 	ErrRangeInverted = errors.New("invalid range, end must not be less than start")
+	// ErrRangeTooLarge indicates a range requests more than maxPageSize items.
+	ErrRangeTooLarge = errors.New("range exceeds maximum page size of 1000")
 )
 
 // parseRangeParam parses a "range" query parameter value into start and end.
@@ -43,6 +47,9 @@ func parseRangeParam(rangeParam string) (start, end int64, err error) {
 
 	if start > end {
 		return 0, 0, ErrRangeInverted
+	}
+	if end-start >= maxPageSize {
+		return 0, 0, ErrRangeTooLarge
 	}
 
 	return start, end, nil
