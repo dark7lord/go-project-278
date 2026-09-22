@@ -34,9 +34,15 @@ fmt:
 	golangci-lint fmt
 
 # Testing
-.PHONY: test cover cover-html check
+.PHONY: test test-unit test-integration cover cover-html check
 test:
 	go test -race -coverpkg=./... -coverprofile=coverage.out ./...
+
+test-unit:
+	go test -short -race -coverpkg=./... -coverprofile=coverage-unit.out ./...
+
+test-integration:
+	go test -race -coverpkg=./... ./internal/app/...
 
 cover:
 	go test -coverpkg=./... -coverprofile=coverage.out ./...

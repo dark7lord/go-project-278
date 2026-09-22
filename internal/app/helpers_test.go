@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -32,6 +33,12 @@ import (
 var testDBInst *testDB
 
 func TestMain(m *testing.M) {
+	flag.Parse()
+
+	if testing.Short() {
+		os.Exit(0)
+	}
+
 	ctx := context.Background()
 
 	td, err := startTestDB(ctx)
