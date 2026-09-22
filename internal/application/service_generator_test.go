@@ -32,7 +32,6 @@ func TestServiceCreateLinkUsesInjectedGenerator(t *testing.T) {
 		Return(LinkView{
 			OriginalURL: testExampleURL,
 			ShortName:   testGeneratedCode,
-			ShortURL:    "http://localhost:8080/r/" + testGeneratedCode,
 		}, nil).
 		Once()
 	link, err := svc.CreateLink(context.Background(), CreateLinkCommand{
@@ -42,7 +41,6 @@ func TestServiceCreateLinkUsesInjectedGenerator(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, testGeneratedCode, link.ShortName)
-	assert.Equal(t, "http://localhost:8080/r/generated-code", link.ShortURL)
 	writer.AssertExpectations(t)
 	assert.Equal(t, 1, generator.calls)
 }

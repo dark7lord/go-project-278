@@ -11,12 +11,11 @@ import (
 )
 
 const (
-	testExampleURL     = "https://example.com"
-	testShortName      = "my-link"
-	testGeneratedCode  = "generated-code"
-	testTargetName     = "target"
-	testTargetShortURL = "http://localhost:8080/r/target"
-	testOKURL          = "https://ok.com"
+	testExampleURL    = "https://example.com"
+	testShortName     = "my-link"
+	testGeneratedCode = "generated-code"
+	testTargetName    = "target"
+	testOKURL         = "https://ok.com"
 )
 
 func TestServiceCreateLink(t *testing.T) {
@@ -73,7 +72,6 @@ func TestServiceCreateLink(t *testing.T) {
 			expected := LinkView{
 				OriginalURL: tt.wantURL,
 				ShortName:   tt.wantCode,
-				ShortURL:    "http://localhost:8080/r/" + tt.wantCode,
 			}
 			call := writer.On("CreateLink", mock.Anything, tt.wantURL, tt.wantCode)
 			if len(tt.repoErrors) > 0 {
@@ -91,7 +89,6 @@ func TestServiceCreateLink(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, tt.wantURL, link.OriginalURL)
 			assert.Equal(t, tt.wantCode, link.ShortName)
-			assert.Equal(t, "http://localhost:8080/r/"+tt.wantCode, link.ShortURL)
 			assert.Equal(t, tt.wantGeneratorCalls, generator.calls)
 			writer.AssertExpectations(t)
 			assert.Equal(t, tt.wantRepoCalls, len(writer.Calls))

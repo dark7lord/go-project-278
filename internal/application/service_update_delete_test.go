@@ -16,7 +16,6 @@ func TestServiceUpdateLink(t *testing.T) {
 		ID:          7,
 		OriginalURL: "https://updated.com",
 		ShortName:   "updated-link",
-		ShortURL:    "http://localhost:8080/r/updated-link",
 	}
 	writer.
 		On("UpdateLink", mock.Anything, int64(7), "https://updated.com", "updated-link").
@@ -62,7 +61,6 @@ func TestServiceUpdateLinkGeneratesShortName(t *testing.T) {
 		ID:          7,
 		OriginalURL: testOKURL,
 		ShortName:   "test-code",
-		ShortURL:    "http://localhost:8080/r/test-code",
 	}
 	writer.
 		On("UpdateLink", mock.Anything, int64(7), testOKURL, "test-code").
@@ -110,7 +108,6 @@ func TestServiceDeleteLink(t *testing.T) {
 	expected := LinkView{
 		ID:        7,
 		ShortName: testTargetName,
-		ShortURL:  testTargetShortURL,
 	}
 	writer.
 		On("DeleteLink", mock.Anything, int64(7)).

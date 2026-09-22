@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"code/internal/application"
 	"code/internal/db"
 )
 
@@ -24,7 +23,7 @@ func TestCreateLink(t *testing.T) {
 		w := performRequest(t, tx.router, "POST", "/api/links", body)
 		assert.Equal(t, http.StatusCreated, w.Code)
 
-		var created application.LinkView
+		var created linkResponse
 		decode(t, w, &created)
 		assert.Equal(t, "https://example.com", created.OriginalURL)
 		assert.Equal(t, "my-link", created.ShortName)
@@ -60,7 +59,7 @@ func TestGetLink(t *testing.T) {
 	w := performRequest(t, tx.router, "GET", fmt.Sprintf("/api/links/%d", created.ID), "")
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var got application.LinkView
+	var got linkResponse
 	decode(t, w, &got)
 	assert.Equal(t, created.ID, got.ID)
 	assert.Equal(t, created.OriginalURL, got.OriginalURL)
@@ -81,7 +80,7 @@ func TestUpdateLink(t *testing.T) {
 		w := performRequest(t, tx.router, "PUT", fmt.Sprintf("/api/links/%d", created.ID), body)
 		assert.Equal(t, http.StatusOK, w.Code)
 
-		var got application.LinkView
+		var got linkResponse
 		decode(t, w, &got)
 		assert.Equal(t, created.ID, got.ID)
 		assert.Equal(t, "https://updated.com", got.OriginalURL)

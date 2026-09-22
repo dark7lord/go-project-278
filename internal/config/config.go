@@ -4,7 +4,9 @@ package config
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -37,6 +39,12 @@ func Load() (*Config, error) {
 		cfg.BaseURL = defaultBaseURL
 	}
 
+	baseURL, err := normalizeBaseURL(cfg.BaseURL)
+	if err != nil {
+		return nil, err
+	}
+	cfg.BaseURL = baseURL
+
 	cfg.RequestTimeout = defaultRequestTimeout
 	if raw := os.Getenv("REQUEST_TIMEOUT"); raw != "" {
 		timeout, err := time.ParseDuration(raw)
@@ -47,4 +55,31 @@ func Load() (*Config, error) {
 	}
 
 	return cfg, nil
+}
+
+// normalizeBaseURL validates a public HTTP origin and removes its trailing slash.
+func normalizeBaseURL(raw string) (string, error) {
+	parsed, err := url.Parse(strings.TrimSpace(raw))
+	if err != nil {
+		return "", fmt.Errorf("BASE_URL: %w", err)
+	}
+	if parsed.Scheme != "http" && parsed.Scheme != "https" {
+		return "", errors.New("BASE_URL must use http or https")
+	}
+	if parsed.Host == "" {
+		return "", errors.New("BASE_URL must include a host")
+	}
+	if parsed.User != nil {
+		return "", errors.New("BASE_URL must not include user credentials")
+	}
+	if parsed.Path != "" && parsed.Path != "/" {
+		return "", errors.New("BASE_URL must not include a path")
+	}
+	if parsed.RawQuery != "" || parsed.Fragment != "" {
+		return "", errors.New("BASE_URL must not include a query or fragment")
+	}
+
+	parsed.Path = ""
+
+	return parsed.String(), nil
 }

@@ -16,7 +16,6 @@ func TestServiceRedirectRecordsVisit(t *testing.T) {
 		ID:          42,
 		OriginalURL: testExampleURL,
 		ShortName:   testTargetName,
-		ShortURL:    testTargetShortURL,
 	}
 	reader := &fakeLinkReader{gotLink: link}
 	recorder := &mockVisitRecorder{}

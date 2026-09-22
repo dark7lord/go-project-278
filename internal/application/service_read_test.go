@@ -13,7 +13,6 @@ func TestServiceReadLinks(t *testing.T) {
 	expected := []LinkView{{
 		ID:        1,
 		ShortName: "first",
-		ShortURL:  "http://localhost:8080/r/first",
 	}}
 	svc := NewServiceWithGenerator(
 		serviceDeps(&fakeLinkReader{links: expected}, nil, nil, nil),
@@ -43,7 +42,6 @@ func TestServiceReadLinksRange(t *testing.T) {
 	expected := []LinkView{{
 		ID:        2,
 		ShortName: "second",
-		ShortURL:  "http://localhost:8080/r/second",
 	}}
 	reader := &fakeLinkReader{linkCount: 10, linkRange: expected}
 	svc := NewServiceWithGenerator(
@@ -89,7 +87,6 @@ func TestServiceGetLink(t *testing.T) {
 	expected := LinkView{
 		ID:        7,
 		ShortName: testTargetName,
-		ShortURL:  testTargetShortURL,
 	}
 	svc := NewServiceWithGenerator(
 		serviceDeps(&fakeLinkReader{gotLink: expected}, nil, nil, nil),

@@ -96,11 +96,46 @@ func writeServiceError(c *gin.Context, err error) {
 type Handler struct {
 	linkService  application.LinkUseCase
 	visitService application.VisitUseCase
+	baseURL      string
 }
 
-// NewHandler creates a new Handler from separate link and visit use cases.
-func NewHandler(linkService application.LinkUseCase, visitService application.VisitUseCase) *Handler {
-	return &Handler{linkService: linkService, visitService: visitService}
+// NewHandler creates a Handler from use cases and the public link origin.
+func NewHandler(
+	linkService application.LinkUseCase,
+	visitService application.VisitUseCase,
+	baseURL string,
+) *Handler {
+	return &Handler{
+		linkService:  linkService,
+		visitService: visitService,
+		baseURL:      baseURL,
+	}
+}
+
+// linkResponse is the HTTP representation of a shortened link.
+type linkResponse struct {
+	ID          int64  `json:"id"`
+	OriginalURL string `json:"original_url"`
+	ShortName   string `json:"short_name"`
+	ShortURL    string `json:"short_url"`
+}
+
+func (h *Handler) linkResponse(link application.LinkView) linkResponse {
+	return linkResponse{
+		ID:          link.ID,
+		OriginalURL: link.OriginalURL,
+		ShortName:   link.ShortName,
+		ShortURL:    h.baseURL + "/r/" + link.ShortName,
+	}
+}
+
+func (h *Handler) linkResponses(links []application.LinkView) []linkResponse {
+	responses := make([]linkResponse, len(links))
+	for index, link := range links {
+		responses[index] = h.linkResponse(link)
+	}
+
+	return responses
 }
 
 // CreateLinkRequest represents a request to create a link.
@@ -126,7 +161,7 @@ func (h *Handler) CreateLink(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, link)
+	c.JSON(http.StatusCreated, h.linkResponse(link))
 }
 
 // GetLink handles link retrieval by ID.
@@ -144,7 +179,7 @@ func (h *Handler) GetLink(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, link)
+	c.JSON(http.StatusOK, h.linkResponse(link))
 }
 
 // requestRange returns the range parameter from query string or Range header.
@@ -167,7 +202,7 @@ func (h *Handler) ListLinks(c *gin.Context) {
 			return
 		}
 
-		c.JSON(http.StatusOK, links)
+		c.JSON(http.StatusOK, h.linkResponses(links))
 
 		return
 	}
@@ -184,7 +219,11 @@ func (h *Handler) ListLinks(c *gin.Context) {
 		return
 	}
 
-	writeRangePage(c, "links", page)
+	writeRangePage(c, "links", application.RangePage[linkResponse]{
+		Items: h.linkResponses(page.Items),
+		Start: page.Start,
+		Total: page.Total,
+	})
 }
 
 // UpdateLinkRequest represents a request to update a link.
@@ -215,7 +254,7 @@ func (h *Handler) UpdateLink(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, updated)
+	c.JSON(http.StatusOK, h.linkResponse(updated))
 }
 
 // DeleteLink handles link deletion.

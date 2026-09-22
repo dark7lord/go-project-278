@@ -80,6 +80,7 @@ func (q *Queries) GetLinkByShortName(ctx context.Context, shortName string) (Lin
 const getLinks = `-- name: GetLinks :many
 SELECT id, original_url, short_name
 FROM links
+ORDER BY id
 `
 
 func (q *Queries) GetLinks(ctx context.Context) ([]Link, error) {

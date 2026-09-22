@@ -15,7 +15,8 @@ WHERE short_name = @short_name;
 
 -- name: GetLinks :many
 SELECT id, original_url, short_name
-FROM links;
+FROM links
+ORDER BY id;
 
 -- name: GetLinksRange :many
 SELECT id, original_url, short_name

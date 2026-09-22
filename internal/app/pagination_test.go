@@ -127,7 +127,6 @@ func TestLinksPagination(t *testing.T) {
 				l := linkFactory(i)
 				created, err := tx.repo.CreateLink(ctx, l.OriginalURL, l.ShortName)
 				require.NoError(t, err)
-				created.ShortURL = "http://localhost:8080/r/" + created.ShortName
 				seeds = append(seeds, created)
 			}
 
@@ -150,15 +149,19 @@ func TestLinksPagination(t *testing.T) {
 			}
 
 			if w.Code == http.StatusOK {
-				var links []application.LinkView
-				decode(t, w, &links)
+				var responses []linkResponse
+				decode(t, w, &responses)
+				links := make([]application.LinkView, len(responses))
+				for index, response := range responses {
+					links[index] = response.linkView()
+				}
 				assert.Len(t, links, tt.wantLen)
 
 				if tt.wantLen == 0 {
 					return
 				}
 				if tt.rangeQuery == "" && tt.rangeHeader == "" {
-					assert.ElementsMatch(t, seeds, links)
+					assert.Equal(t, seeds, links)
 
 					return
 				}

@@ -104,7 +104,7 @@ func startTestDB(ctx context.Context) (*testDB, error) {
 
 func newTestDB(pg testcontainers.Container, pool *pgxpool.Pool) *testDB {
 	queries := db.New(pool)
-	linkRepo := postgresadapter.NewLinkRepository(queries, "http://localhost:8080")
+	linkRepo := postgresadapter.NewLinkRepository(queries)
 	linkSvc := application.NewServiceWithGenerator(application.ServiceDeps{
 		LinkReader:    linkRepo,
 		LinkWriter:    linkRepo,
@@ -112,7 +112,7 @@ func newTestDB(pg testcontainers.Container, pool *pgxpool.Pool) *testDB {
 		VisitRecorder: linkRepo,
 	},
 		stubGenerator{})
-	linkHandler := httpadapter.NewHandler(linkSvc, linkSvc)
+	linkHandler := httpadapter.NewHandler(linkSvc, linkSvc, "http://localhost:8080")
 	router := setupRouter(linkHandler)
 
 	return &testDB{
@@ -138,7 +138,7 @@ func setupTestTx(t *testing.T, td *testDB) *testDB {
 	t.Cleanup(func() { _ = tx.Rollback(context.Background()) })
 
 	txQueries := td.queries.WithTx(tx)
-	txRepo := postgresadapter.NewLinkRepository(txQueries, "http://localhost:8080")
+	txRepo := postgresadapter.NewLinkRepository(txQueries)
 	txSvc := application.NewServiceWithGenerator(application.ServiceDeps{
 		LinkReader:    txRepo,
 		LinkWriter:    txRepo,
@@ -146,7 +146,7 @@ func setupTestTx(t *testing.T, td *testDB) *testDB {
 		VisitRecorder: txRepo,
 	},
 		stubGenerator{})
-	txHandler := httpadapter.NewHandler(txSvc, txSvc)
+	txHandler := httpadapter.NewHandler(txSvc, txSvc, "http://localhost:8080")
 	router := setupRouter(txHandler)
 
 	return &testDB{
@@ -208,4 +208,19 @@ type stubGenerator struct{}
 
 func (stubGenerator) Generate() (string, error) {
 	return "test-code", nil
+}
+
+type linkResponse struct {
+	ID          int64  `json:"id"`
+	OriginalURL string `json:"original_url"`
+	ShortName   string `json:"short_name"`
+	ShortURL    string `json:"short_url"`
+}
+
+func (r linkResponse) linkView() application.LinkView {
+	return application.LinkView{
+		ID:          r.ID,
+		OriginalURL: r.OriginalURL,
+		ShortName:   r.ShortName,
+	}
 }

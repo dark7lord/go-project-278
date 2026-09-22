@@ -59,3 +59,43 @@ func TestLoadInvalidRequestTimeout(t *testing.T) {
 	require.Error(t, err)
 	assert.ErrorContains(t, err, "REQUEST_TIMEOUT")
 }
+
+func TestLoadNormalizesBaseURL(t *testing.T) {
+	t.Setenv("SENTRY_DSN", "")
+	t.Setenv("DATABASE_URL", "postgres://user:pass@localhost/db")
+	t.Setenv("BASE_URL", " https://short.example/ ")
+	t.Setenv("REQUEST_TIMEOUT", "")
+
+	cfg, err := Load()
+
+	require.NoError(t, err)
+	assert.Equal(t, "https://short.example", cfg.BaseURL)
+}
+
+func TestLoadRejectsInvalidBaseURL(t *testing.T) {
+	tests := []struct {
+		name    string
+		baseURL string
+	}{
+		{name: "unsupported scheme", baseURL: "ftp://short.example"},
+		{name: "missing host", baseURL: "https:///path"},
+		{name: "path", baseURL: "https://short.example/path"},
+		{name: "query", baseURL: "https://short.example?source=test"},
+		{name: "fragment", baseURL: "https://short.example#fragment"},
+		{name: "credentials", baseURL: "https://user:pass@short.example"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv("SENTRY_DSN", "")
+			t.Setenv("DATABASE_URL", "postgres://user:pass@localhost/db")
+			t.Setenv("BASE_URL", tt.baseURL)
+			t.Setenv("REQUEST_TIMEOUT", "")
+
+			_, err := Load()
+
+			require.Error(t, err)
+			assert.ErrorContains(t, err, "BASE_URL")
+		})
+	}
+}
