@@ -74,12 +74,7 @@ func setupRouter(linkHandler *httpadapter.Handler) *gin.Engine {
 
 	api.Use(maxRequestBody(maxRequestBodyBytes))
 
-	api.POST("/links", linkHandler.CreateLink)
-	api.GET("/links", linkHandler.ListLinks)
-	api.GET("/links/:id", linkHandler.GetLink)
-	api.PUT("/links/:id", linkHandler.UpdateLink)
-	api.DELETE("/links/:id", linkHandler.DeleteLink)
-	api.GET("/link_visits", linkHandler.ListVisits)
+	linkHandler.RegisterAPIRoutes(api)
 
 	return router
 }

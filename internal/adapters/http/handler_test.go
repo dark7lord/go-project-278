@@ -29,13 +29,8 @@ func newTestHandler(linkService application.LinkUseCase, visitService applicatio
 
 func newHandlerRouter(handler *Handler) *gin.Engine {
 	router := gin.New()
-	router.POST("/links", handler.CreateLink)
-	router.GET("/links/:id", handler.GetLink)
-	router.GET("/links", handler.ListLinks)
-	router.PUT("/links/:id", handler.UpdateLink)
-	router.DELETE("/links/:id", handler.DeleteLink)
+	handler.RegisterAPIRoutes(router.Group(""))
 	router.GET("/r/:code", handler.Redirect)
-	router.GET("/link_visits", handler.ListVisits)
 
 	return router
 }
