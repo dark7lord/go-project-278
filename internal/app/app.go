@@ -30,6 +30,17 @@ func init() {
 	binding.EnableDecoderDisallowUnknownFields = true
 }
 
+// maxRequestBodyBytes bounds JSON request bodies from above (1 MiB headroom).
+const maxRequestBodyBytes = 1 << 20
+
+// maxRequestBody is the equivalent of the common gin.MaxAllowedBodyBytes
+// helper (gin does not ship one): it caps the body size seen by handlers.
+func maxRequestBody(limit int64) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, limit)
+	}
+}
+
 // connectDB creates a new pgxpool connection and pings the database.
 func connectDB(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
 	pool, err := pgxpool.New(ctx, dsn)
@@ -60,6 +71,8 @@ func setupRouter(linkHandler *httpadapter.Handler) *gin.Engine {
 	router.GET("/r/:code", linkHandler.Redirect)
 
 	api := router.Group("/api")
+
+	api.Use(maxRequestBody(maxRequestBodyBytes))
 
 	api.POST("/links", linkHandler.CreateLink)
 	api.GET("/links", linkHandler.ListLinks)
