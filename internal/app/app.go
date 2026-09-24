@@ -13,7 +13,6 @@ import (
 
 	"github.com/getsentry/sentry-go"
 	sentrygin "github.com/getsentry/sentry-go/gin"
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -30,16 +29,8 @@ func init() {
 	binding.EnableDecoderDisallowUnknownFields = true
 }
 
-// maxRequestBodyBytes bounds JSON request bodies from above (1 MiB headroom).
-const maxRequestBodyBytes = 1 << 20
-
-// maxRequestBody is the equivalent of the common gin.MaxAllowedBodyBytes
-// helper (gin does not ship one): it caps the body size seen by handlers.
-func maxRequestBody(limit int64) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, limit)
-	}
-}
+// Check that the httpadapter middleware wiring stays transport-local: the
+// composition root no longer defines HTTP cross-cutting concerns here.
 
 // connectDB creates a new pgxpool connection and pings the database.
 func connectDB(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
@@ -59,7 +50,7 @@ func setupRouter(linkHandler *httpadapter.Handler) *gin.Engine {
 	router := gin.New()
 	router.Use(gin.Logger())
 	router.Use(sentrygin.New(sentrygin.Options{Repanic: true}))
-	router.Use(newCORS())
+	router.Use(httpadapter.NewCORS())
 	router.Use(gin.Recovery())
 
 	router.TrustedPlatform = gin.PlatformCloudflare
@@ -71,30 +62,10 @@ func setupRouter(linkHandler *httpadapter.Handler) *gin.Engine {
 	router.GET("/r/:code", linkHandler.Redirect)
 
 	api := router.Group("/api")
-
-	api.Use(maxRequestBody(maxRequestBodyBytes))
-
+	api.Use(httpadapter.MaxRequestBody(httpadapter.MaxRequestBodyBytes))
 	linkHandler.RegisterAPIRoutes(api)
 
 	return router
-}
-
-func newCORS() gin.HandlerFunc {
-	return cors.New(cors.Config{
-		AllowOrigins: []string{"http://localhost:5173"},
-		AllowMethods: []string{
-			http.MethodGet,
-			http.MethodPost,
-			http.MethodPut,
-			http.MethodPatch,
-			http.MethodHead,
-			http.MethodDelete,
-			http.MethodOptions,
-		},
-		AllowHeaders:  []string{"Content-Type", "Accept", "Range"},
-		ExposeHeaders: []string{"Content-Range"},
-		MaxAge:        12 * time.Hour,
-	})
 }
 
 func newLinkService(linkRepo *postgres.LinkRepository) *application.Service {

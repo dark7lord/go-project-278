@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"net/http"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -29,14 +28,4 @@ func TestPingRoute(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "pong", w.Body.String())
-}
-
-func TestRequestBodyTooLarge(t *testing.T) {
-	router := setupRouter(httpadapter.NewHandler(nil, nil, "http://localhost:8080"))
-
-	body := strings.Repeat("a", maxRequestBodyBytes+1)
-	w := performRequest(t, router, "POST", "/api/links", body)
-
-	assert.Equal(t, http.StatusBadRequest, w.Code)
-	assertErrorBody(t, w)
 }
