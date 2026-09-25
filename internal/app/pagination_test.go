@@ -86,18 +86,6 @@ func TestLinksPagination(t *testing.T) {
 			wantLen:    0,
 		},
 		{
-			name:       "start > end",
-			rangeQuery: "[10,5]",
-			seedCount:  0,
-			wantStatus: http.StatusBadRequest,
-		},
-		{
-			name:       "bad format",
-			rangeQuery: "invalid",
-			seedCount:  0,
-			wantStatus: http.StatusBadRequest,
-		},
-		{
 			name:        "range header applies without query param",
 			rangeHeader: "[2,6]",
 			seedCount:   15,

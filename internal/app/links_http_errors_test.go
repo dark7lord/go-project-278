@@ -1,24 +1,19 @@
 package app
 
 import (
-	"context"
-	"fmt"
 	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+
+	httpadapter "code/internal/adapters/http"
 )
 
 func TestUpdateLinkRejectsUnknownField(t *testing.T) {
-	td := setupTestDB(t)
-	tx := setupTestTx(t, td)
-	ctx := context.Background()
-	created, err := tx.repo.CreateLink(ctx, "https://strict-update.com", "strict-update")
-	require.NoError(t, err)
+	router := setupRouter(httpadapter.NewHandler(nil, nil, "http://localhost:8080"))
 
-	w := performRequest(t, tx.router, "PUT", fmt.Sprintf("/api/links/%d", created.ID),
-		`{"original_url": "https://strict-update.com", "short_name": "ok-link", "short_url": "boom"}`)
+	body := `{"original_url": "https://strict-update.com", "short_name": "ok-link", "short_url": "boom"}`
+	w := performRequest(t, router, "PUT", "/api/links/1", body)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	assert.JSONEq(t, `{"error": "invalid request"}`, w.Body.String())

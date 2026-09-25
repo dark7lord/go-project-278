@@ -331,6 +331,40 @@ func TestHandlerListLinksRejectsRangeOverMaximumPageSize(t *testing.T) {
 	linkService.AssertNotCalled(t, "ListLinksRange", mock.Anything, mock.Anything)
 }
 
+func TestHandlerListLinksRejectsMalformedRange(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		rangeVal string
+		wantBody string
+	}{
+		{
+			name:     "bad format",
+			rangeVal: "invalid",
+			wantBody: `{"error": "invalid range, expected [start,end]"}`,
+		},
+		{
+			name:     "start > end",
+			rangeVal: "[10,5]",
+			wantBody: `{"error": "invalid range, end must not be less than start"}`,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			linkService := &mockLinkUseCase{}
+			handler := newTestHandler(linkService, &mockVisitUseCase{})
+
+			w := httptest.NewRecorder()
+			query := url.Values{"range": {tc.rangeVal}}.Encode()
+			req := httptest.NewRequest(http.MethodGet, "/links?"+query, nil)
+			newHandlerRouter(handler).ServeHTTP(w, req)
+
+			assert.Equal(t, http.StatusBadRequest, w.Code)
+			assert.JSONEq(t, tc.wantBody, w.Body.String())
+			linkService.AssertNotCalled(t, "ListLinks", mock.Anything)
+			linkService.AssertNotCalled(t, "ListLinksRange", mock.Anything, mock.Anything)
+		})
+	}
+}
+
 func TestHandlerListLinksRangeSortMapsRequest(t *testing.T) {
 	linkService := &mockLinkUseCase{}
 	linkService.

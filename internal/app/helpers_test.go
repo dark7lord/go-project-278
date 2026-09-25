@@ -36,22 +36,22 @@ var testDBInst *testDB
 func TestMain(m *testing.M) {
 	flag.Parse()
 
-	if testing.Short() {
-		os.Exit(0)
-	}
-
 	ctx := context.Background()
 
-	td, err := startTestDB(ctx)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+	if !testing.Short() {
+		td, err := startTestDB(ctx)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		testDBInst = td
 	}
-	testDBInst = td
 
 	code := m.Run()
-	td.conn.Close()
-	_ = td.pg.Terminate(ctx)
+	if testDBInst != nil {
+		testDBInst.conn.Close()
+		_ = testDBInst.pg.Terminate(ctx)
+	}
 	os.Exit(code)
 }
 
@@ -137,6 +137,10 @@ func newTestDB(pg testcontainers.Container, pool *pgxpool.Pool) *testDB {
 
 func setupTestDB(t *testing.T) *testDB {
 	t.Helper()
+	if testing.Short() {
+		t.Skip("integration test: needs postgres container, run 'make test-integration'")
+	}
+
 	return testDBInst
 }
 
