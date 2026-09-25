@@ -6,7 +6,13 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 )
+
+// The decoder flag is process-global, so the transport that decodes bodies owns it.
+func init() {
+	binding.EnableDecoderDisallowUnknownFields = true
+}
 
 // MaxRequestBodyBytes bounds JSON request bodies from above (1 MiB headroom).
 const MaxRequestBodyBytes = 1 << 20

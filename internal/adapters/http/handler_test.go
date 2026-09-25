@@ -35,8 +35,8 @@ func newTestHandler(
 
 func newHandlerRouter(handler *Handler) *gin.Engine {
 	router := gin.New()
+	handler.RegisterRootRoutes(router)
 	handler.RegisterAPIRoutes(router.Group(""))
-	router.GET("/r/:code", handler.Redirect)
 
 	return router
 }
@@ -149,6 +149,14 @@ func TestHandlerLinkBindErrorsMapToUnprocessable(t *testing.T) {
 			method:     http.MethodPost,
 			path:       "/links",
 			body:       `{broken`,
+			wantStatus: http.StatusBadRequest,
+			wantBody:   `{"error": "invalid request"}`,
+		},
+		{
+			name:       "update / unknown field",
+			method:     http.MethodPut,
+			path:       "/links/1",
+			body:       `{"original_url": "https://strict-update.com", "short_name": "ok-link", "short_url": "boom"}`,
 			wantStatus: http.StatusBadRequest,
 			wantBody:   `{"error": "invalid request"}`,
 		},

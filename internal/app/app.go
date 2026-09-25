@@ -14,7 +14,6 @@ import (
 	"github.com/getsentry/sentry-go"
 	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
-	"github.com/gin-gonic/gin/binding"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	httpadapter "code/internal/adapters/http"
@@ -24,10 +23,6 @@ import (
 	"code/internal/config"
 	"code/internal/db"
 )
-
-func init() {
-	binding.EnableDecoderDisallowUnknownFields = true
-}
 
 // connectDB creates a new pgxpool connection and pings the database.
 func connectDB(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
