@@ -620,6 +620,39 @@ func TestHandlerListVisitsEmptyCollection(t *testing.T) {
 	visitService.AssertExpectations(t)
 }
 
+func TestHandlerListLinksMapsResponseContract(t *testing.T) {
+	link := application.LinkView{
+		ID:          7,
+		OriginalURL: testExampleURL,
+		ShortName:   "target",
+	}
+	linkService := &mockLinkUseCase{}
+	linkService.
+		On("ListLinks", mock.Anything).
+		Return([]application.LinkView{link}, nil).
+		Once()
+	handler := newTestHandler(linkService, &mockVisitUseCase{})
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/links", nil)
+	newHandlerRouter(handler).ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var items []map[string]any
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &items))
+	require.Len(t, items, 1)
+
+	wantKeys := []string{
+		"id",
+		"original_url",
+		"short_name",
+		"short_url",
+	}
+	assert.ElementsMatch(t, wantKeys, slices.Collect(maps.Keys(items[0])))
+	linkService.AssertExpectations(t)
+}
+
 func TestHandlerListVisitsMapsResponseContract(t *testing.T) {
 	visit := application.VisitView{
 		ID:        7,
