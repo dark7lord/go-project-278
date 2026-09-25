@@ -58,15 +58,21 @@ func (r *VisitRepository) CreateLinkVisit(
 		Referer:   referer,
 		Status:    status,
 	})
+	if err != nil {
+		return application.VisitView{}, mapStorageError(err)
+	}
 
-	return toVisitView(visit), mapStorageError(err)
+	return toVisitView(visit), nil
 }
 
 // ListLinkVisits retrieves all link visits.
 func (r *VisitRepository) ListLinkVisits(ctx context.Context) ([]application.VisitView, error) {
 	visits, err := r.queries.GetLinkVisits(ctx)
+	if err != nil {
+		return nil, mapStorageError(err)
+	}
 
-	return toVisitViews(visits), mapStorageError(err)
+	return toVisitViews(visits), nil
 }
 
 // PageLinkVisits retrieves a paginated page of link visits together with the total count.

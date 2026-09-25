@@ -66,22 +66,31 @@ func mapStorageError(err error) error {
 // GetLinkByID retrieves a link by its ID.
 func (r *LinkRepository) GetLinkByID(ctx context.Context, id int64) (application.LinkView, error) {
 	link, err := r.queries.GetLinkByID(ctx, id)
+	if err != nil {
+		return application.LinkView{}, mapStorageError(err)
+	}
 
-	return toLinkView(link), mapStorageError(err)
+	return toLinkView(link), nil
 }
 
 // GetLinkByShortName retrieves a link by its short name.
 func (r *LinkRepository) GetLinkByShortName(ctx context.Context, shortName string) (application.LinkView, error) {
 	link, err := r.queries.GetLinkByShortName(ctx, shortName)
+	if err != nil {
+		return application.LinkView{}, mapStorageError(err)
+	}
 
-	return toLinkView(link), mapStorageError(err)
+	return toLinkView(link), nil
 }
 
 // ListLinks retrieves all links.
 func (r *LinkRepository) ListLinks(ctx context.Context) ([]application.LinkView, error) {
 	links, err := r.queries.GetLinks(ctx)
+	if err != nil {
+		return nil, mapStorageError(err)
+	}
 
-	return toLinkViews(links), mapStorageError(err)
+	return toLinkViews(links), nil
 }
 
 // PageLinks retrieves a paginated page of links together with the total count.
@@ -117,8 +126,11 @@ func (r *LinkRepository) CreateLink(ctx context.Context, originalURL, shortName 
 		OriginalURL: originalURL,
 		ShortName:   shortName,
 	})
+	if err != nil {
+		return application.LinkView{}, mapStorageError(err)
+	}
 
-	return toLinkView(link), mapStorageError(err)
+	return toLinkView(link), nil
 }
 
 // UpdateLink updates an existing link.
@@ -132,13 +144,19 @@ func (r *LinkRepository) UpdateLink(
 		OriginalURL: originalURL,
 		ShortName:   shortName,
 	})
+	if err != nil {
+		return application.LinkView{}, mapStorageError(err)
+	}
 
-	return toLinkView(link), mapStorageError(err)
+	return toLinkView(link), nil
 }
 
 // DeleteLink deletes a link by its ID.
 func (r *LinkRepository) DeleteLink(ctx context.Context, id int64) (application.LinkView, error) {
 	link, err := r.queries.DeleteLink(ctx, id)
+	if err != nil {
+		return application.LinkView{}, mapStorageError(err)
+	}
 
-	return toLinkView(link), mapStorageError(err)
+	return toLinkView(link), nil
 }
