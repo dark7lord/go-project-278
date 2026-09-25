@@ -89,6 +89,21 @@ func buildApp(cfg *config.Config, dbConn *pgxpool.Pool) *gin.Engine {
 	return setupRouter(linkHandler)
 }
 
+const timeoutErrorBody = `{"error": "request timeout"}`
+
+// withRequestTimeout bounds a request and answers an expired one in JSON.
+// The content type is set on the outer writer on purpose: http.TimeoutHandler
+// discards the handler's own headers on the timeout path, so a type set by the
+// handler or by gin would never reach the client.
+func withRequestTimeout(h http.Handler, timeout time.Duration) http.Handler {
+	timed := http.TimeoutHandler(h, timeout, timeoutErrorBody)
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		timed.ServeHTTP(w, r)
+	})
+}
+
 // Run loads config, connects to the database, and starts the HTTP server.
 func Run() error {
 	cfg, err := config.Load()
@@ -113,7 +128,7 @@ func Run() error {
 
 	server := &http.Server{
 		Addr:              ":8080",
-		Handler:           http.TimeoutHandler(router, cfg.RequestTimeout, `{"error": "request timeout"}`),
+		Handler:           withRequestTimeout(router, cfg.RequestTimeout),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
 		WriteTimeout:      10 * time.Second,

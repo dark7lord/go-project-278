@@ -1,6 +1,7 @@
 package app
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -12,13 +13,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const timeoutErrorBody = `{"error": "request timeout"}`
-
 func newTimeoutTestServer(timeout time.Duration, routes func(*gin.Engine)) *httptest.Server {
 	router := gin.New()
 	routes(router)
 
-	return httptest.NewServer(http.TimeoutHandler(router, timeout, timeoutErrorBody))
+	return httptest.NewServer(withRequestTimeout(router, timeout))
 }
 
 func TestRequestTimeoutReturns503(t *testing.T) {
@@ -38,7 +37,61 @@ func TestRequestTimeoutReturns503(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, http.StatusServiceUnavailable, resp.StatusCode)
-	assert.Contains(t, string(body), "request timeout")
+	assert.Equal(t, "application/json; charset=utf-8", resp.Header.Get("Content-Type"))
+
+	var payload map[string]string
+	require.NoError(t, json.Unmarshal(body, &payload))
+	assert.Contains(t, payload, "error")
+	assert.NotEmpty(t, payload["error"])
+}
+
+func TestRequestTimeoutKeepsDeclaredContentType(t *testing.T) {
+	tests := []struct {
+		name     string
+		register func(*gin.Engine)
+		path     string
+		wantType string
+	}{
+		{
+			name: "json response",
+			register: func(r *gin.Engine) {
+				r.GET("/json", func(c *gin.Context) {
+					c.JSON(http.StatusOK, gin.H{"ok": true})
+				})
+			},
+			path:     "/json",
+			wantType: "application/json; charset=utf-8",
+		},
+		{
+			name: "redirect response",
+			register: func(r *gin.Engine) {
+				r.GET("/redirect", func(c *gin.Context) {
+					c.Redirect(http.StatusFound, "https://example.com")
+				})
+			},
+			path:     "/redirect",
+			wantType: "text/html; charset=utf-8",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			srv := newTimeoutTestServer(time.Second, tt.register)
+			defer srv.Close()
+
+			client := &http.Client{
+				CheckRedirect: func(*http.Request, []*http.Request) error {
+					return http.ErrUseLastResponse
+				},
+			}
+
+			resp, err := client.Get(srv.URL + tt.path)
+			require.NoError(t, err)
+			defer func() { _ = resp.Body.Close() }()
+
+			assert.Equal(t, tt.wantType, resp.Header.Get("Content-Type"))
+		})
+	}
 }
 
 func TestRequestTimeoutFastHandlerPassesThrough(t *testing.T) {
