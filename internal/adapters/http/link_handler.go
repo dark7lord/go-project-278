@@ -247,7 +247,7 @@ func (h *Handler) ListLinks(c *gin.Context) {
 		return
 	}
 
-	page, err := h.linkService.ListLinksRange(
+	page, err := h.linkService.PageLinks(
 		c.Request.Context(),
 		application.ListLinksQuery{Start: start, End: end, Sort: sort},
 	)

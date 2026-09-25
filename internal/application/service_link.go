@@ -71,22 +71,17 @@ func (s *Service) ListLinks(ctx context.Context) ([]LinkView, error) {
 	return links, nil
 }
 
-// ListLinksRange retrieves a paginated subset of links.
-func (s *Service) ListLinksRange(ctx context.Context, q ListLinksQuery) (RangePage[LinkView], error) {
-	totalLinks, err := s.linkReader.CountLinks(ctx)
+// PageLinks retrieves a paginated page of links.
+func (s *Service) PageLinks(ctx context.Context, q ListLinksQuery) (RangePage[LinkView], error) {
+	page, err := s.linkReader.PageLinks(ctx, q)
 	if err != nil {
-		return RangePage[LinkView]{}, fmt.Errorf("count links: %w", err)
+		return RangePage[LinkView]{}, err
+	}
+	if page.Items == nil {
+		page.Items = []LinkView{}
 	}
 
-	links, err := s.linkReader.ListLinksRange(ctx, q.Start, q.End, q.Sort)
-	if err != nil {
-		return RangePage[LinkView]{}, fmt.Errorf("list links range: %w", err)
-	}
-	if links == nil {
-		links = []LinkView{}
-	}
-
-	return RangePage[LinkView]{Items: links, Start: q.Start, Total: totalLinks}, nil
+	return page, nil
 }
 
 // UpdateLink updates an existing link.

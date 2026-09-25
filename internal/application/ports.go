@@ -10,8 +10,7 @@ type LinkReader interface {
 	GetLinkByID(ctx context.Context, id int64) (LinkView, error)
 	GetLinkByShortName(ctx context.Context, shortName string) (LinkView, error)
 	ListLinks(ctx context.Context) ([]LinkView, error)
-	ListLinksRange(ctx context.Context, start, end int64, sort *Sort) ([]LinkView, error)
-	CountLinks(ctx context.Context) (int64, error)
+	PageLinks(ctx context.Context, q ListLinksQuery) (RangePage[LinkView], error)
 }
 
 // LinkWriter defines persistence operations for changing links.
@@ -54,7 +53,7 @@ type LinkUseCase interface {
 	GetLinkByID(ctx context.Context, id int64) (LinkView, error)
 	GetLinkByShortName(ctx context.Context, shortName string) (LinkView, error)
 	ListLinks(ctx context.Context) ([]LinkView, error)
-	ListLinksRange(ctx context.Context, q ListLinksQuery) (RangePage[LinkView], error)
+	PageLinks(ctx context.Context, q ListLinksQuery) (RangePage[LinkView], error)
 	UpdateLink(ctx context.Context, id int64, cmd UpdateLinkCommand) (LinkView, error)
 	DeleteLink(ctx context.Context, id int64) (LinkView, error)
 }

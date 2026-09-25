@@ -237,7 +237,7 @@ func TestHandlerUpdateLinkFieldErrorMapsToUnprocessable(t *testing.T) {
 func TestHandlerListLinksRangeMapsRequest(t *testing.T) {
 	linkService := &mockLinkUseCase{}
 	linkService.
-		On("ListLinksRange", mock.Anything, application.ListLinksQuery{Start: 5, End: 9}).
+		On("PageLinks", mock.Anything, application.ListLinksQuery{Start: 5, End: 9}).
 		Return(application.RangePage[application.LinkView]{
 			Items: make([]application.LinkView, 5),
 			Start: 5,
@@ -262,7 +262,7 @@ func TestHandlerListLinksRangeMapsRequest(t *testing.T) {
 func TestHandlerListLinksRangeUnsatisfiable(t *testing.T) {
 	linkService := &mockLinkUseCase{}
 	linkService.
-		On("ListLinksRange", mock.Anything, application.ListLinksQuery{Start: 100, End: 200}).
+		On("PageLinks", mock.Anything, application.ListLinksQuery{Start: 100, End: 200}).
 		Return(application.RangePage[application.LinkView]{
 			Items: []application.LinkView{},
 			Start: 100,
@@ -287,7 +287,7 @@ func TestHandlerListLinksRangeUnsatisfiable(t *testing.T) {
 func TestHandlerListLinksRangeEmptyCollection(t *testing.T) {
 	linkService := &mockLinkUseCase{}
 	linkService.
-		On("ListLinksRange", mock.Anything, application.ListLinksQuery{Start: 0, End: 4}).
+		On("PageLinks", mock.Anything, application.ListLinksQuery{Start: 0, End: 4}).
 		Return(
 			application.RangePage[application.LinkView]{
 				Items: []application.LinkView{},
@@ -315,7 +315,7 @@ func TestHandlerListLinksRangeEmptyCollection(t *testing.T) {
 func TestHandlerListLinksRangeEmptyItems(t *testing.T) {
 	linkService := &mockLinkUseCase{}
 	linkService.
-		On("ListLinksRange", mock.Anything, application.ListLinksQuery{Start: 5, End: 9}).
+		On("PageLinks", mock.Anything, application.ListLinksQuery{Start: 5, End: 9}).
 		Return(application.RangePage[application.LinkView]{Items: []application.LinkView{}, Start: 5, Total: 10}, nil).
 		Once()
 	handler := newTestHandler(linkService, &mockVisitUseCase{})
@@ -339,7 +339,7 @@ func TestHandlerListLinksRejectsRangeOverMaximumPageSize(t *testing.T) {
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	assert.JSONEq(t, `{"error": "range exceeds maximum page size of 1000"}`, w.Body.String())
-	linkService.AssertNotCalled(t, "ListLinksRange", mock.Anything, mock.Anything)
+	linkService.AssertNotCalled(t, "PageLinks", mock.Anything, mock.Anything)
 }
 
 func TestHandlerListLinksRejectsMalformedRange(t *testing.T) {
@@ -371,7 +371,7 @@ func TestHandlerListLinksRejectsMalformedRange(t *testing.T) {
 			assert.Equal(t, http.StatusBadRequest, w.Code)
 			assert.JSONEq(t, tc.wantBody, w.Body.String())
 			linkService.AssertNotCalled(t, "ListLinks", mock.Anything)
-			linkService.AssertNotCalled(t, "ListLinksRange", mock.Anything, mock.Anything)
+			linkService.AssertNotCalled(t, "PageLinks", mock.Anything, mock.Anything)
 		})
 	}
 }
@@ -379,7 +379,7 @@ func TestHandlerListLinksRejectsMalformedRange(t *testing.T) {
 func TestHandlerListLinksRangeSortMapsRequest(t *testing.T) {
 	linkService := &mockLinkUseCase{}
 	linkService.
-		On("ListLinksRange", mock.Anything, application.ListLinksQuery{
+		On("PageLinks", mock.Anything, application.ListLinksQuery{
 			Start: 5,
 			End:   9,
 			Sort:  &application.Sort{Field: application.SortFieldShortName, Asc: true},
@@ -414,7 +414,7 @@ func TestHandlerListLinksSortWithoutRange(t *testing.T) {
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	assert.JSONEq(t, `{"error": "sort requires a range"}`, w.Body.String())
-	linkService.AssertNotCalled(t, "ListLinksRange", mock.Anything, mock.Anything)
+	linkService.AssertNotCalled(t, "PageLinks", mock.Anything, mock.Anything)
 }
 
 func TestHandlerListLinksSortUnsupportedField(t *testing.T) {
@@ -431,7 +431,7 @@ func TestHandlerListLinksSortUnsupportedField(t *testing.T) {
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	assert.JSONEq(t, `{"error": "unsupported sort field"}`, w.Body.String())
-	linkService.AssertNotCalled(t, "ListLinksRange", mock.Anything, mock.Anything)
+	linkService.AssertNotCalled(t, "PageLinks", mock.Anything, mock.Anything)
 }
 
 func TestHandlerListLinksSortBadFormat(t *testing.T) {
@@ -448,7 +448,7 @@ func TestHandlerListLinksSortBadFormat(t *testing.T) {
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	assert.JSONEq(t, `{"error": "invalid sort, expected [field,ASC|DESC]"}`, w.Body.String())
-	linkService.AssertNotCalled(t, "ListLinksRange", mock.Anything, mock.Anything)
+	linkService.AssertNotCalled(t, "PageLinks", mock.Anything, mock.Anything)
 }
 
 func TestHandlerRedirectMapsVisitMetadata(t *testing.T) {

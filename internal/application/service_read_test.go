@@ -38,18 +38,24 @@ func TestServiceReadLinksReturnsEmptySlice(t *testing.T) {
 	assert.Empty(t, links)
 }
 
-func TestServiceReadLinksRange(t *testing.T) {
+func TestServicePageLinks(t *testing.T) {
 	expected := []LinkView{{
 		ID:        2,
 		ShortName: "second",
 	}}
-	reader := &fakeLinkReader{linkCount: 10, linkRange: expected}
+	reader := &fakeLinkReader{
+		linkPage: RangePage[LinkView]{
+			Items: expected,
+			Start: 5,
+			Total: 10,
+		},
+	}
 	svc := NewServiceWithGenerator(
 		serviceDeps(reader, nil, nil, nil),
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
-	page, err := svc.ListLinksRange(context.Background(), ListLinksQuery{Start: 5, End: 9})
+	page, err := svc.PageLinks(context.Background(), ListLinksQuery{Start: 5, End: 9})
 
 	require.NoError(t, err)
 	assert.Equal(t, expected, page.Items)
@@ -57,28 +63,28 @@ func TestServiceReadLinksRange(t *testing.T) {
 	assert.Equal(t, int64(5), page.Start)
 }
 
-func TestServiceReadLinksRangeNormalizesNilItems(t *testing.T) {
-	reader := &fakeLinkReader{linkCount: 10}
+func TestServicePageLinksNormalizesNilItems(t *testing.T) {
+	reader := &fakeLinkReader{}
 	svc := NewServiceWithGenerator(
 		serviceDeps(reader, nil, nil, nil),
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
-	page, err := svc.ListLinksRange(context.Background(), ListLinksQuery{Start: 0, End: 4})
+	page, err := svc.PageLinks(context.Background(), ListLinksQuery{Start: 0, End: 4})
 
 	require.NoError(t, err)
 	assert.NotNil(t, page.Items)
 	assert.Empty(t, page.Items)
 }
 
-func TestServiceReadLinksRangePropagatesCountError(t *testing.T) {
-	repoErr := errors.New("count failed")
+func TestServicePageLinksPropagatesReaderError(t *testing.T) {
+	repoErr := errors.New("page failed")
 	svc := NewServiceWithGenerator(
-		serviceDeps(&fakeLinkReader{linkCountError: repoErr}, nil, nil, nil),
+		serviceDeps(&fakeLinkReader{linkPageError: repoErr}, nil, nil, nil),
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
-	_, err := svc.ListLinksRange(context.Background(), ListLinksQuery{Start: 0, End: 4})
+	_, err := svc.PageLinks(context.Background(), ListLinksQuery{Start: 0, End: 4})
 
 	assert.ErrorIs(t, err, repoErr)
 }

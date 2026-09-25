@@ -14,23 +14,6 @@ const (
 	fieldOriginalURL = application.SortFieldOriginalURL
 )
 
-// ListLinksRange retrieves a paginated subset of links, sorted when a sort is requested.
-func (r *LinkRepository) ListLinksRange(
-	ctx context.Context,
-	start, end int64,
-	sort *application.Sort,
-) ([]application.LinkView, error) {
-	limit, offset := pageRange(start, end)
-
-	links, err := r.pickLinksRange(ctx, sort, limit, offset)
-	views := make([]application.LinkView, len(links))
-	for index, link := range links {
-		views[index] = toLinkView(link)
-	}
-
-	return views, mapStorageError(err)
-}
-
 // pickLinksRange selects the query matching a links sort request.
 func (r *LinkRepository) pickLinksRange(
 	ctx context.Context,

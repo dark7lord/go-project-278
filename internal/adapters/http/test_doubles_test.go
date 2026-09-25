@@ -38,7 +38,7 @@ func (m *mockLinkUseCase) ListLinks(ctx context.Context) ([]application.LinkView
 	return args.Get(0).([]application.LinkView), args.Error(1)
 }
 
-func (m *mockLinkUseCase) ListLinksRange(
+func (m *mockLinkUseCase) PageLinks(
 	ctx context.Context,
 	q application.ListLinksQuery,
 ) (application.RangePage[application.LinkView], error) {

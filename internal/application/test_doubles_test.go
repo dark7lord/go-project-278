@@ -7,14 +7,12 @@ import (
 )
 
 type fakeLinkReader struct {
-	gotLink        LinkView
-	getLinkError   error
-	links          []LinkView
-	linksError     error
-	linkRange      []LinkView
-	linkRangeError error
-	linkCount      int64
-	linkCountError error
+	gotLink       LinkView
+	getLinkError  error
+	links         []LinkView
+	linksError    error
+	linkPage      RangePage[LinkView]
+	linkPageError error
 }
 
 func (f *fakeLinkReader) GetLinkByID(_ context.Context, _ int64) (LinkView, error) {
@@ -29,12 +27,8 @@ func (f *fakeLinkReader) ListLinks(_ context.Context) ([]LinkView, error) {
 	return f.links, f.linksError
 }
 
-func (f *fakeLinkReader) ListLinksRange(_ context.Context, _, _ int64, _ *Sort) ([]LinkView, error) {
-	return f.linkRange, f.linkRangeError
-}
-
-func (f *fakeLinkReader) CountLinks(_ context.Context) (int64, error) {
-	return f.linkCount, f.linkCountError
+func (f *fakeLinkReader) PageLinks(_ context.Context, _ ListLinksQuery) (RangePage[LinkView], error) {
+	return f.linkPage, f.linkPageError
 }
 
 type mockLinkWriter struct{ mock.Mock }

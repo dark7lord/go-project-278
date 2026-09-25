@@ -4,6 +4,7 @@ package postgres
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -35,6 +36,15 @@ func toLinkView(link db.Link) application.LinkView {
 		ShortName:   link.ShortName,
 		OriginalURL: link.OriginalURL,
 	}
+}
+
+func toLinkViews(links []db.Link) []application.LinkView {
+	views := make([]application.LinkView, len(links))
+	for index, link := range links {
+		views[index] = toLinkView(link)
+	}
+
+	return views
 }
 
 func mapStorageError(err error) error {
@@ -70,17 +80,35 @@ func (r *LinkRepository) GetLinkByShortName(ctx context.Context, shortName strin
 // ListLinks retrieves all links.
 func (r *LinkRepository) ListLinks(ctx context.Context) ([]application.LinkView, error) {
 	links, err := r.queries.GetLinks(ctx)
-	views := make([]application.LinkView, len(links))
-	for index, link := range links {
-		views[index] = toLinkView(link)
-	}
 
-	return views, mapStorageError(err)
+	return toLinkViews(links), mapStorageError(err)
 }
 
-// CountLinks returns the total number of links.
-func (r *LinkRepository) CountLinks(ctx context.Context) (int64, error) {
-	return r.queries.CountLinks(ctx)
+// PageLinks retrieves a paginated page of links together with the total count.
+func (r *LinkRepository) PageLinks(
+	ctx context.Context,
+	q application.ListLinksQuery,
+) (application.RangePage[application.LinkView], error) {
+	total, err := r.queries.CountLinks(ctx)
+	if err != nil {
+		return application.RangePage[application.LinkView]{}, fmt.Errorf("count links: %w", err)
+	}
+
+	limit, offset := pageRange(q.Start, q.End)
+
+	links, err := r.pickLinksRange(ctx, q.Sort, limit, offset)
+	if err != nil {
+		return application.RangePage[application.LinkView]{}, fmt.Errorf(
+			"list links range: %w",
+			mapStorageError(err),
+		)
+	}
+
+	return application.RangePage[application.LinkView]{
+		Items: toLinkViews(links),
+		Start: q.Start,
+		Total: total,
+	}, nil
 }
 
 // CreateLink inserts a new link.
