@@ -4,11 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -517,6 +520,44 @@ func TestHandlerListVisitsRangeSortMapsRequest(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "link_visits 0-4/5", w.Header().Get("Content-Range"))
+	visitService.AssertExpectations(t)
+}
+
+func TestHandlerListVisitsMapsResponseContract(t *testing.T) {
+	visit := application.VisitView{
+		ID:        7,
+		LinkID:    42,
+		CreatedAt: time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC),
+		IP:        "192.0.2.1",
+		UserAgent: "test-agent",
+		Status:    int32(http.StatusFound),
+	}
+	visitService := &mockVisitUseCase{}
+	visitService.
+		On("ListLinkVisits", mock.Anything).
+		Return([]application.VisitView{visit}, nil).
+		Once()
+	handler := newTestHandler(&mockLinkUseCase{}, visitService)
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/link_visits", nil)
+	newHandlerRouter(handler).ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var items []map[string]any
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &items))
+	require.Len(t, items, 1)
+
+	wantKeys := []string{
+		"created_at",
+		"id",
+		"ip",
+		"link_id",
+		"status",
+		"user_agent",
+	}
+	assert.ElementsMatch(t, wantKeys, slices.Collect(maps.Keys(items[0])))
 	visitService.AssertExpectations(t)
 }
 
