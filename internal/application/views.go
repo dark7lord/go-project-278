@@ -4,9 +4,9 @@ import "time"
 
 // LinkView is the application representation of a link returned by a use case.
 type LinkView struct {
-	ID          int64  `json:"id"`
-	OriginalURL string `json:"original_url"`
-	ShortName   string `json:"short_name"`
+	ID          int64
+	OriginalURL string
+	ShortName   string
 }
 
 // VisitView is the application representation of a recorded link visit.
