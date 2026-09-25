@@ -24,7 +24,7 @@ func (s *Service) Redirect(ctx context.Context, cmd RedirectCommand) (LinkView, 
 		return LinkView{}, fmt.Errorf("normalize redirect URL: %w", err)
 	}
 
-	if _, err := s.CreateLinkVisit(
+	if _, err := s.createLinkVisit(
 		ctx,
 		link.ID,
 		cmd.VisitMeta.IP,

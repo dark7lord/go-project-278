@@ -62,17 +62,6 @@ func (m *mockLinkUseCase) DeleteLink(ctx context.Context, id int64) (application
 
 type mockVisitUseCase struct{ mock.Mock }
 
-func (m *mockVisitUseCase) CreateLinkVisit(
-	ctx context.Context,
-	linkID int64,
-	ip, userAgent string,
-	referer *string,
-	status int32,
-) (application.VisitView, error) {
-	args := m.Called(ctx, linkID, ip, userAgent, referer, status)
-	return args.Get(0).(application.VisitView), args.Error(1)
-}
-
 func (m *mockVisitUseCase) ListLinkVisits(ctx context.Context) ([]application.VisitView, error) {
 	args := m.Called(ctx)
 	return args.Get(0).([]application.VisitView), args.Error(1)

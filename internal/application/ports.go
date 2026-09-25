@@ -61,13 +61,6 @@ type LinkUseCase interface {
 
 // VisitUseCase defines the visit operations required by the HTTP transport.
 type VisitUseCase interface {
-	CreateLinkVisit(
-		ctx context.Context,
-		linkID int64,
-		ip, userAgent string,
-		referer *string,
-		status int32,
-	) (VisitView, error)
 	ListLinkVisits(ctx context.Context) ([]VisitView, error)
 	ListLinkVisitsRange(ctx context.Context, q ListLinkVisitsQuery) (RangePage[VisitView], error)
 }

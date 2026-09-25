@@ -2,8 +2,8 @@ package application
 
 import "context"
 
-// CreateLinkVisit records a visit for the given link.
-func (s *Service) CreateLinkVisit(
+// createLinkVisit records a visit for the given link.
+func (s *Service) createLinkVisit(
 	ctx context.Context,
 	linkID int64,
 	ip, userAgent string,
