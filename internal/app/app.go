@@ -121,7 +121,7 @@ func Run() error {
 
 	server := &http.Server{
 		Addr:              ":8080",
-		Handler:           http.TimeoutHandler(router, cfg.RequestTimeout, `{"error":"request timeout"}`),
+		Handler:           http.TimeoutHandler(router, cfg.RequestTimeout, `{"error": "request timeout"}`),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
 		WriteTimeout:      10 * time.Second,

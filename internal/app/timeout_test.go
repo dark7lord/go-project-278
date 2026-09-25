@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const timeoutErrorBody = `{"error":"request timeout"}`
+const timeoutErrorBody = `{"error": "request timeout"}`
 
 func newTimeoutTestServer(timeout time.Duration, routes func(*gin.Engine)) *httptest.Server {
 	router := gin.New()
@@ -57,7 +57,7 @@ func TestRequestTimeoutFastHandlerPassesThrough(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.JSONEq(t, `{"ok":true}`, string(body))
+	assert.JSONEq(t, `{"ok": true}`, string(body))
 }
 
 func TestRequestTimeoutForwardsDeadlineToContext(t *testing.T) {

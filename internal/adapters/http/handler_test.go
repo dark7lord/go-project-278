@@ -77,7 +77,7 @@ func TestHandlerIDValidationDoesNotCallUseCase(t *testing.T) {
 			newHandlerRouter(handler).ServeHTTP(w, req)
 
 			assert.Equal(t, http.StatusBadRequest, w.Code)
-			assert.JSONEq(t, `{"error":"invalid id"}`, w.Body.String())
+			assert.JSONEq(t, `{"error": "invalid id"}`, w.Body.String())
 			linkService.AssertNotCalled(t, "GetLinkByID", mock.Anything, mock.Anything)
 			linkService.AssertNotCalled(t, "UpdateLink", mock.Anything, mock.Anything, mock.Anything)
 			linkService.AssertNotCalled(t, "DeleteLink", mock.Anything, mock.Anything)
@@ -187,14 +187,14 @@ func TestHandlerCreateLinkFieldErrorMapsToUnprocessable(t *testing.T) {
 	req := httptest.NewRequest(
 		http.MethodPost,
 		"/links",
-		strings.NewReader(`{"original_url":"ftp://example.com","short_name":"ok-link"}`),
+		strings.NewReader(`{"original_url": "ftp://example.com", "short_name": "ok-link"}`),
 	)
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	newHandlerRouter(handler).ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusUnprocessableEntity, w.Code)
-	assert.JSONEq(t, `{"errors":{"original_url":"unsupported scheme"}}`, w.Body.String())
+	assert.JSONEq(t, `{"errors": {"original_url": "unsupported scheme"}}`, w.Body.String())
 	linkService.AssertExpectations(t)
 }
 
@@ -215,14 +215,14 @@ func TestHandlerUpdateLinkFieldErrorMapsToUnprocessable(t *testing.T) {
 	req := httptest.NewRequest(
 		http.MethodPut,
 		"/links/1",
-		strings.NewReader(`{"original_url":"https://example.com","short_name":"bad/name"}`),
+		strings.NewReader(`{"original_url": "https://example.com", "short_name": "bad/name"}`),
 	)
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	newHandlerRouter(handler).ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusUnprocessableEntity, w.Code)
-	assert.JSONEq(t, `{"errors":{"short_name":"invalid short code"}}`, w.Body.String())
+	assert.JSONEq(t, `{"errors": {"short_name": "invalid short code"}}`, w.Body.String())
 	linkService.AssertExpectations(t)
 }
 
@@ -330,7 +330,7 @@ func TestHandlerListLinksRejectsRangeOverMaximumPageSize(t *testing.T) {
 	newHandlerRouter(handler).ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	assert.JSONEq(t, `{"error":"range exceeds maximum page size of 1000"}`, w.Body.String())
+	assert.JSONEq(t, `{"error": "range exceeds maximum page size of 1000"}`, w.Body.String())
 	linkService.AssertNotCalled(t, "ListLinksRange", mock.Anything, mock.Anything)
 }
 
@@ -405,7 +405,7 @@ func TestHandlerListLinksSortWithoutRange(t *testing.T) {
 	newHandlerRouter(handler).ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	assert.JSONEq(t, `{"error":"sort requires a range"}`, w.Body.String())
+	assert.JSONEq(t, `{"error": "sort requires a range"}`, w.Body.String())
 	linkService.AssertNotCalled(t, "ListLinksRange", mock.Anything, mock.Anything)
 }
 
@@ -422,7 +422,7 @@ func TestHandlerListLinksSortUnsupportedField(t *testing.T) {
 	newHandlerRouter(handler).ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	assert.JSONEq(t, `{"error":"unsupported sort field"}`, w.Body.String())
+	assert.JSONEq(t, `{"error": "unsupported sort field"}`, w.Body.String())
 	linkService.AssertNotCalled(t, "ListLinksRange", mock.Anything, mock.Anything)
 }
 
@@ -439,7 +439,7 @@ func TestHandlerListLinksSortBadFormat(t *testing.T) {
 	newHandlerRouter(handler).ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	assert.JSONEq(t, `{"error":"invalid sort, expected [field,ASC|DESC]"}`, w.Body.String())
+	assert.JSONEq(t, `{"error": "invalid sort, expected [field,ASC|DESC]"}`, w.Body.String())
 	linkService.AssertNotCalled(t, "ListLinksRange", mock.Anything, mock.Anything)
 }
 
@@ -570,7 +570,7 @@ func TestHandlerListVisitsRejectsRangeOverMaximumPageSize(t *testing.T) {
 	newHandlerRouter(handler).ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	assert.JSONEq(t, `{"error":"range exceeds maximum page size of 1000"}`, w.Body.String())
+	assert.JSONEq(t, `{"error": "range exceeds maximum page size of 1000"}`, w.Body.String())
 	visitService.AssertNotCalled(t, "ListLinkVisitsRange", mock.Anything, mock.Anything)
 }
 
@@ -603,13 +603,13 @@ func TestHandlerCreateLinkHidesInternalError(t *testing.T) {
 	req := httptest.NewRequest(
 		http.MethodPost,
 		"/links",
-		strings.NewReader(`{"original_url":"https://boom.example","short_name":"boomlink"}`),
+		strings.NewReader(`{"original_url": "https://boom.example", "short_name": "boomlink"}`),
 	)
 	req.Header.Set("Content-Type", "application/json")
 	newHandlerRouter(handler).ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
-	assert.JSONEq(t, `{"error":"internal error"}`, w.Body.String())
+	assert.JSONEq(t, `{"error": "internal error"}`, w.Body.String())
 	assert.NotContains(t, w.Body.String(), "connection refused")
 	linkService.AssertExpectations(t)
 }
@@ -627,7 +627,7 @@ func TestHandlerContextDeadlineMapsTo503(t *testing.T) {
 	newHandlerRouter(handler).ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusServiceUnavailable, w.Code)
-	assert.JSONEq(t, `{"error":"request timeout"}`, w.Body.String())
+	assert.JSONEq(t, `{"error": "request timeout"}`, w.Body.String())
 	linkService.AssertExpectations(t)
 }
 
@@ -647,13 +647,13 @@ func TestHandlerUpdateLinkHidesInternalError(t *testing.T) {
 	req := httptest.NewRequest(
 		http.MethodPut,
 		"/links/1",
-		strings.NewReader(`{"original_url":"https://boom.example","short_name":"boomlink"}`),
+		strings.NewReader(`{"original_url": "https://boom.example", "short_name": "boomlink"}`),
 	)
 	req.Header.Set("Content-Type", "application/json")
 	newHandlerRouter(handler).ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
-	assert.JSONEq(t, `{"error":"internal error"}`, w.Body.String())
+	assert.JSONEq(t, `{"error": "internal error"}`, w.Body.String())
 	assert.NotContains(t, w.Body.String(), "connection refused")
 	linkService.AssertExpectations(t)
 }
@@ -677,7 +677,7 @@ func TestHandlerCreateLinkBuildsShortURL(t *testing.T) {
 	req := httptest.NewRequest(
 		http.MethodPost,
 		"/links",
-		strings.NewReader(`{"original_url":"https://example.com","short_name":"example"}`),
+		strings.NewReader(`{"original_url": "https://example.com", "short_name": "example"}`),
 	)
 	req.Header.Set("Content-Type", "application/json")
 	newHandlerRouter(handler).ServeHTTP(w, req)
