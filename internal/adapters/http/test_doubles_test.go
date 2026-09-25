@@ -67,7 +67,7 @@ func (m *mockVisitUseCase) ListLinkVisits(ctx context.Context) ([]application.Vi
 	return args.Get(0).([]application.VisitView), args.Error(1)
 }
 
-func (m *mockVisitUseCase) ListLinkVisitsRange(
+func (m *mockVisitUseCase) PageLinkVisits(
 	ctx context.Context,
 	q application.ListLinkVisitsQuery,
 ) (application.RangePage[application.VisitView], error) {

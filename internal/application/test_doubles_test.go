@@ -64,30 +64,20 @@ func (m *mockLinkWriter) DeleteLink(ctx context.Context, id int64) (LinkView, er
 }
 
 type fakeVisitReader struct {
-	visits           []VisitView
-	visitsRange      []VisitView
-	visitsRangeError error
-	visitCount       int64
-	visitCountError  error
+	visits         []VisitView
+	visitPage      RangePage[VisitView]
+	visitPageError error
 }
 
 func (f *fakeVisitReader) ListLinkVisits(_ context.Context) ([]VisitView, error) {
 	return f.visits, nil
 }
 
-func (f *fakeVisitReader) ListLinkVisitsRange(_ context.Context, _, _ int64, _ *Sort) ([]VisitView, error) {
-	return f.visitsRange, f.visitsRangeError
-}
-
-func (f *fakeVisitReader) CountLinkVisits(_ context.Context) (int64, error) {
-	if f.visitCountError != nil {
-		return 0, f.visitCountError
-	}
-	if f.visitCount != 0 {
-		return f.visitCount, nil
-	}
-
-	return int64(len(f.visits)), nil
+func (f *fakeVisitReader) PageLinkVisits(
+	_ context.Context,
+	_ ListLinkVisitsQuery,
+) (RangePage[VisitView], error) {
+	return f.visitPage, f.visitPageError
 }
 
 type mockVisitRecorder struct{ mock.Mock }

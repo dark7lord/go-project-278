@@ -18,23 +18,6 @@ const (
 	fieldStatus    = application.SortFieldStatus
 )
 
-// ListLinkVisitsRange retrieves a paginated subset of link visits, sorted when a sort is requested.
-func (r *VisitRepository) ListLinkVisitsRange(
-	ctx context.Context,
-	start, end int64,
-	sort *application.Sort,
-) ([]application.VisitView, error) {
-	limit, offset := pageRange(start, end)
-
-	visits, err := r.pickVisitsRange(ctx, sort, limit, offset)
-	views := make([]application.VisitView, len(visits))
-	for index, visit := range visits {
-		views[index] = toVisitView(visit)
-	}
-
-	return views, mapStorageError(err)
-}
-
 // pickVisitsRange selects the query matching a link visits sort request.
 func (r *VisitRepository) pickVisitsRange(
 	ctx context.Context,

@@ -22,15 +22,21 @@ func TestServiceListVisitsReturnsEmptySlice(t *testing.T) {
 	assert.Empty(t, visits)
 }
 
-func TestServiceListVisitsRange(t *testing.T) {
+func TestServicePageLinkVisits(t *testing.T) {
 	expected := []VisitView{{ID: 3, LinkID: 1}}
-	reader := &fakeVisitReader{visitCount: 10, visitsRange: expected}
+	reader := &fakeVisitReader{
+		visitPage: RangePage[VisitView]{
+			Items: expected,
+			Start: 5,
+			Total: 10,
+		},
+	}
 	svc := NewServiceWithGenerator(
 		serviceDeps(nil, nil, reader, nil),
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
-	page, err := svc.ListLinkVisitsRange(context.Background(), ListLinkVisitsQuery{Start: 5, End: 9})
+	page, err := svc.PageLinkVisits(context.Background(), ListLinkVisitsQuery{Start: 5, End: 9})
 
 	require.NoError(t, err)
 	assert.Equal(t, expected, page.Items)
@@ -38,28 +44,28 @@ func TestServiceListVisitsRange(t *testing.T) {
 	assert.Equal(t, int64(5), page.Start)
 }
 
-func TestServiceListVisitsRangeNormalizesNilItems(t *testing.T) {
-	reader := &fakeVisitReader{visitCount: 10}
+func TestServicePageLinkVisitsNormalizesNilItems(t *testing.T) {
+	reader := &fakeVisitReader{}
 	svc := NewServiceWithGenerator(
 		serviceDeps(nil, nil, reader, nil),
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
-	page, err := svc.ListLinkVisitsRange(context.Background(), ListLinkVisitsQuery{Start: 0, End: 4})
+	page, err := svc.PageLinkVisits(context.Background(), ListLinkVisitsQuery{Start: 0, End: 4})
 
 	require.NoError(t, err)
 	assert.NotNil(t, page.Items)
 	assert.Empty(t, page.Items)
 }
 
-func TestServiceListVisitsRangePropagatesCountError(t *testing.T) {
-	repoErr := errors.New("count visits failed")
+func TestServicePageLinkVisitsPropagatesReaderError(t *testing.T) {
+	repoErr := errors.New("page visits failed")
 	svc := NewServiceWithGenerator(
-		serviceDeps(nil, nil, &fakeVisitReader{visitCountError: repoErr}, nil),
+		serviceDeps(nil, nil, &fakeVisitReader{visitPageError: repoErr}, nil),
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
-	_, err := svc.ListLinkVisitsRange(context.Background(), ListLinkVisitsQuery{Start: 0, End: 4})
+	_, err := svc.PageLinkVisits(context.Background(), ListLinkVisitsQuery{Start: 0, End: 4})
 
 	assert.ErrorIs(t, err, repoErr)
 }

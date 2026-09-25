@@ -29,20 +29,18 @@ func (s *Service) ListLinkVisits(ctx context.Context) ([]VisitView, error) {
 	return visits, nil
 }
 
-// ListLinkVisitsRange retrieves a paginated subset of link visits.
-func (s *Service) ListLinkVisitsRange(ctx context.Context, q ListLinkVisitsQuery) (RangePage[VisitView], error) {
-	totalVisits, err := s.visitReader.CountLinkVisits(ctx)
+// PageLinkVisits retrieves a paginated page of link visits.
+func (s *Service) PageLinkVisits(
+	ctx context.Context,
+	q ListLinkVisitsQuery,
+) (RangePage[VisitView], error) {
+	page, err := s.visitReader.PageLinkVisits(ctx, q)
 	if err != nil {
-		return RangePage[VisitView]{}, fmt.Errorf("count link visits: %w", err)
+		return RangePage[VisitView]{}, err
+	}
+	if page.Items == nil {
+		page.Items = []VisitView{}
 	}
 
-	visits, err := s.visitReader.ListLinkVisitsRange(ctx, q.Start, q.End, q.Sort)
-	if err != nil {
-		return RangePage[VisitView]{}, fmt.Errorf("list link visits range: %w", err)
-	}
-	if visits == nil {
-		visits = []VisitView{}
-	}
-
-	return RangePage[VisitView]{Items: visits, Start: q.Start, Total: totalVisits}, nil
+	return page, nil
 }

@@ -23,8 +23,7 @@ type LinkWriter interface {
 // VisitReader defines persistence operations for reading visits.
 type VisitReader interface {
 	ListLinkVisits(ctx context.Context) ([]VisitView, error)
-	ListLinkVisitsRange(ctx context.Context, start, end int64, sort *Sort) ([]VisitView, error)
-	CountLinkVisits(ctx context.Context) (int64, error)
+	PageLinkVisits(ctx context.Context, q ListLinkVisitsQuery) (RangePage[VisitView], error)
 }
 
 // VisitRecorder defines persistence operations for recording visits.
@@ -61,7 +60,7 @@ type LinkUseCase interface {
 // VisitUseCase defines the visit operations required by the HTTP transport.
 type VisitUseCase interface {
 	ListLinkVisits(ctx context.Context) ([]VisitView, error)
-	ListLinkVisitsRange(ctx context.Context, q ListLinkVisitsQuery) (RangePage[VisitView], error)
+	PageLinkVisits(ctx context.Context, q ListLinkVisitsQuery) (RangePage[VisitView], error)
 }
 
 // UseCase combines the application use cases for a single HTTP adapter.

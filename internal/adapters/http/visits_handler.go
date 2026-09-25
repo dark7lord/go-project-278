@@ -46,7 +46,7 @@ func (h *Handler) ListVisits(c *gin.Context) {
 		return
 	}
 
-	page, err := h.visitService.ListLinkVisitsRange(
+	page, err := h.visitService.PageLinkVisits(
 		c.Request.Context(),
 		application.ListLinkVisitsQuery{
 			Start: start,

@@ -478,7 +478,7 @@ func TestHandlerRedirectMapsVisitMetadata(t *testing.T) {
 func TestHandlerListVisitsRangeMapsRequest(t *testing.T) {
 	visitService := &mockVisitUseCase{}
 	visitService.
-		On("ListLinkVisitsRange", mock.Anything, application.ListLinkVisitsQuery{Start: 0, End: 4}).
+		On("PageLinkVisits", mock.Anything, application.ListLinkVisitsQuery{Start: 0, End: 4}).
 		Return(
 			application.RangePage[application.VisitView]{
 				Items: make([]application.VisitView, 5),
@@ -502,7 +502,7 @@ func TestHandlerListVisitsRangeMapsRequest(t *testing.T) {
 func TestHandlerListVisitsRangeSortMapsRequest(t *testing.T) {
 	visitService := &mockVisitUseCase{}
 	visitService.
-		On("ListLinkVisitsRange", mock.Anything, application.ListLinkVisitsQuery{
+		On("PageLinkVisits", mock.Anything, application.ListLinkVisitsQuery{
 			Start: 0,
 			End:   4,
 			Sort:  &application.Sort{Field: application.SortFieldCreatedAt, Asc: false},
@@ -579,7 +579,7 @@ func TestHandlerListVisitsRejectsRangeOverMaximumPageSize(t *testing.T) {
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	assert.JSONEq(t, `{"error": "range exceeds maximum page size of 1000"}`, w.Body.String())
-	visitService.AssertNotCalled(t, "ListLinkVisitsRange", mock.Anything, mock.Anything)
+	visitService.AssertNotCalled(t, "PageLinkVisits", mock.Anything, mock.Anything)
 }
 
 func TestHandlerGetLinkRejectsInvalidID(t *testing.T) {
