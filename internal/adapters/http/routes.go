@@ -1,8 +1,18 @@
 package httpadapter
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 )
+
+// RegisterRootRoutes registers the non-API routes on the given router.
+func (h *Handler) RegisterRootRoutes(router *gin.Engine) {
+	router.GET("/ping", func(c *gin.Context) {
+		c.String(http.StatusOK, "pong")
+	})
+	router.GET("/r/:code", h.Redirect)
+}
 
 // RegisterAPIRoutes registers the JSON API routes on the given router group.
 func (h *Handler) RegisterAPIRoutes(api *gin.RouterGroup) {

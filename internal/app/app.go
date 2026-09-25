@@ -29,9 +29,6 @@ func init() {
 	binding.EnableDecoderDisallowUnknownFields = true
 }
 
-// Check that the httpadapter middleware wiring stays transport-local: the
-// composition root no longer defines HTTP cross-cutting concerns here.
-
 // connectDB creates a new pgxpool connection and pings the database.
 func connectDB(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
 	pool, err := pgxpool.New(ctx, dsn)
@@ -55,11 +52,7 @@ func setupRouter(linkHandler *httpadapter.Handler) *gin.Engine {
 
 	router.TrustedPlatform = gin.PlatformCloudflare
 
-	router.GET("/ping", func(c *gin.Context) {
-		c.String(http.StatusOK, "pong")
-	})
-
-	router.GET("/r/:code", linkHandler.Redirect)
+	linkHandler.RegisterRootRoutes(router)
 
 	api := router.Group("/api")
 	api.Use(httpadapter.MaxRequestBody(httpadapter.MaxRequestBodyBytes))
