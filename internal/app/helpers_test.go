@@ -243,3 +243,12 @@ func (r linkResponse) linkView() application.LinkView {
 		ShortName:   r.ShortName,
 	}
 }
+
+type visitResponse struct {
+	ID        int64     `json:"id"`
+	LinkID    int64     `json:"link_id"`
+	CreatedAt time.Time `json:"created_at"`
+	IP        string    `json:"ip"`
+	UserAgent string    `json:"user_agent"`
+	Status    int32     `json:"status"`
+}

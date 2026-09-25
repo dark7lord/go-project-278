@@ -65,21 +65,9 @@ func unsatisfiedRange(collection string, total int64) string {
 	return fmt.Sprintf("%s */%d", collection, total)
 }
 
-// orEmpty replaces a nil collection with an empty one so the response body
-// is [] rather than null.
-func orEmpty[T any](items []T) []T {
-	if items == nil {
-		return []T{}
-	}
-
-	return items
-}
-
 // writeRangePage resolves the range status against the page total and writes
 // the Content-Range header and response body for a paginated page.
 func writeRangePage[T any](c *gin.Context, collection string, page application.RangePage[T]) {
-	page.Items = orEmpty(page.Items)
-
 	if page.Total == 0 {
 		c.Header("Content-Range", unsatisfiedRange(collection, page.Total))
 		c.JSON(http.StatusOK, page.Items)

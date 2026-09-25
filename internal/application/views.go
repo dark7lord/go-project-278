@@ -11,10 +11,10 @@ type LinkView struct {
 
 // VisitView is the application representation of a recorded link visit.
 type VisitView struct {
-	ID        int64     `json:"id"`
-	LinkID    int64     `json:"link_id"`
-	CreatedAt time.Time `json:"created_at"`
-	IP        string    `json:"ip"`
-	UserAgent string    `json:"user_agent"`
-	Status    int32     `json:"status"`
+	ID        int64
+	LinkID    int64
+	CreatedAt time.Time
+	IP        string
+	UserAgent string
+	Status    int32
 }

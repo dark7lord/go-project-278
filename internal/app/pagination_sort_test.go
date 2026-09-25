@@ -9,8 +9,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"code/internal/application"
 )
 
 func visitIP(i int) string {
@@ -95,7 +93,7 @@ func TestVisitsRangeSortByIP(t *testing.T) {
 			assert.Equal(t, http.StatusOK, w.Code)
 			assert.Equal(t, "link_visits 0-2/3", w.Header().Get("Content-Range"))
 
-			var visits []application.VisitView
+			var visits []visitResponse
 			decode(t, w, &visits)
 			require.Len(t, visits, len(tt.want))
 			for i, visit := range visits {
@@ -148,7 +146,7 @@ func TestVisitsRangeSortRefererNullsLast(t *testing.T) {
 
 			assert.Equal(t, http.StatusOK, w.Code)
 
-			var visits []application.VisitView
+			var visits []visitResponse
 			decode(t, w, &visits)
 			require.Len(t, visits, len(tt.want))
 			for i, visit := range visits {
@@ -203,7 +201,7 @@ func TestVisitsRangeSortCreatedAt(t *testing.T) {
 			assert.Equal(t, http.StatusOK, w.Code)
 			assert.Equal(t, "link_visits 0-2/3", w.Header().Get("Content-Range"))
 
-			var visits []application.VisitView
+			var visits []visitResponse
 			decode(t, w, &visits)
 			require.Len(t, visits, len(tt.want))
 			for i, visit := range visits {

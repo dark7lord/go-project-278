@@ -143,7 +143,7 @@ func TestVisitsPagination(t *testing.T) {
 			}
 
 			if w.Code == http.StatusOK {
-				var visits []application.VisitView
+				var visits []visitResponse
 				decode(t, w, &visits)
 				assert.Len(t, visits, tt.wantLen)
 
