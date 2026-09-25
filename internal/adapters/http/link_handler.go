@@ -145,18 +145,29 @@ func (h *Handler) linkResponses(links []application.LinkView) []linkResponse {
 	return responses
 }
 
-// CreateLinkRequest represents a request to create a link.
-type CreateLinkRequest struct {
+// LinkRequest represents the request body shared by link creation and update.
+type LinkRequest struct {
 	OriginalURL string `json:"original_url" binding:"required"`
 	ShortName   string `json:"short_name" binding:"omitempty,min=3,max=32"`
 }
 
-// CreateLink handles link creation.
-func (h *Handler) CreateLink(c *gin.Context) {
-	var req CreateLinkRequest
-
+// bindLinkRequest decodes the link body shared by create and update, writing
+// the error response itself when the body is invalid.
+func bindLinkRequest(c *gin.Context) (LinkRequest, bool) {
+	var req LinkRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		writeBindErrors(c, err)
+
+		return req, false
+	}
+
+	return req, true
+}
+
+// CreateLink handles link creation.
+func (h *Handler) CreateLink(c *gin.Context) {
+	req, ok := bindLinkRequest(c)
+	if !ok {
 		return
 	}
 
@@ -252,12 +263,6 @@ func (h *Handler) ListLinks(c *gin.Context) {
 	})
 }
 
-// UpdateLinkRequest represents a request to update a link.
-type UpdateLinkRequest struct {
-	OriginalURL string `json:"original_url" binding:"required"`
-	ShortName   string `json:"short_name" binding:"omitempty,min=3,max=32"`
-}
-
 // UpdateLink handles link updates.
 func (h *Handler) UpdateLink(c *gin.Context) {
 	id, err := parsePositiveID(c.Param("id"))
@@ -266,9 +271,8 @@ func (h *Handler) UpdateLink(c *gin.Context) {
 		return
 	}
 
-	var req UpdateLinkRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		writeBindErrors(c, err)
+	req, ok := bindLinkRequest(c)
+	if !ok {
 		return
 	}
 
