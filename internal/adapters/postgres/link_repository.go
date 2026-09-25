@@ -9,8 +9,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 
+	"code/db/generated"
 	"code/internal/application"
-	"code/internal/db"
 )
 
 const shortNameConstraint = "links_short_name_key"

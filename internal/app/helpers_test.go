@@ -24,11 +24,11 @@ import (
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
 
+	"code/db/generated"
 	"code/db/migrations"
 	httpadapter "code/internal/adapters/http"
 	postgresadapter "code/internal/adapters/postgres"
 	"code/internal/application"
-	"code/internal/db"
 )
 
 var testDBInst *testDB

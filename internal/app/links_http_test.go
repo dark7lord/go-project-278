@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"code/internal/db"
+	"code/db/generated"
 )
 
 func TestCreateLink(t *testing.T) {

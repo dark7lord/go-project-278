@@ -16,12 +16,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"code/db/generated"
 	httpadapter "code/internal/adapters/http"
 	"code/internal/adapters/postgres"
 	shortcodeadapter "code/internal/adapters/shortcode"
 	"code/internal/application"
 	"code/internal/config"
-	"code/internal/db"
 )
 
 // connectDB creates a new pgxpool connection and pings the database.

@@ -4,8 +4,8 @@ package postgres
 import (
 	"context"
 
+	"code/db/generated"
 	"code/internal/application"
-	"code/internal/db"
 )
 
 // Link sortable field names matching the ones validated in the HTTP layer.

@@ -5,8 +5,8 @@ import (
 	"context"
 	"fmt"
 
+	"code/db/generated"
 	"code/internal/application"
-	"code/internal/db"
 )
 
 // VisitRepository adapts generated visit queries to the application persistence ports.
