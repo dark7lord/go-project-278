@@ -68,14 +68,17 @@ func setupRouter(linkHandler *httpadapter.Handler) *gin.Engine {
 	return router
 }
 
-func newLinkService(linkRepo *postgres.LinkRepository) *application.Service {
+func newService(
+	linkRepo *postgres.LinkRepository,
+	visitRepo *postgres.VisitRepository,
+) *application.Service {
 	shortCodeGenerator := shortcodeadapter.NewGenerator()
 
 	return application.NewServiceWithGenerator(application.ServiceDeps{
 		LinkReader:    linkRepo,
 		LinkWriter:    linkRepo,
-		VisitReader:   linkRepo,
-		VisitRecorder: linkRepo,
+		VisitReader:   visitRepo,
+		VisitRecorder: visitRepo,
 	}, shortCodeGenerator)
 }
 
@@ -91,7 +94,8 @@ func newLinkHandler(
 func buildApp(cfg *config.Config, dbConn *pgxpool.Pool) *gin.Engine {
 	queries := db.New(dbConn)
 	linkRepo := postgres.NewLinkRepository(queries)
-	linkService := newLinkService(linkRepo)
+	visitRepo := postgres.NewVisitRepository(queries)
+	linkService := newService(linkRepo, visitRepo)
 	linkHandler := newLinkHandler(linkService, linkService, cfg.BaseURL)
 
 	return setupRouter(linkHandler)

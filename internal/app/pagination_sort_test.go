@@ -25,7 +25,7 @@ func TestLinksRangeSortShortName(t *testing.T) {
 
 	seedNames := []string{"banana", "apple", "cherry"}
 	for _, name := range seedNames {
-		_, err := tx.repo.CreateLink(ctx, "https://x.example/"+name, name)
+		_, err := tx.linkRepo.CreateLink(ctx, "https://x.example/"+name, name)
 		require.NoError(t, err)
 	}
 
@@ -66,12 +66,12 @@ func TestVisitsRangeSortByIP(t *testing.T) {
 	tx := setupTestTx(t, td)
 
 	link := linkFactory(0)
-	created, err := tx.repo.CreateLink(ctx, link.OriginalURL, link.ShortName)
+	created, err := tx.linkRepo.CreateLink(ctx, link.OriginalURL, link.ShortName)
 	require.NoError(t, err)
 
 	seedIPs := []string{visitIP(1), visitIP(0), visitIP(2)}
 	for _, ip := range seedIPs {
-		_, err := tx.repo.CreateLinkVisit(ctx, created.ID, ip, "agent", nil, int32(http.StatusFound))
+		_, err := tx.visitRepo.CreateLinkVisit(ctx, created.ID, ip, "agent", nil, int32(http.StatusFound))
 		require.NoError(t, err)
 	}
 
@@ -112,7 +112,7 @@ func TestVisitsRangeSortRefererNullsLast(t *testing.T) {
 	tx := setupTestTx(t, td)
 
 	link := linkFactory(0)
-	created, err := tx.repo.CreateLink(ctx, link.OriginalURL, link.ShortName)
+	created, err := tx.linkRepo.CreateLink(ctx, link.OriginalURL, link.ShortName)
 	require.NoError(t, err)
 
 	refA := "https://a.example"
@@ -125,7 +125,7 @@ func TestVisitsRangeSortRefererNullsLast(t *testing.T) {
 		{ip: visitIP(1), referer: nil},
 		{ip: visitIP(2), referer: &refB},
 	} {
-		_, err := tx.repo.CreateLinkVisit(ctx, created.ID, seed.ip, "agent", seed.referer, int32(http.StatusFound))
+		_, err := tx.visitRepo.CreateLinkVisit(ctx, created.ID, seed.ip, "agent", seed.referer, int32(http.StatusFound))
 		require.NoError(t, err)
 	}
 
@@ -165,13 +165,13 @@ func TestVisitsRangeSortCreatedAt(t *testing.T) {
 	tx := setupTestTx(t, td)
 
 	link := linkFactory(0)
-	created, err := tx.repo.CreateLink(ctx, link.OriginalURL, link.ShortName)
+	created, err := tx.linkRepo.CreateLink(ctx, link.OriginalURL, link.ShortName)
 	require.NoError(t, err)
 
 	// CURRENT_TIMESTAMP is constant within a transaction, so created_at is
 	// backdated per visit to make the ordering deterministic.
 	for i := range 3 {
-		visit, err := tx.repo.CreateLinkVisit(ctx, created.ID, visitIP(i), "agent", nil, int32(http.StatusFound))
+		visit, err := tx.visitRepo.CreateLinkVisit(ctx, created.ID, visitIP(i), "agent", nil, int32(http.StatusFound))
 		require.NoError(t, err)
 
 		_, err = tx.tx.Exec(

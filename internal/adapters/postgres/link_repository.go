@@ -22,8 +22,6 @@ type LinkRepository struct {
 // Compile-time checks that the adapter implements the application ports.
 var _ application.LinkReader = (*LinkRepository)(nil)
 var _ application.LinkWriter = (*LinkRepository)(nil)
-var _ application.VisitReader = (*LinkRepository)(nil)
-var _ application.VisitRecorder = (*LinkRepository)(nil)
 
 // NewLinkRepository creates a PostgreSQL link repository.
 func NewLinkRepository(queries *db.Queries) *LinkRepository {
@@ -36,17 +34,6 @@ func toLinkView(link db.Link) application.LinkView {
 		ID:          link.ID,
 		ShortName:   link.ShortName,
 		OriginalURL: link.OriginalURL,
-	}
-}
-
-func toVisitView(visit db.LinkVisit) application.VisitView {
-	return application.VisitView{
-		ID:        visit.ID,
-		LinkID:    visit.LinkID,
-		CreatedAt: visit.CreatedAt.Time,
-		IP:        visit.IP,
-		UserAgent: visit.UserAgent,
-		Status:    visit.Status,
 	}
 }
 
@@ -126,39 +113,4 @@ func (r *LinkRepository) DeleteLink(ctx context.Context, id int64) (application.
 	link, err := r.queries.DeleteLink(ctx, id)
 
 	return toLinkView(link), mapStorageError(err)
-}
-
-// CreateLinkVisit records a visit for the given link.
-func (r *LinkRepository) CreateLinkVisit(
-	ctx context.Context,
-	linkID int64,
-	ip, userAgent string,
-	referer *string,
-	status int32,
-) (application.VisitView, error) {
-	visit, err := r.queries.CreateLinkVisit(ctx, db.CreateLinkVisitParams{
-		LinkID:    linkID,
-		IP:        ip,
-		UserAgent: userAgent,
-		Referer:   referer,
-		Status:    status,
-	})
-
-	return toVisitView(visit), mapStorageError(err)
-}
-
-// ListLinkVisits retrieves all link visits.
-func (r *LinkRepository) ListLinkVisits(ctx context.Context) ([]application.VisitView, error) {
-	visits, err := r.queries.GetLinkVisits(ctx)
-	views := make([]application.VisitView, len(visits))
-	for index, visit := range visits {
-		views[index] = toVisitView(visit)
-	}
-
-	return views, mapStorageError(err)
-}
-
-// CountLinkVisits returns the total number of link visits.
-func (r *LinkRepository) CountLinkVisits(ctx context.Context) (int64, error) {
-	return r.queries.CountLinkVisits(ctx)
 }

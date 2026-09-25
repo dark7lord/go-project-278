@@ -107,13 +107,13 @@ func TestVisitsPagination(t *testing.T) {
 			tx := setupTestTx(t, td)
 
 			link := linkFactory(0)
-			created, err := tx.repo.CreateLink(ctx, link.OriginalURL, link.ShortName)
+			created, err := tx.linkRepo.CreateLink(ctx, link.OriginalURL, link.ShortName)
 			require.NoError(t, err)
 
 			var seeds []application.VisitView
 			for i := range tt.seedCount {
 				ref := fmt.Sprintf("https://ref-%d.com", i)
-				visit, err := tx.repo.CreateLinkVisit(
+				visit, err := tx.visitRepo.CreateLinkVisit(
 					ctx, created.ID,
 					fmt.Sprintf("10.0.0.%d", i),
 					fmt.Sprintf("agent-%d", i),
@@ -165,7 +165,7 @@ func TestRedirectRecordsVisit(t *testing.T) {
 	tx := setupTestTx(t, td)
 
 	link := linkFactory(0)
-	created, err := tx.repo.CreateLink(ctx, link.OriginalURL, link.ShortName)
+	created, err := tx.linkRepo.CreateLink(ctx, link.OriginalURL, link.ShortName)
 	require.NoError(t, err)
 
 	req := httptest.NewRequest("GET", "/r/"+created.ShortName, nil)

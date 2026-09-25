@@ -96,7 +96,7 @@ func TestLinksPagination(t *testing.T) {
 			var seeds []application.LinkView
 			for i := range tt.seedCount {
 				l := linkFactory(i)
-				created, err := tx.repo.CreateLink(ctx, l.OriginalURL, l.ShortName)
+				created, err := tx.linkRepo.CreateLink(ctx, l.OriginalURL, l.ShortName)
 				require.NoError(t, err)
 				seeds = append(seeds, created)
 			}

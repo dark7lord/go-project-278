@@ -56,14 +56,15 @@ func TestMain(m *testing.M) {
 }
 
 type testDB struct {
-	pg      testcontainers.Container
-	conn    *pgxpool.Pool
-	queries *db.Queries
-	repo    *postgresadapter.LinkRepository
-	svc     *application.Service
-	handler *httpadapter.Handler
-	router  *gin.Engine
-	tx      pgx.Tx
+	pg        testcontainers.Container
+	conn      *pgxpool.Pool
+	queries   *db.Queries
+	linkRepo  *postgresadapter.LinkRepository
+	visitRepo *postgresadapter.VisitRepository
+	svc       *application.Service
+	handler   *httpadapter.Handler
+	router    *gin.Engine
+	tx        pgx.Tx
 }
 
 func startTestDB(ctx context.Context) (*testDB, error) {
@@ -114,24 +115,26 @@ func startTestDB(ctx context.Context) (*testDB, error) {
 func newTestDB(pg testcontainers.Container, pool *pgxpool.Pool) *testDB {
 	queries := db.New(pool)
 	linkRepo := postgresadapter.NewLinkRepository(queries)
+	visitRepo := postgresadapter.NewVisitRepository(queries)
 	linkSvc := application.NewServiceWithGenerator(application.ServiceDeps{
 		LinkReader:    linkRepo,
 		LinkWriter:    linkRepo,
-		VisitReader:   linkRepo,
-		VisitRecorder: linkRepo,
+		VisitReader:   visitRepo,
+		VisitRecorder: visitRepo,
 	},
 		stubGenerator{})
 	linkHandler := httpadapter.NewHandler(linkSvc, linkSvc, "http://localhost:8080")
 	router := setupRouter(linkHandler)
 
 	return &testDB{
-		pg:      pg,
-		conn:    pool,
-		queries: queries,
-		repo:    linkRepo,
-		svc:     linkSvc,
-		handler: linkHandler,
-		router:  router,
+		pg:        pg,
+		conn:      pool,
+		queries:   queries,
+		linkRepo:  linkRepo,
+		visitRepo: visitRepo,
+		svc:       linkSvc,
+		handler:   linkHandler,
+		router:    router,
 	}
 }
 
@@ -152,24 +155,26 @@ func setupTestTx(t *testing.T, td *testDB) *testDB {
 
 	txQueries := td.queries.WithTx(tx)
 	txRepo := postgresadapter.NewLinkRepository(txQueries)
+	txVisitRepo := postgresadapter.NewVisitRepository(txQueries)
 	txSvc := application.NewServiceWithGenerator(application.ServiceDeps{
 		LinkReader:    txRepo,
 		LinkWriter:    txRepo,
-		VisitReader:   txRepo,
-		VisitRecorder: txRepo,
+		VisitReader:   txVisitRepo,
+		VisitRecorder: txVisitRepo,
 	},
 		stubGenerator{})
 	txHandler := httpadapter.NewHandler(txSvc, txSvc, "http://localhost:8080")
 	router := setupRouter(txHandler)
 
 	return &testDB{
-		conn:    td.conn,
-		queries: txQueries,
-		repo:    txRepo,
-		svc:     txSvc,
-		handler: txHandler,
-		router:  router,
-		tx:      tx,
+		conn:      td.conn,
+		queries:   txQueries,
+		linkRepo:  txRepo,
+		visitRepo: txVisitRepo,
+		svc:       txSvc,
+		handler:   txHandler,
+		router:    router,
+		tx:        tx,
 	}
 }
 
