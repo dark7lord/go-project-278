@@ -12,8 +12,10 @@ type UpdateLinkCommand struct {
 	ShortName   string
 }
 
-// RedirectCommand describes a redirect request and its visit metadata.
+// RedirectCommand describes a redirect request, its visit metadata and the
+// response status the visit is recorded with.
 type RedirectCommand struct {
 	ShortName string
 	VisitMeta VisitMeta
+	Status    int32
 }

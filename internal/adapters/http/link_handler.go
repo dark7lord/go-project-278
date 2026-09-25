@@ -19,6 +19,10 @@ import (
 const errInvalidID = "invalid id"
 const errInternal = "internal error"
 
+// redirectStatus is the single source for the response status and for the
+// status recorded on the visit, so the two can never drift apart.
+const redirectStatus = http.StatusFound
+
 func errJSON(msg string) gin.H {
 	return gin.H{"error": msg}
 }
@@ -322,6 +326,7 @@ func (h *Handler) Redirect(c *gin.Context) {
 			UserAgent: c.Request.UserAgent(),
 			Referer:   referer,
 		},
+		Status: int32(redirectStatus),
 	})
 
 	if err != nil {
@@ -330,5 +335,5 @@ func (h *Handler) Redirect(c *gin.Context) {
 		return
 	}
 
-	c.Redirect(http.StatusFound, link.OriginalURL)
+	c.Redirect(redirectStatus, link.OriginalURL)
 }

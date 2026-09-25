@@ -24,7 +24,7 @@ func TestServiceRedirectRecordsVisit(t *testing.T) {
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 	recorder.
-		On("CreateLinkVisit", mock.Anything, int64(42), "192.0.2.1", "test-agent", &referer, int32(302)).
+		On("CreateLinkVisit", mock.Anything, int64(42), "192.0.2.1", "test-agent", &referer, testRedirectStatus).
 		Return(VisitView{}, nil).
 		Once()
 
@@ -35,6 +35,7 @@ func TestServiceRedirectRecordsVisit(t *testing.T) {
 			UserAgent: "test-agent",
 			Referer:   &referer,
 		},
+		Status: testRedirectStatus,
 	})
 
 	require.NoError(t, err)
@@ -72,11 +73,14 @@ func TestServiceRedirectReturnsVisitError(t *testing.T) {
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 	recorder.
-		On("CreateLinkVisit", mock.Anything, int64(1), "", "", (*string)(nil), int32(302)).
+		On("CreateLinkVisit", mock.Anything, int64(1), "", "", (*string)(nil), testRedirectStatus).
 		Return(VisitView{}, visitErr).
 		Once()
 
-	_, err := svc.Redirect(context.Background(), RedirectCommand{ShortName: testTargetName})
+	_, err := svc.Redirect(context.Background(), RedirectCommand{
+		ShortName: testTargetName,
+		Status:    testRedirectStatus,
+	})
 
 	assert.ErrorIs(t, err, visitErr)
 	recorder.AssertExpectations(t)

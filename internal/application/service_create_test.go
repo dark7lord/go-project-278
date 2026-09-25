@@ -18,6 +18,10 @@ const (
 	testOKURL         = "https://ok.com"
 )
 
+// testRedirectStatus is deliberately not 302, so the redirect assertions prove
+// that the service records the status it was handed instead of a literal 302.
+const testRedirectStatus = int32(307)
+
 func TestServiceCreateLink(t *testing.T) {
 	tests := []struct {
 		name               string

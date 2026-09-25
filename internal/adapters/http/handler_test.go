@@ -473,6 +473,7 @@ func TestHandlerRedirectMapsVisitMetadata(t *testing.T) {
 				IP:        "192.0.2.1",
 				UserAgent: "test-agent",
 			},
+			Status: int32(http.StatusFound),
 		}).
 		Return(application.LinkView{OriginalURL: testExampleURL}, nil).
 		Once()

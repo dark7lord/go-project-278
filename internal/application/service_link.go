@@ -30,7 +30,7 @@ func (s *Service) Redirect(ctx context.Context, cmd RedirectCommand) (LinkView, 
 		cmd.VisitMeta.IP,
 		cmd.VisitMeta.UserAgent,
 		cmd.VisitMeta.Referer,
-		302,
+		cmd.Status,
 	); err != nil {
 		return LinkView{}, fmt.Errorf("record link visit: %w", err)
 	}
