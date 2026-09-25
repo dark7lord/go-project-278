@@ -10,39 +10,7 @@ import (
 
 // CreateLink creates a new link with the given URL and optional short name.
 func (s *Service) CreateLink(ctx context.Context, cmd CreateLinkCommand) (LinkView, error) {
-	normalized, err := normalizeURL(cmd.OriginalURL)
-	if err != nil {
-		return LinkView{}, &FieldError{
-			Field: fieldOriginalURL,
-			Err:   fmt.Errorf("%w: %s", domainlinks.ErrInvalidURL, cmd.OriginalURL),
-		}
-	}
-
-	shortName := cmd.ShortName
-	if shortName == "" {
-		link, err := s.withGeneratedShortName(ctx, func(ctx context.Context, name string) (LinkView, error) {
-			return s.linkWriter.CreateLink(ctx, normalized, name)
-		})
-		if err != nil {
-			return LinkView{}, err
-		}
-
-		return link, nil
-	}
-
-	if _, err := domainlinks.NewShortCode(shortName); err != nil {
-		return LinkView{}, &FieldError{
-			Field: fieldShortName,
-			Err:   fmt.Errorf("%w: %s", domainlinks.ErrInvalidShortCode, shortName),
-		}
-	}
-
-	link, err := s.linkWriter.CreateLink(ctx, normalized, shortName)
-	if err != nil {
-		return LinkView{}, err
-	}
-
-	return link, nil
+	return s.saveLinkFields(ctx, cmd.OriginalURL, cmd.ShortName, s.linkWriter.CreateLink)
 }
 
 // Redirect resolves a short name, validates its destination, and records the visit.
@@ -123,24 +91,43 @@ func (s *Service) ListLinksRange(ctx context.Context, q ListLinksQuery) (RangePa
 
 // UpdateLink updates an existing link.
 func (s *Service) UpdateLink(ctx context.Context, id int64, cmd UpdateLinkCommand) (LinkView, error) {
-	normalized, err := normalizeURL(cmd.OriginalURL)
+	persist := func(ctx context.Context, normalizedURL, name string) (LinkView, error) {
+		return s.linkWriter.UpdateLink(ctx, id, normalizedURL, name)
+	}
+
+	return s.saveLinkFields(ctx, cmd.OriginalURL, cmd.ShortName, persist)
+}
+
+// DeleteLink deletes a link by its ID.
+func (s *Service) DeleteLink(ctx context.Context, id int64) (LinkView, error) {
+	link, err := s.linkWriter.DeleteLink(ctx, id)
+	if err != nil {
+		return LinkView{}, fmt.Errorf("delete link: %w", err)
+	}
+
+	return link, nil
+}
+
+// saveLinkFields validates the fields shared by create and update and persists
+// them through persist, which differs only in the writer call per operation.
+func (s *Service) saveLinkFields(
+	ctx context.Context,
+	originalURL string,
+	shortName string,
+	persist func(ctx context.Context, normalizedURL, name string) (LinkView, error),
+) (LinkView, error) {
+	normalized, err := normalizeURL(originalURL)
 	if err != nil {
 		return LinkView{}, &FieldError{
 			Field: fieldOriginalURL,
-			Err:   fmt.Errorf("%w: %s", domainlinks.ErrInvalidURL, cmd.OriginalURL),
+			Err:   fmt.Errorf("%w: %s", domainlinks.ErrInvalidURL, originalURL),
 		}
 	}
 
-	shortName := cmd.ShortName
 	if shortName == "" {
-		updated, err := s.withGeneratedShortName(ctx, func(ctx context.Context, name string) (LinkView, error) {
-			return s.linkWriter.UpdateLink(ctx, id, normalized, name)
+		return s.withGeneratedShortName(ctx, func(ctx context.Context, name string) (LinkView, error) {
+			return persist(ctx, normalized, name)
 		})
-		if err != nil {
-			return LinkView{}, err
-		}
-
-		return updated, nil
 	}
 
 	if _, err := domainlinks.NewShortCode(shortName); err != nil {
@@ -150,19 +137,9 @@ func (s *Service) UpdateLink(ctx context.Context, id int64, cmd UpdateLinkComman
 		}
 	}
 
-	updated, err := s.linkWriter.UpdateLink(ctx, id, normalized, shortName)
+	link, err := persist(ctx, normalized, shortName)
 	if err != nil {
 		return LinkView{}, err
-	}
-
-	return updated, nil
-}
-
-// DeleteLink deletes a link by its ID.
-func (s *Service) DeleteLink(ctx context.Context, id int64) (LinkView, error) {
-	link, err := s.linkWriter.DeleteLink(ctx, id)
-	if err != nil {
-		return LinkView{}, fmt.Errorf("delete link: %w", err)
 	}
 
 	return link, nil
