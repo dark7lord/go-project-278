@@ -25,19 +25,6 @@ func TestServiceReadLinks(t *testing.T) {
 	assert.Equal(t, expected, links)
 }
 
-func TestServiceReadLinksReturnsEmptySlice(t *testing.T) {
-	svc := NewServiceWithGenerator(
-		serviceDeps(&fakeLinkReader{}, nil, nil, nil),
-		&fakeShortCodeGenerator{value: testShortCode},
-	)
-
-	links, err := svc.ListLinks(context.Background())
-
-	require.NoError(t, err)
-	assert.NotNil(t, links)
-	assert.Empty(t, links)
-}
-
 func TestServicePageLinks(t *testing.T) {
 	expected := []LinkView{{
 		ID:        2,
@@ -61,20 +48,6 @@ func TestServicePageLinks(t *testing.T) {
 	assert.Equal(t, expected, page.Items)
 	assert.Equal(t, int64(10), page.Total)
 	assert.Equal(t, int64(5), page.Start)
-}
-
-func TestServicePageLinksNormalizesNilItems(t *testing.T) {
-	reader := &fakeLinkReader{}
-	svc := NewServiceWithGenerator(
-		serviceDeps(reader, nil, nil, nil),
-		&fakeShortCodeGenerator{value: testShortCode},
-	)
-
-	page, err := svc.PageLinks(context.Background(), ListLinksQuery{Start: 0, End: 4})
-
-	require.NoError(t, err)
-	assert.NotNil(t, page.Items)
-	assert.Empty(t, page.Items)
 }
 
 func TestServicePageLinksPropagatesReaderError(t *testing.T) {

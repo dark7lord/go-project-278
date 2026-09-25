@@ -64,9 +64,6 @@ func (s *Service) ListLinks(ctx context.Context) ([]LinkView, error) {
 	if err != nil {
 		return nil, fmt.Errorf("list links: %w", err)
 	}
-	if links == nil {
-		return []LinkView{}, nil
-	}
 
 	return links, nil
 }
@@ -76,9 +73,6 @@ func (s *Service) PageLinks(ctx context.Context, q ListLinksQuery) (RangePage[Li
 	page, err := s.linkReader.PageLinks(ctx, q)
 	if err != nil {
 		return RangePage[LinkView]{}, err
-	}
-	if page.Items == nil {
-		page.Items = []LinkView{}
 	}
 
 	return page, nil

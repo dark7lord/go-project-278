@@ -35,7 +35,7 @@ func (h *Handler) ListVisits(c *gin.Context) {
 			return
 		}
 
-		c.JSON(http.StatusOK, visits)
+		c.JSON(http.StatusOK, orEmpty(visits))
 
 		return
 	}

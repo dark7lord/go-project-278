@@ -22,9 +22,6 @@ func (s *Service) ListLinkVisits(ctx context.Context) ([]VisitView, error) {
 	if err != nil {
 		return nil, fmt.Errorf("list link visits: %w", err)
 	}
-	if visits == nil {
-		return []VisitView{}, nil
-	}
 
 	return visits, nil
 }
@@ -37,9 +34,6 @@ func (s *Service) PageLinkVisits(
 	page, err := s.visitReader.PageLinkVisits(ctx, q)
 	if err != nil {
 		return RangePage[VisitView]{}, err
-	}
-	if page.Items == nil {
-		page.Items = []VisitView{}
 	}
 
 	return page, nil
