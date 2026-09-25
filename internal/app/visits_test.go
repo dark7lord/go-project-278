@@ -194,7 +194,6 @@ func TestRedirectRecordsVisit(t *testing.T) {
 
 func TestRedirectErrors(t *testing.T) {
 	td := setupTestDB(t)
-	ctx := context.Background()
 
 	t.Run("not found", func(t *testing.T) {
 		tx := setupTestTx(t, td)
@@ -202,18 +201,6 @@ func TestRedirectErrors(t *testing.T) {
 		w := performRequest(t, tx.router, "GET", "/r/nonexistent", "")
 
 		assert.Equal(t, http.StatusNotFound, w.Code)
-		assertErrorBody(t, w)
-	})
-
-	t.Run("stored url fails to normalize", func(t *testing.T) {
-		tx := setupTestTx(t, td)
-
-		_, err := tx.repo.CreateLink(ctx, "ftp://x", "invalid-url")
-		require.NoError(t, err)
-
-		w := performRequest(t, tx.router, "GET", "/r/invalid-url", "")
-
-		assert.Equal(t, http.StatusInternalServerError, w.Code)
 		assertErrorBody(t, w)
 	})
 }

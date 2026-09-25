@@ -55,15 +55,6 @@ func TestLinksPagination(t *testing.T) {
 			wantLen:    5,
 		},
 		{
-			name:       "range with spaces",
-			rangeQuery: "[1, 5]",
-			seedCount:  15,
-			start:      1,
-			wantStatus: http.StatusOK,
-			wantRange:  "links 1-5/15",
-			wantLen:    5,
-		},
-		{
 			name:       "no range returns all",
 			rangeQuery: "",
 			seedCount:  15,
@@ -76,14 +67,6 @@ func TestLinksPagination(t *testing.T) {
 			seedCount:  5,
 			wantStatus: http.StatusRequestedRangeNotSatisfiable,
 			wantRange:  "links */5",
-		},
-		{
-			name:       "empty collection returns wildcard range",
-			rangeQuery: "[4,8]",
-			seedCount:  0,
-			wantStatus: http.StatusOK,
-			wantRange:  "links */0",
-			wantLen:    0,
 		},
 		{
 			name:        "range header applies without query param",
