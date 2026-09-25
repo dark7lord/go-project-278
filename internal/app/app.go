@@ -104,6 +104,24 @@ func withRequestTimeout(h http.Handler, timeout time.Duration) http.Handler {
 	})
 }
 
+// writeTimeoutGrace is the window the timeout handler gets to deliver its
+// response after the request budget is spent. Without it the socket deadline
+// races the middleware's 503 and the client sees a dropped connection instead.
+const writeTimeoutGrace = 1 * time.Second
+
+// newServer builds the HTTP server. The write deadline is derived from the
+// request budget so it can never preempt the timeout handler's response.
+func newServer(cfg *config.Config, handler http.Handler) *http.Server {
+	return &http.Server{
+		Addr:              ":8080",
+		Handler:           withRequestTimeout(handler, cfg.RequestTimeout),
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      cfg.RequestTimeout + writeTimeoutGrace,
+		IdleTimeout:       60 * time.Second,
+	}
+}
+
 // Run loads config, connects to the database, and starts the HTTP server.
 func Run() error {
 	cfg, err := config.Load()
@@ -126,16 +144,7 @@ func Run() error {
 
 	router := buildApp(cfg, dbConn)
 
-	server := &http.Server{
-		Addr:              ":8080",
-		Handler:           withRequestTimeout(router, cfg.RequestTimeout),
-		ReadHeaderTimeout: 5 * time.Second,
-		ReadTimeout:       10 * time.Second,
-		WriteTimeout:      10 * time.Second,
-		IdleTimeout:       60 * time.Second,
-	}
-
-	return serveUntilSignal(server)
+	return serveUntilSignal(newServer(cfg, router))
 }
 
 // serveUntilSignal serves HTTP requests until the server crashes on its own
