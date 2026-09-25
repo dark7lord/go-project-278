@@ -1,6 +1,9 @@
 package application
 
-import "context"
+import (
+	"context"
+	"fmt"
+)
 
 // createLinkVisit records a visit for the given link.
 func (s *Service) createLinkVisit(
@@ -17,7 +20,7 @@ func (s *Service) createLinkVisit(
 func (s *Service) ListLinkVisits(ctx context.Context) ([]VisitView, error) {
 	visits, err := s.visitReader.ListLinkVisits(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("list link visits: %w", err)
 	}
 	if visits == nil {
 		return []VisitView{}, nil
@@ -30,12 +33,12 @@ func (s *Service) ListLinkVisits(ctx context.Context) ([]VisitView, error) {
 func (s *Service) ListLinkVisitsRange(ctx context.Context, q ListLinkVisitsQuery) (RangePage[VisitView], error) {
 	totalVisits, err := s.visitReader.CountLinkVisits(ctx)
 	if err != nil {
-		return RangePage[VisitView]{}, err
+		return RangePage[VisitView]{}, fmt.Errorf("count link visits: %w", err)
 	}
 
 	visits, err := s.visitReader.ListLinkVisitsRange(ctx, q.Start, q.End, q.Sort)
 	if err != nil {
-		return RangePage[VisitView]{}, err
+		return RangePage[VisitView]{}, fmt.Errorf("list link visits range: %w", err)
 	}
 	if visits == nil {
 		visits = []VisitView{}

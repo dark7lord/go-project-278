@@ -62,7 +62,7 @@ func (s *Service) GetLinkByShortName(ctx context.Context, shortName string) (Lin
 func (s *Service) ListLinks(ctx context.Context) ([]LinkView, error) {
 	links, err := s.linkReader.ListLinks(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("list links: %w", err)
 	}
 	if links == nil {
 		return []LinkView{}, nil
@@ -75,12 +75,12 @@ func (s *Service) ListLinks(ctx context.Context) ([]LinkView, error) {
 func (s *Service) ListLinksRange(ctx context.Context, q ListLinksQuery) (RangePage[LinkView], error) {
 	totalLinks, err := s.linkReader.CountLinks(ctx)
 	if err != nil {
-		return RangePage[LinkView]{}, err
+		return RangePage[LinkView]{}, fmt.Errorf("count links: %w", err)
 	}
 
 	links, err := s.linkReader.ListLinksRange(ctx, q.Start, q.End, q.Sort)
 	if err != nil {
-		return RangePage[LinkView]{}, err
+		return RangePage[LinkView]{}, fmt.Errorf("list links range: %w", err)
 	}
 	if links == nil {
 		links = []LinkView{}
@@ -139,7 +139,7 @@ func (s *Service) saveLinkFields(
 
 	link, err := persist(ctx, normalized, shortName)
 	if err != nil {
-		return LinkView{}, err
+		return LinkView{}, fmt.Errorf("persist link: %w", err)
 	}
 
 	return link, nil
@@ -171,7 +171,7 @@ func (s *Service) withGeneratedShortName(
 
 		var fieldErr *FieldError
 		if !errors.As(err, &fieldErr) || !errors.Is(fieldErr.Err, ErrShortNameAlreadyUse) {
-			return LinkView{}, err
+			return LinkView{}, fmt.Errorf("persist link: %w", err)
 		}
 	}
 
