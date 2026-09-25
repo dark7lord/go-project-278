@@ -10,7 +10,7 @@ type LinkReader interface {
 	GetLinkByID(ctx context.Context, id int64) (LinkView, error)
 	GetLinkByShortName(ctx context.Context, shortName string) (LinkView, error)
 	ListLinks(ctx context.Context) ([]LinkView, error)
-	ListLinksRange(ctx context.Context, start, end int64) ([]LinkView, error)
+	ListLinksRange(ctx context.Context, start, end int64, sort *Sort) ([]LinkView, error)
 	CountLinks(ctx context.Context) (int64, error)
 }
 
@@ -24,7 +24,7 @@ type LinkWriter interface {
 // VisitReader defines persistence operations for reading visits.
 type VisitReader interface {
 	ListLinkVisits(ctx context.Context) ([]VisitView, error)
-	ListLinkVisitsRange(ctx context.Context, start, end int64) ([]VisitView, error)
+	ListLinkVisitsRange(ctx context.Context, start, end int64, sort *Sort) ([]VisitView, error)
 	CountLinkVisits(ctx context.Context) (int64, error)
 }
 

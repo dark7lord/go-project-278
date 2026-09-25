@@ -33,7 +33,7 @@ func (s *Service) ListLinkVisitsRange(ctx context.Context, q ListLinkVisitsQuery
 		return RangePage[VisitView]{}, err
 	}
 
-	visits, err := s.visitReader.ListLinkVisitsRange(ctx, q.Start, q.End)
+	visits, err := s.visitReader.ListLinkVisitsRange(ctx, q.Start, q.End, q.Sort)
 	if err != nil {
 		return RangePage[VisitView]{}, err
 	}

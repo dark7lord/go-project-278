@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/moby/moby/api/types/network"
@@ -62,6 +63,7 @@ type testDB struct {
 	svc     *application.Service
 	handler *httpadapter.Handler
 	router  *gin.Engine
+	tx      pgx.Tx
 }
 
 func startTestDB(ctx context.Context) (*testDB, error) {
@@ -163,6 +165,7 @@ func setupTestTx(t *testing.T, td *testDB) *testDB {
 		svc:     txSvc,
 		handler: txHandler,
 		router:  router,
+		tx:      tx,
 	}
 }
 

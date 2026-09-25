@@ -126,7 +126,7 @@ func TestVisitsPagination(t *testing.T) {
 
 			urlStr := "/api/link_visits"
 			if tt.rangeQuery != "" {
-				urlStr += "?range=" + url.QueryEscape(tt.rangeQuery)
+				urlStr += "?" + url.Values{"range": {tt.rangeQuery}}.Encode()
 			}
 
 			req, _ := http.NewRequest("GET", urlStr, nil)

@@ -23,7 +23,10 @@ const (
 	testExampleURL = "https://example.com"
 )
 
-func newTestHandler(linkService application.LinkUseCase, visitService application.VisitUseCase) *Handler {
+func newTestHandler(
+	linkService application.LinkUseCase,
+	visitService application.VisitUseCase,
+) *Handler {
 	return NewHandler(linkService, visitService, testBaseURL)
 }
 
@@ -83,12 +86,20 @@ func TestHandlerListLinksRangeMapsRequest(t *testing.T) {
 	linkService := &mockLinkUseCase{}
 	linkService.
 		On("ListLinksRange", mock.Anything, application.ListLinksQuery{Start: 5, End: 9}).
-		Return(application.RangePage[application.LinkView]{Items: make([]application.LinkView, 5), Start: 5, Total: 10}, nil).
+		Return(application.RangePage[application.LinkView]{
+			Items: make([]application.LinkView, 5),
+			Start: 5,
+			Total: 10,
+		}, nil).
 		Once()
 	handler := newTestHandler(linkService, &mockVisitUseCase{})
 
 	w := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "/links?range="+url.QueryEscape("[5,9]"), nil)
+	req := httptest.NewRequest(
+		http.MethodGet,
+		"/links?"+url.Values{"range": {"[5,9]"}}.Encode(),
+		nil,
+	)
 	newHandlerRouter(handler).ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -100,12 +111,20 @@ func TestHandlerListLinksRangeUnsatisfiable(t *testing.T) {
 	linkService := &mockLinkUseCase{}
 	linkService.
 		On("ListLinksRange", mock.Anything, application.ListLinksQuery{Start: 100, End: 200}).
-		Return(application.RangePage[application.LinkView]{Items: []application.LinkView{}, Start: 100, Total: 5}, nil).
+		Return(application.RangePage[application.LinkView]{
+			Items: []application.LinkView{},
+			Start: 100,
+			Total: 5,
+		}, nil).
 		Once()
 	handler := newTestHandler(linkService, &mockVisitUseCase{})
 
 	w := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "/links?range="+url.QueryEscape("[100,200]"), nil)
+	req := httptest.NewRequest(
+		http.MethodGet,
+		"/links?"+url.Values{"range": {"[100,200]"}}.Encode(),
+		nil,
+	)
 	newHandlerRouter(handler).ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusRequestedRangeNotSatisfiable, w.Code)
@@ -117,12 +136,23 @@ func TestHandlerListLinksRangeEmptyCollection(t *testing.T) {
 	linkService := &mockLinkUseCase{}
 	linkService.
 		On("ListLinksRange", mock.Anything, application.ListLinksQuery{Start: 0, End: 4}).
-		Return(application.RangePage[application.LinkView]{Items: []application.LinkView{}, Start: 0, Total: 0}, nil).
+		Return(
+			application.RangePage[application.LinkView]{
+				Items: []application.LinkView{},
+				Start: 0,
+				Total: 0,
+			},
+			nil,
+		).
 		Once()
 	handler := newTestHandler(linkService, &mockVisitUseCase{})
 
 	w := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "/links?range="+url.QueryEscape("[0,4]"), nil)
+	req := httptest.NewRequest(
+		http.MethodGet,
+		"/links?"+url.Values{"range": {"[0,4]"}}.Encode(),
+		nil,
+	)
 	newHandlerRouter(handler).ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -139,7 +169,7 @@ func TestHandlerListLinksRangeEmptyItems(t *testing.T) {
 	handler := newTestHandler(linkService, &mockVisitUseCase{})
 
 	w := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "/links?range="+url.QueryEscape("[5,9]"), nil)
+	req := httptest.NewRequest(http.MethodGet, "/links?"+url.Values{"range": {"[5,9]"}}.Encode(), nil)
 	newHandlerRouter(handler).ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusRequestedRangeNotSatisfiable, w.Code)
@@ -152,11 +182,86 @@ func TestHandlerListLinksRejectsRangeOverMaximumPageSize(t *testing.T) {
 	handler := newTestHandler(linkService, &mockVisitUseCase{})
 
 	w := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "/links?range="+url.QueryEscape("[0,1000]"), nil)
+	req := httptest.NewRequest(http.MethodGet, "/links?"+url.Values{"range": {"[0,1000]"}}.Encode(), nil)
 	newHandlerRouter(handler).ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	assert.JSONEq(t, `{"error":"range exceeds maximum page size of 1000"}`, w.Body.String())
+	linkService.AssertNotCalled(t, "ListLinksRange", mock.Anything, mock.Anything)
+}
+
+func TestHandlerListLinksRangeSortMapsRequest(t *testing.T) {
+	linkService := &mockLinkUseCase{}
+	linkService.
+		On("ListLinksRange", mock.Anything, application.ListLinksQuery{
+			Start: 5,
+			End:   9,
+			Sort:  &application.Sort{Field: application.SortFieldShortName, Asc: true},
+		}).
+		Return(application.RangePage[application.LinkView]{Items: make([]application.LinkView, 5), Start: 5, Total: 10}, nil).
+		Once()
+	handler := newTestHandler(linkService, &mockVisitUseCase{})
+
+	query := url.Values{
+		"range": {"[5,9]"},
+		"sort":  {`["short_name","ASC"]`},
+	}.Encode()
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/links?"+query, nil)
+	newHandlerRouter(handler).ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, "links 5-9/10", w.Header().Get("Content-Range"))
+	linkService.AssertExpectations(t)
+}
+
+func TestHandlerListLinksSortWithoutRange(t *testing.T) {
+	linkService := &mockLinkUseCase{}
+	handler := newTestHandler(linkService, &mockVisitUseCase{})
+
+	w := httptest.NewRecorder()
+	query := url.Values{
+		"sort": {`["short_name","ASC"]`},
+	}.Encode()
+	req := httptest.NewRequest(http.MethodGet, "/links?"+query, nil)
+	newHandlerRouter(handler).ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.JSONEq(t, `{"error":"sort requires a range"}`, w.Body.String())
+	linkService.AssertNotCalled(t, "ListLinksRange", mock.Anything, mock.Anything)
+}
+
+func TestHandlerListLinksSortUnsupportedField(t *testing.T) {
+	linkService := &mockLinkUseCase{}
+	handler := newTestHandler(linkService, &mockVisitUseCase{})
+
+	query := url.Values{
+		"range": {"[0,4]"},
+		"sort":  {`["bogus","ASC"]`},
+	}.Encode()
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/links?"+query, nil)
+	newHandlerRouter(handler).ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.JSONEq(t, `{"error":"unsupported sort field"}`, w.Body.String())
+	linkService.AssertNotCalled(t, "ListLinksRange", mock.Anything, mock.Anything)
+}
+
+func TestHandlerListLinksSortBadFormat(t *testing.T) {
+	linkService := &mockLinkUseCase{}
+	handler := newTestHandler(linkService, &mockVisitUseCase{})
+
+	query := url.Values{
+		"range": {"[0,4]"},
+		"sort":  {"short_name"},
+	}.Encode()
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/links?"+query, nil)
+	newHandlerRouter(handler).ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.JSONEq(t, `{"error":"invalid sort, expected [field,ASC|DESC]"}`, w.Body.String())
 	linkService.AssertNotCalled(t, "ListLinksRange", mock.Anything, mock.Anything)
 }
 
@@ -200,7 +305,39 @@ func TestHandlerListVisitsRangeMapsRequest(t *testing.T) {
 	handler := newTestHandler(&mockLinkUseCase{}, visitService)
 
 	w := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "/link_visits?range="+url.QueryEscape("[0,4]"), nil)
+	req := httptest.NewRequest(http.MethodGet, "/link_visits?"+url.Values{"range": {"[0,4]"}}.Encode(), nil)
+	newHandlerRouter(handler).ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, "link_visits 0-4/5", w.Header().Get("Content-Range"))
+	visitService.AssertExpectations(t)
+}
+
+func TestHandlerListVisitsRangeSortMapsRequest(t *testing.T) {
+	visitService := &mockVisitUseCase{}
+	visitService.
+		On("ListLinkVisitsRange", mock.Anything, application.ListLinkVisitsQuery{
+			Start: 0,
+			End:   4,
+			Sort:  &application.Sort{Field: application.SortFieldCreatedAt, Asc: false},
+		}).
+		Return(
+			application.RangePage[application.VisitView]{
+				Items: make([]application.VisitView, 5),
+				Start: 0,
+				Total: 5,
+			},
+			nil,
+		).
+		Once()
+	handler := newTestHandler(&mockLinkUseCase{}, visitService)
+
+	query := url.Values{
+		"range": {"[0,4]"},
+		"sort":  {`["created_at","DESC"]`},
+	}.Encode()
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/link_visits?"+query, nil)
 	newHandlerRouter(handler).ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -213,7 +350,7 @@ func TestHandlerListVisitsRejectsRangeOverMaximumPageSize(t *testing.T) {
 	handler := newTestHandler(&mockLinkUseCase{}, visitService)
 
 	w := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "/link_visits?range="+url.QueryEscape("[0,1000]"), nil)
+	req := httptest.NewRequest(http.MethodGet, "/link_visits?"+url.Values{"range": {"[0,1000]"}}.Encode(), nil)
 	newHandlerRouter(handler).ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)

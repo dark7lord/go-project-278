@@ -29,7 +29,7 @@ func (f *fakeLinkReader) ListLinks(_ context.Context) ([]LinkView, error) {
 	return f.links, f.linksError
 }
 
-func (f *fakeLinkReader) ListLinksRange(_ context.Context, _, _ int64) ([]LinkView, error) {
+func (f *fakeLinkReader) ListLinksRange(_ context.Context, _, _ int64, _ *Sort) ([]LinkView, error) {
 	return f.linkRange, f.linkRangeError
 }
 
@@ -81,7 +81,7 @@ func (f *fakeVisitReader) ListLinkVisits(_ context.Context) ([]VisitView, error)
 	return f.visits, nil
 }
 
-func (f *fakeVisitReader) ListLinkVisitsRange(_ context.Context, _, _ int64) ([]VisitView, error) {
+func (f *fakeVisitReader) ListLinkVisitsRange(_ context.Context, _, _ int64, _ *Sort) ([]VisitView, error) {
 	return f.visitsRange, f.visitsRangeError
 }
 

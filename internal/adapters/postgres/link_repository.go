@@ -12,14 +12,7 @@ import (
 	"code/internal/db"
 )
 
-const (
-	shortNameConstraint = "links_short_name_key"
-)
-
-// pageRange converts an inclusive [start,end] range into a LIMIT/OFFSET pair.
-func pageRange(start, end int64) (limit, offset int64) {
-	return end - start + 1, start
-}
+const shortNameConstraint = "links_short_name_key"
 
 // LinkRepository adapts generated SQL queries to the application persistence ports.
 type LinkRepository struct {
@@ -65,7 +58,7 @@ func mapStorageError(err error) error {
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) && pgErr.Code == "23505" && pgErr.ConstraintName == shortNameConstraint {
 		return &application.FieldError{
-			Field: "short_name",
+			Field: string(fieldShortName),
 			Err:   application.ErrShortNameAlreadyUse,
 		}
 	}
@@ -90,18 +83,6 @@ func (r *LinkRepository) GetLinkByShortName(ctx context.Context, shortName strin
 // ListLinks retrieves all links.
 func (r *LinkRepository) ListLinks(ctx context.Context) ([]application.LinkView, error) {
 	links, err := r.queries.GetLinks(ctx)
-	views := make([]application.LinkView, len(links))
-	for index, link := range links {
-		views[index] = toLinkView(link)
-	}
-
-	return views, mapStorageError(err)
-}
-
-// ListLinksRange retrieves a paginated subset of links.
-func (r *LinkRepository) ListLinksRange(ctx context.Context, start, end int64) ([]application.LinkView, error) {
-	limit, offset := pageRange(start, end)
-	links, err := r.queries.GetLinksRange(ctx, db.GetLinksRangeParams{Limit: limit, Offset: offset})
 	views := make([]application.LinkView, len(links))
 	for index, link := range links {
 		views[index] = toLinkView(link)
@@ -169,21 +150,6 @@ func (r *LinkRepository) CreateLinkVisit(
 // ListLinkVisits retrieves all link visits.
 func (r *LinkRepository) ListLinkVisits(ctx context.Context) ([]application.VisitView, error) {
 	visits, err := r.queries.GetLinkVisits(ctx)
-	views := make([]application.VisitView, len(visits))
-	for index, visit := range visits {
-		views[index] = toVisitView(visit)
-	}
-
-	return views, mapStorageError(err)
-}
-
-// ListLinkVisitsRange retrieves a paginated subset of link visits.
-func (r *LinkRepository) ListLinkVisitsRange(ctx context.Context, start, end int64) ([]application.VisitView, error) {
-	limit, offset := pageRange(start, end)
-	visits, err := r.queries.GetLinkVisitsRange(ctx, db.GetLinkVisitsRangeParams{
-		Limit:  limit,
-		Offset: offset,
-	})
 	views := make([]application.VisitView, len(visits))
 	for index, visit := range visits {
 		views[index] = toVisitView(visit)

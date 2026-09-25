@@ -20,6 +20,8 @@ linters:
     - misspell
     - lll
   settings:
+    goconst:
+      ignore-tests: true
     nlreturn:
       block-size: 3
     lll:

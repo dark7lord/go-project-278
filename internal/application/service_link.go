@@ -110,7 +110,7 @@ func (s *Service) ListLinksRange(ctx context.Context, q ListLinksQuery) (RangePa
 		return RangePage[LinkView]{}, err
 	}
 
-	links, err := s.linkReader.ListLinksRange(ctx, q.Start, q.End)
+	links, err := s.linkReader.ListLinksRange(ctx, q.Start, q.End, q.Sort)
 	if err != nil {
 		return RangePage[LinkView]{}, err
 	}

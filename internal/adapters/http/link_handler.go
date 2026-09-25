@@ -79,6 +79,11 @@ func writeServiceError(c *gin.Context, err error) {
 		return
 	}
 
+	if errors.Is(err, application.ErrSortField) {
+		c.JSON(http.StatusBadRequest, errJSON(err.Error()))
+		return
+	}
+
 	if errors.Is(err, application.ErrNotFound) {
 		c.JSON(http.StatusNotFound, errJSON(err.Error()))
 		return
@@ -197,6 +202,22 @@ func requestRange(c *gin.Context) string {
 func (h *Handler) ListLinks(c *gin.Context) {
 	rangeParam := requestRange(c)
 
+	sort, err := parseSortParam(c.Query("sort"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, errJSON(err.Error()))
+		return
+	}
+	if sort != nil {
+		if rangeParam == "" {
+			c.JSON(http.StatusBadRequest, errJSON(ErrSortWithoutRange.Error()))
+			return
+		}
+		if _, ok := linksSortableFields[sort.Field]; !ok {
+			c.JSON(http.StatusBadRequest, errJSON(application.ErrSortField.Error()))
+			return
+		}
+	}
+
 	if rangeParam == "" {
 		links, err := h.linkService.ListLinks(c.Request.Context())
 		if err != nil {
@@ -215,7 +236,10 @@ func (h *Handler) ListLinks(c *gin.Context) {
 		return
 	}
 
-	page, err := h.linkService.ListLinksRange(c.Request.Context(), application.ListLinksQuery{Start: start, End: end})
+	page, err := h.linkService.ListLinksRange(
+		c.Request.Context(),
+		application.ListLinksQuery{Start: start, End: end, Sort: sort},
+	)
 	if err != nil {
 		writeServiceError(c, err)
 		return
