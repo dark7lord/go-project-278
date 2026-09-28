@@ -32,6 +32,8 @@ RUN apk add --no-cache ca-certificates tzdata bash caddy
 
 WORKDIR /app
 
+ENV GIN_MODE=release
+
 COPY --from=backend-builder /build/app /app/bin/app
 COPY --from=frontend-builder \
   /build/frontend/node_modules/@hexlet/project-url-shortener-frontend/dist \
