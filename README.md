@@ -98,6 +98,8 @@ visits by `id`, `link_id`, `created_at`, `ip`, `user_agent`, `referer`, `status`
 - `400` for malformed JSON, unknown fields, a bad id, range or sort.
 - A request body is limited to 1 MiB.
 - A request running longer than `REQUEST_TIMEOUT` answers `503 {"error": "request timeout"}`.
+- Every response except the `503` timeout carries a generated `X-Request-ID`;
+  the Sentry event of a `500` is tagged with it.
 
 ## Examples
 

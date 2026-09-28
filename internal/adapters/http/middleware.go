@@ -1,9 +1,11 @@
 package httpadapter
 
 import (
+	"crypto/rand"
 	"net/http"
 	"time"
 
+	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -42,4 +44,19 @@ func NewCORS() gin.HandlerFunc {
 		ExposeHeaders: []string{"Content-Range"},
 		MaxAge:        12 * time.Hour,
 	})
+}
+
+// RequestIDHeader carries the id that ties a response to its Sentry event.
+const RequestIDHeader = "X-Request-ID"
+
+// RequestID tags each request with a fresh id in the response and its Sentry
+// scope. It must run after the sentrygin middleware.
+func RequestID() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id := rand.Text()
+		c.Header(RequestIDHeader, id)
+		if hub := sentrygin.GetHubFromContext(c); hub != nil {
+			hub.Scope().SetTag("request_id", id)
+		}
+	}
 }

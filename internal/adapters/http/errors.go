@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/getsentry/sentry-go"
+	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 
@@ -84,6 +85,16 @@ func writeServiceError(c *gin.Context, err error) {
 	}
 
 	_ = c.Error(err)
-	sentry.CaptureException(err)
+	captureException(c, err)
 	c.JSON(http.StatusInternalServerError, errJSON(errInternal))
+}
+
+// captureException reports err through the request's Sentry hub, so the event
+// carries the request scope (request id); it falls back to the global hub.
+func captureException(c *gin.Context, err error) {
+	if hub := sentrygin.GetHubFromContext(c); hub != nil {
+		hub.CaptureException(err)
+		return
+	}
+	sentry.CaptureException(err)
 }

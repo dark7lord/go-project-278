@@ -42,6 +42,7 @@ func setupRouter(linkHandler *httpadapter.Handler) *gin.Engine {
 	router := gin.New()
 	router.Use(gin.Logger())
 	router.Use(sentrygin.New(sentrygin.Options{Repanic: true}))
+	router.Use(httpadapter.RequestID())
 	router.Use(httpadapter.NewCORS())
 	router.Use(gin.Recovery())
 
