@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -214,4 +215,30 @@ func TestListVisitsEmpty(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "[]", w.Body.String())
+}
+
+// TestVisitCreatedAtIgnoresSessionTimeZone guards created_at against being
+// stored as wall-clock time: a non-UTC session must not shift the API value.
+func TestVisitCreatedAtIgnoresSessionTimeZone(t *testing.T) {
+	td := setupTestDB(t)
+	ctx := context.Background()
+
+	tx := setupTestTx(t, td)
+
+	_, err := tx.tx.Exec(ctx, "SET LOCAL TIME ZONE 'Asia/Yekaterinburg'")
+	require.NoError(t, err)
+
+	link := linkFactory(0)
+	created, err := tx.linkRepo.CreateLink(ctx, link.OriginalURL, link.ShortName)
+	require.NoError(t, err)
+	_, err = tx.visitRepo.CreateLinkVisit(ctx, created.ID, "1.1.1.1", "agent", nil, int32(http.StatusFound))
+	require.NoError(t, err)
+
+	w := performRequest(t, tx.router, "GET", "/api/link_visits", "")
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	var visits []visitResponse
+	decode(t, w, &visits)
+	require.Len(t, visits, 1)
+	assert.WithinDuration(t, time.Now(), visits[0].CreatedAt, time.Minute)
 }

@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS links (
 CREATE TABLE IF NOT EXISTS link_visits (
     id              BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     link_id         BIGINT REFERENCES links(id) ON DELETE CASCADE NOT NULL,
-    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    created_at      TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     ip              VARCHAR(45) NOT NULL DEFAULT '',
     user_agent      TEXT NOT NULL DEFAULT '',
     referer         TEXT,
