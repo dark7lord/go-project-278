@@ -202,7 +202,7 @@ func TestRedirectErrors(t *testing.T) {
 		w := performRequest(t, tx.router, "GET", "/r/nonexistent", "")
 
 		assert.Equal(t, http.StatusNotFound, w.Code)
-		assertErrorBody(t, w)
+		assertErrorMessage(t, w, "link not found")
 	})
 }
 

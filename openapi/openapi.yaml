@@ -277,6 +277,8 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+          example:
+            error: link not found
     RangeNotSatisfiable:
       description: The range starts past the end of a non-empty collection.
       headers:

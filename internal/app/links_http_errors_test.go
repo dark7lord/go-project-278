@@ -47,7 +47,7 @@ func TestLinkErrors(t *testing.T) {
 			w := performRequest(t, tx.router, tt.method, tt.path, tt.body)
 
 			assert.Equal(t, tt.wantStatus, w.Code)
-			assertErrorBody(t, w)
+			assertErrorMessage(t, w, "link not found")
 		})
 	}
 }

@@ -83,13 +83,15 @@ func writeServiceError(c *gin.Context, err error) {
 		return
 	}
 
+	// A classified error answers with its sentinel text: the wrap chain added
+	// by the use cases is for logs, not part of the contract.
 	if errors.Is(err, application.ErrSortField) {
-		c.JSON(http.StatusBadRequest, errJSON(err.Error()))
+		c.JSON(http.StatusBadRequest, errJSON(application.ErrSortField.Error()))
 		return
 	}
 
 	if errors.Is(err, application.ErrNotFound) {
-		c.JSON(http.StatusNotFound, errJSON(err.Error()))
+		c.JSON(http.StatusNotFound, errJSON(application.ErrNotFound.Error()))
 		return
 	}
 

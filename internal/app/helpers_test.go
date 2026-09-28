@@ -209,11 +209,11 @@ func decode(t *testing.T, w *httptest.ResponseRecorder, v any) {
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), v))
 }
 
-func assertErrorBody(t *testing.T, w *httptest.ResponseRecorder) {
+func assertErrorMessage(t *testing.T, w *httptest.ResponseRecorder, want string) {
 	t.Helper()
 	var body map[string]string
 	decode(t, w, &body)
-	assert.NotEmpty(t, body["error"])
+	assert.Equal(t, want, body["error"])
 }
 
 func assertFieldErrors(t *testing.T, w *httptest.ResponseRecorder, field string) {
