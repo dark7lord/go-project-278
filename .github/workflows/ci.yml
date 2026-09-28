@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
         with:
-          go-version: '1.25.7'
+          go-version: '1.26.0'
           cache: true
           cache-dependency-path: go.sum
       - name: Check build
@@ -28,7 +28,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
         with:
-          go-version: '1.25.7'
+          go-version: '1.26.0'
           cache: true
           cache-dependency-path: go.sum
       - name: Run tests with coverage
@@ -46,15 +46,14 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
         with:
-          go-version: '1.25.7'
+          go-version: '1.26.0'
           cache: true
           cache-dependency-path: go.sum
-      - name: Install golangci-lint
+      # The action installs and runs the linter itself; make lint expects it in $(GOBIN)
+      - name: Lint
         uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.12.2
-      - name: Lint
-        run: make lint
+          version: v2.14.0
 
   sonar:
     runs-on: ubuntu-latest

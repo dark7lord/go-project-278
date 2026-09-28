@@ -1,9 +1,20 @@
 # Databases
-.PHONY: sqlc-gen goose-status goose-up goose-down goose-validate db-redo
-GOOSE := goose -dir db/migrations postgres $(DATABASE_URL)
+SQLC_VERSION := v1.31.1
+# Keep in sync with ARG GOOSE_VERSION in the Dockerfile
+GOOSE_VERSION := v3.28.0
 
+.PHONY: sqlc-gen sqlc-install goose-install goose-status goose-up goose-down goose-validate db-redo
+GOOSE := $(GOBIN)/goose -dir db/migrations postgres $(DATABASE_URL)
+
+sqlc-install: ## Install sqlc (pinned version)
+	go install github.com/sqlc-dev/sqlc/cmd/sqlc@$(SQLC_VERSION)
+
+goose-install: ## Install goose (pinned version, as in the image)
+	go install github.com/pressly/goose/v3/cmd/goose@$(GOOSE_VERSION)
+
+# $(GOBIN), not bare `sqlc`: only sqlc's version reproduces db/generated in git
 sqlc-gen: ## Generate code from SQL (sqlc)
-	sqlc generate
+	$(GOBIN)/sqlc generate
 
 goose-status: ## Show DB migration status
 	$(GOOSE) status

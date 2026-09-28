@@ -8,7 +8,7 @@ RUN --mount=type=cache,target=/root/.npm \
   npm ci --prefer-offline --no-audit
 
 # 2) Build backend
-FROM golang:1.25-alpine AS backend-builder
+FROM golang:1.26-alpine AS backend-builder
 RUN apk add --no-cache git
 WORKDIR /build/code
 
@@ -16,7 +16,9 @@ COPY go.mod go.sum ./
 RUN --mount=type=cache,target=/go/pkg/mod \
   go mod download
 
-RUN go install github.com/pressly/goose/v3/cmd/goose@latest
+# Keep in sync with GOOSE_VERSION in make/db.mk
+ARG GOOSE_VERSION=v3.28.0
+RUN go install github.com/pressly/goose/v3/cmd/goose@${GOOSE_VERSION}
 
 COPY . .
 
