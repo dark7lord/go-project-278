@@ -16,5 +16,6 @@ type VisitView struct {
 	CreatedAt time.Time
 	IP        string
 	UserAgent string
+	Referer   *string
 	Status    int32
 }

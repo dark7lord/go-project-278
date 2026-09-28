@@ -189,7 +189,7 @@ curl -i localhost:8080/api/link_visits -H 'Range: link_visits=0-1'
 HTTP/1.1 206 Partial Content
 Content-Range: link_visits 0-0/1
 
-[{"id":1,"link_id":1,"created_at":"2026-09-28T18:36:35.585766+05:00","ip":"::1","user_agent":"curl/8.7.1","status":302}]
+[{"id":1,"link_id":1,"created_at":"2026-09-28T18:36:35.585766+05:00","ip":"::1","user_agent":"curl/8.7.1","reffer":null,"status":302}]
 ```
 
 The last link, with a suffix range:

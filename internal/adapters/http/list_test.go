@@ -459,6 +459,7 @@ func TestHandlerListVisitsMapsResponseContract(t *testing.T) {
 		"id",
 		"ip",
 		"link_id",
+		"reffer",
 		"status",
 		"user_agent",
 	}

@@ -29,6 +29,7 @@ func toVisitView(visit db.LinkVisit) application.VisitView {
 		CreatedAt: visit.CreatedAt.Time,
 		IP:        visit.IP,
 		UserAgent: visit.UserAgent,
+		Referer:   visit.Referer,
 		Status:    visit.Status,
 	}
 }

@@ -413,6 +413,11 @@ components:
           type: string
         user_agent:
           type: string
+        reffer:
+          type: [string, 'null']
+          description: |
+            The Referer of the redirect request, null when the browser sent none.
+            Spelled `reffer`, as the dashboard reads it.
         status:
           type: integer
           format: int32

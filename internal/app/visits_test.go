@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"code/db/generated"
 	"code/internal/application"
 )
 
@@ -199,11 +198,12 @@ func TestRedirectRecordsVisit(t *testing.T) {
 	assert.Equal(t, "test-agent", visits[0].UserAgent)
 	assert.Equal(t, int32(http.StatusFound), visits[0].Status)
 
-	stored, err := tx.queries.GetLinkVisitsRangeIdAsc(ctx, db.GetLinkVisitsRangeIdAscParams{Limit: 10})
-	require.NoError(t, err)
-	require.Len(t, stored, 1)
-	require.NotNil(t, stored[0].Referer)
-	assert.Equal(t, "https://example.com", *stored[0].Referer)
+	w = performRequest(t, tx.router, "GET", "/api/link_visits", "")
+	var listed []visitResponse
+	decode(t, w, &listed)
+	require.Len(t, listed, 1)
+	require.NotNil(t, listed[0].Reffer)
+	assert.Equal(t, "https://example.com", *listed[0].Reffer)
 }
 
 func TestRedirectErrors(t *testing.T) {

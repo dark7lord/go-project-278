@@ -39,7 +39,9 @@ type visitResponse struct {
 	CreatedAt time.Time `json:"created_at"`
 	IP        string    `json:"ip"`
 	UserAgent string    `json:"user_agent"`
-	Status    int32     `json:"status"`
+	// "reffer", not "referer": the dashboard's visits column reads this name
+	Reffer *string `json:"reffer"`
+	Status int32   `json:"status"`
 }
 
 func toVisitResponse(visit application.VisitView) visitResponse {
@@ -49,6 +51,7 @@ func toVisitResponse(visit application.VisitView) visitResponse {
 		CreatedAt: visit.CreatedAt,
 		IP:        visit.IP,
 		UserAgent: visit.UserAgent,
+		Reffer:    visit.Referer,
 		Status:    visit.Status,
 	}
 }

@@ -250,5 +250,6 @@ type visitResponse struct {
 	CreatedAt time.Time `json:"created_at"`
 	IP        string    `json:"ip"`
 	UserAgent string    `json:"user_agent"`
+	Reffer    *string   `json:"reffer"`
 	Status    int32     `json:"status"`
 }
