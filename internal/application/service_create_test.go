@@ -43,6 +43,13 @@ func TestServiceCreateLink(t *testing.T) {
 			wantRepoCalls: 1,
 		},
 		{
+			name:          "trims explicit short name",
+			command:       CreateLinkCommand{OriginalURL: testExampleURL, ShortName: " my-link "},
+			wantURL:       testExampleURL,
+			wantCode:      testShortName,
+			wantRepoCalls: 1,
+		},
+		{
 			name:               "generates missing short name",
 			command:            CreateLinkCommand{OriginalURL: "https://example.com"},
 			generator:          testGeneratedCode,

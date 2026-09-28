@@ -119,14 +119,15 @@ func (s *Service) saveLinkFields(
 		})
 	}
 
-	if _, err := domainlinks.NewShortCode(shortName); err != nil {
+	code, err := domainlinks.NewShortCode(shortName)
+	if err != nil {
 		return LinkView{}, &FieldError{
 			Field: fieldShortName,
 			Err:   fmt.Errorf("%w: %s", domainlinks.ErrInvalidShortCode, shortName),
 		}
 	}
 
-	link, err := persist(ctx, normalized, shortName)
+	link, err := persist(ctx, normalized, code.String())
 	if err != nil {
 		return LinkView{}, fmt.Errorf("persist link: %w", err)
 	}
