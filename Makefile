@@ -9,7 +9,7 @@ GOBIN := $(shell go env GOPATH)/bin
 -include .env
 export
 
-include make/dev.mk make/lint.mk make/test.mk make/db.mk make/docker.mk
+include make/dev.mk make/lint.mk make/test.mk make/db.mk make/docker.mk make/api.mk
 
 .PHONY: all tools help
 all: deps build ## Everything needed to start working: deps + build

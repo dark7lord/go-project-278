@@ -1,0 +1,385 @@
+openapi: 3.1.0
+info:
+  title: Link Shortener API
+  version: 1.0.0
+  description: |
+    REST API of the link shortener: links, redirects and recorded visits.
+
+    Collections are paginated by an inclusive `[start,end]` range, passed as the
+    `range` query parameter or the `Range` header (the query parameter wins).
+    A paginated response carries `Content-Range: <collection> <first>-<last>/<total>`.
+    Without a range the whole collection is returned, with no `Content-Range`.
+
+    Every JSON endpoint may answer `503 {"error": "request timeout"}` once the
+    request exceeds `REQUEST_TIMEOUT`, and `500 {"error": "internal error"}`.
+servers:
+  - url: http://localhost:8080
+
+# The API has no authentication yet.
+security: []
+
+tags:
+  - name: links
+  - name: visits
+  - name: service
+
+paths:
+  /ping:
+    get:
+      tags: [service]
+      summary: Health check
+      operationId: ping
+      responses:
+        '200':
+          description: The service is up.
+          content:
+            text/plain:
+              schema:
+                type: string
+                const: pong
+
+  /r/{code}:
+    get:
+      tags: [links]
+      summary: Follow a short link
+      description: Records a visit (IP, User-Agent, Referer, status) and redirects to the original URL.
+      operationId: redirect
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '302':
+          description: Redirect to the original URL.
+          headers:
+            Location:
+              schema:
+                type: string
+                format: uri
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Timeout'
+
+  /api/links:
+    get:
+      tags: [links]
+      summary: List links
+      operationId: listLinks
+      parameters:
+        - $ref: '#/components/parameters/RangeQuery'
+        - $ref: '#/components/parameters/RangeHeader'
+        - name: sort
+          in: query
+          description: |
+            `["field","ASC|DESC"]`, requires a range.
+            Sortable fields: `id`, `original_url`, `short_name`.
+          schema:
+            type: string
+            examples: ['["short_name","ASC"]']
+      responses:
+        '200':
+          description: Links; paginated when a range is given.
+          headers:
+            Content-Range:
+              $ref: '#/components/headers/ContentRange'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Link'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '416':
+          $ref: '#/components/responses/RangeNotSatisfiable'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Timeout'
+    post:
+      tags: [links]
+      summary: Create a link
+      operationId: createLink
+      requestBody:
+        $ref: '#/components/requestBodies/LinkRequest'
+      responses:
+        '201':
+          description: The created link.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Link'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Timeout'
+
+  /api/links/{id}:
+    parameters:
+      - $ref: '#/components/parameters/ID'
+    get:
+      tags: [links]
+      summary: Get a link
+      operationId: getLink
+      responses:
+        '200':
+          description: The link.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Link'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Timeout'
+    put:
+      tags: [links]
+      summary: Replace a link
+      description: A missing `short_name` is generated, as on creation.
+      operationId: updateLink
+      requestBody:
+        $ref: '#/components/requestBodies/LinkRequest'
+      responses:
+        '200':
+          description: The updated link.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Link'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Timeout'
+    delete:
+      tags: [links]
+      summary: Delete a link and its visits
+      operationId: deleteLink
+      responses:
+        '204':
+          description: Deleted.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Timeout'
+
+  /api/link_visits:
+    get:
+      tags: [visits]
+      summary: List link visits
+      operationId: listLinkVisits
+      parameters:
+        - $ref: '#/components/parameters/RangeQuery'
+        - $ref: '#/components/parameters/RangeHeader'
+        - name: sort
+          in: query
+          description: |
+            `["field","ASC|DESC"]`, requires a range. Sortable fields: `id`, `link_id`,
+            `created_at`, `ip`, `user_agent`, `referer`, `status`.
+          schema:
+            type: string
+            examples: ['["created_at","DESC"]']
+      responses:
+        '200':
+          description: Visits; paginated when a range is given.
+          headers:
+            Content-Range:
+              $ref: '#/components/headers/ContentRange'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Visit'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '416':
+          $ref: '#/components/responses/RangeNotSatisfiable'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Timeout'
+
+components:
+  parameters:
+    ID:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+    RangeQuery:
+      name: range
+      in: query
+      description: Inclusive `[start,end]`, at most 1000 items. Takes precedence over the `Range` header.
+      schema:
+        type: string
+        examples: ['[0,9]']
+    RangeHeader:
+      name: Range
+      in: header
+      description: Same `[start,end]` format as the `range` query parameter.
+      schema:
+        type: string
+        examples: ['[0,9]']
+
+  headers:
+    ContentRange:
+      description: |
+        Present only on paginated responses: `<collection> <first>-<last>/<total>`,
+        or `<collection> */<total>` for an empty collection or an unsatisfiable range.
+      schema:
+        type: string
+        examples: ['links 0-9/42']
+
+  requestBodies:
+    LinkRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/LinkRequest'
+
+  responses:
+    BadRequest:
+      description: Malformed JSON, unknown field, invalid id, range or sort.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: The link does not exist.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    RangeNotSatisfiable:
+      description: The range starts past the end of a non-empty collection.
+      headers:
+        Content-Range:
+          $ref: '#/components/headers/ContentRange'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: range not satisfiable
+    ValidationError:
+      description: A field failed validation, or `short_name` is already in use.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationError'
+    InternalError:
+      description: Unexpected failure; details are not exposed.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: internal error
+    Timeout:
+      description: The request exceeded `REQUEST_TIMEOUT`.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: request timeout
+
+  schemas:
+    Link:
+      type: object
+      required: [id, original_url, short_name, short_url]
+      properties:
+        id:
+          type: integer
+          format: int64
+        original_url:
+          type: string
+          format: uri
+        short_name:
+          type: string
+        short_url:
+          type: string
+          format: uri
+          description: '`BASE_URL` + `/r/` + `short_name`.'
+    LinkRequest:
+      type: object
+      required: [original_url]
+      additionalProperties: false
+      properties:
+        original_url:
+          type: string
+          description: HTTP or HTTPS URL; a missing scheme defaults to `https://`.
+          examples: [example.com]
+        short_name:
+          type: string
+          description: |
+            3–32 characters of `[a-zA-Z0-9-]`, surrounding spaces are trimmed.
+            Generated when omitted or empty.
+          minLength: 3
+          maxLength: 32
+    Visit:
+      type: object
+      required: [id, link_id, created_at, ip, user_agent, status]
+      properties:
+        id:
+          type: integer
+          format: int64
+        link_id:
+          type: integer
+          format: int64
+        created_at:
+          type: string
+          format: date-time
+        ip:
+          type: string
+        user_agent:
+          type: string
+        status:
+          type: integer
+          format: int32
+          description: HTTP status of the redirect.
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+    ValidationError:
+      type: object
+      required: [errors]
+      properties:
+        errors:
+          type: object
+          description: Field name to message.
+          additionalProperties:
+            type: string
+      example:
+        errors:
+          short_name: short name already in use
