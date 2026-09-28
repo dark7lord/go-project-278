@@ -50,14 +50,18 @@ func TestLoadMissingEnv(t *testing.T) {
 }
 
 func TestLoadInvalidRequestTimeout(t *testing.T) {
-	t.Setenv("SENTRY_DSN", "")
-	t.Setenv("DATABASE_URL", "postgres://user:pass@localhost/db")
-	t.Setenv("BASE_URL", "")
-	t.Setenv("REQUEST_TIMEOUT", "not-a-duration")
+	for _, raw := range []string{"not-a-duration", "0", "-1s"} {
+		t.Run(raw, func(t *testing.T) {
+			t.Setenv("SENTRY_DSN", "")
+			t.Setenv("DATABASE_URL", "postgres://user:pass@localhost/db")
+			t.Setenv("BASE_URL", "")
+			t.Setenv("REQUEST_TIMEOUT", raw)
 
-	_, err := Load()
-	require.Error(t, err)
-	assert.ErrorContains(t, err, "REQUEST_TIMEOUT")
+			_, err := Load()
+			require.Error(t, err)
+			assert.ErrorContains(t, err, "REQUEST_TIMEOUT")
+		})
+	}
 }
 
 func TestLoadNormalizesBaseURL(t *testing.T) {

@@ -51,6 +51,9 @@ func Load() (*Config, error) {
 		if err != nil {
 			return nil, fmt.Errorf("REQUEST_TIMEOUT: %w", err)
 		}
+		if timeout <= 0 {
+			return nil, errors.New("REQUEST_TIMEOUT must be positive")
+		}
 		cfg.RequestTimeout = timeout
 	}
 
