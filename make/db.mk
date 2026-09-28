@@ -1,32 +1,35 @@
-# Databases
-SQLC_VERSION := v1.31.1
-# Keep in sync with ARG GOOSE_VERSION in the Dockerfile
-GOOSE_VERSION := v3.28.0
+##@ Database (the compose PostgreSQL)
+.PHONY: db-up db-down db-migrate db-rollback db-status db-redo db-validate db-reset db-gen
+GOOSE := $(GOTOOL) goose -dir db/migrations postgres "$(DATABASE_URL)"
 
-.PHONY: sqlc-gen sqlc-install goose-install goose-status goose-up goose-down goose-validate db-redo
-GOOSE := $(GOBIN)/goose -dir db/migrations postgres $(DATABASE_URL)
+db-up: ## Start PostgreSQL in Docker, the data lives in the pgdata volume
+	docker compose up -d --wait db
 
-sqlc-install: ## Install sqlc (pinned version)
-	go install github.com/sqlc-dev/sqlc/cmd/sqlc@$(SQLC_VERSION)
+db-down: ## Stop PostgreSQL, the data stays
+	docker compose stop db
 
-goose-install: ## Install goose (pinned version, as in the image)
-	go install github.com/pressly/goose/v3/cmd/goose@$(GOOSE_VERSION)
-
-# $(GOBIN), not bare `sqlc`: only sqlc's version reproduces db/generated in git
-sqlc-gen: ## Generate code from SQL (sqlc)
-	$(GOBIN)/sqlc generate
-
-goose-status: ## Show DB migration status
-	$(GOOSE) status
-
-goose-up: ## Apply DB migrations
+db-migrate: ## Apply the migrations
 	$(GOOSE) up
 
-goose-down: ## Roll back latest DB migration
+db-rollback: ## Roll back the latest migration
 	$(GOOSE) down
 
-goose-validate: ## Validate migration files without running them
+db-status: ## Show the migration status
+	$(GOOSE) status
+
+db-redo: ## Re-run the latest migration
+	$(GOOSE) redo
+
+db-validate: ## Check the migration files without running them
 	$(GOOSE) validate
 
-db-redo: ## Re-run the latest migration (redo)
-	$(GOOSE) redo
+db-reset: ## Drop all local data and migrate from scratch (asks first)
+	@printf "Drop all data of the compose PostgreSQL? [y/N] "; read answer; [ "$$answer" = y ] \
+		|| { echo "Cancelled."; exit 1; }
+	docker compose down --volumes
+	@$(MAKE) --no-print-directory db-up db-migrate
+
+# The sqlc of tools/go.mod reproduces db/generated in git byte for byte.
+# sqlc keeps stale files: remove the .sql.go of a renamed or deleted query file first
+db-gen: ## Regenerate db/generated from db/queries (sqlc)
+	$(GOTOOL) sqlc generate

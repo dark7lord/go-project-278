@@ -1,0 +1,17 @@
+# make dev: rebuild and restart the API when a Go file changes
+root = "."
+tmp_dir = "tmp/air"
+
+[build]
+  cmd = "go build -o ./tmp/air/app ./cmd/api"
+  entrypoint = ["./tmp/air/app"]
+  include_ext = ["go"]
+  exclude_dir = [".git", "bin", "node_modules", "tmp"]
+  exclude_regex = ["_test\\.go$"]
+  delay = 500
+  # SIGINT lets the server drain in-flight requests, as on a real shutdown
+  send_interrupt = true
+  kill_delay = "3s"
+
+[misc]
+  clean_on_exit = true

@@ -1,20 +1,17 @@
-# Testing
-.PHONY: test test-unit test-integration cover cover-html check
+##@ Tests
+.PHONY: test test-unit test-integration cover cover-html
 
-test: ## Run all tests (with Docker) and write coverage.out
+test: ## All tests with -race, writes coverage.out (integration ones need Docker)
 	go test -race -coverpkg=./... -coverprofile=coverage.out ./...
 
-test-unit: ## Run unit tests only (fast, no Docker)
+test-unit: ## Unit tests only, no Docker
 	go test -short -race ./...
 
-test-integration: ## Run integration tests for internal/app (testcontainers)
+test-integration: ## internal/app against a PostgreSQL in testcontainers
 	go test -race ./internal/app/...
 
-cover: test ## Run all tests and print coverage report
+cover: test ## Tests + coverage report
 	go tool cover -func=coverage.out
 
-cover-html: test ## Run all tests and open HTML coverage report
+cover-html: test ## Tests + coverage report in the browser
 	go tool cover -html=coverage.out
-
-check: test lint build clean ## Run all checks: test + lint + build + clean
-	@echo "✅ All checks passed"

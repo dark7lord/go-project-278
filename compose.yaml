@@ -1,0 +1,35 @@
+# Local stack. Render does not read this file: it builds the Dockerfile alone
+# and pairs it with a managed PostgreSQL.
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: link_shortener
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d link_shortener"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+  # The production image (API, dashboard, Caddy; run.sh applies migrations).
+  app:
+    profiles: [app]
+    build: .
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/link_shortener?sslmode=disable
+      BASE_URL: http://localhost
+      SENTRY_DSN: ${SENTRY_DSN:-}
+    ports:
+      - "80:80"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:

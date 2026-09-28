@@ -14,37 +14,44 @@ Shortens links, redirects through them and records every visit; comes with a rea
 
 ## Quickstart
 
-Requirements: Go 1.26, Node.js, PostgreSQL, Docker (for integration tests and the image).
-
-`.env.example` works as is against a local PostgreSQL; to start one in Docker:
+Requirements: Go (the version in `go.mod`), Node.js 20.19+ or 22.12+, Docker with Compose v2.
 
 ```bash
-docker run -d --name link-shortener-db -p 5432:5432 \
-  -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=link_shortener \
-  postgres:17-alpine
-```
-
-```bash
-cp .env.example .env
-make tools             # golangci-lint, sqlc, goose (pinned versions)
-make deps              # Go modules and the frontend package
-make goose-up          # apply migrations
-make run               # API on :8080 + dashboard on :5173
+git clone https://github.com/dark7lord/go-project-278.git && cd go-project-278
+make setup             # checks, .env, tools, dependencies, PostgreSQL, migrations
+make dev               # API on :8080, restarted on save + dashboard on :5173
 ```
 
 Open [localhost:5173](http://localhost:5173): the dashboard proxies `/api` to the API on `:8080`.
+`make dev` rebuilds and restarts the API through [air](https://github.com/air-verse/air)
+whenever a Go file changes (`.air.toml`); `make run` does the same without restarts.
+
+`make setup` can be re-run at any time, for example after a pull with new migrations.
+It first checks the tools above, that Docker is running and that the PostgreSQL port is free,
+then does the steps you could also run by hand:
+
+```bash
+cp .env.example .env   # only when there is no .env yet
+make tools             # golangci-lint binary; sqlc, goose, air built from tools/go.mod
+make deps              # Go modules and the frontend package
+make db-up             # PostgreSQL 17 in Docker, data kept in the pgdata volume
+make db-migrate        # apply migrations
+```
+
+If port 5432 is taken, for example by a local PostgreSQL, set `POSTGRES_PORT=5433` in `.env`
+and use the same port in `DATABASE_URL`; `make setup` says so when it finds the port busy.
 
 ### Docker
 
 The image bundles the API, the built dashboard and Caddy; migrations run on start.
+It is what Render builds; there the database is a separate managed PostgreSQL.
 
 ```bash
-make docker-build
-make docker-run        # reads .env, serves on :80
+make docker-up         # the image with the compose PostgreSQL, on http://localhost
+make docker-down       # stop the image; PostgreSQL and its data stay
 ```
 
-Inside the container `localhost` is the container itself: point `DATABASE_URL`
-at `host.docker.internal` to reach a database on the host.
+`compose.yaml` wires the image to the database by the service name `db`.
 
 ## Configuration
 
@@ -213,15 +220,46 @@ Content-Range: links */3
 ## Development
 
 ```bash
-make test       # run all tests (integration ones need Docker)
-make lint       # run linters
-make cover      # run tests with coverage report
-make check      # test + lint + build + clean
-make build      # build binary to bin/app
-make clean      # remove build artifacts
+# development
+make help              # every target by section; a bare `make` shows it too
+make setup             # after a clone; make preflight runs its checks alone
+make dev               # PostgreSQL + API restarted on save + dashboard
+make run               # the same without restarts (run-front: the dashboard alone)
+make build             # build the API binary to bin/app
+make deps              # Go modules and the frontend package
+make check             # test + lint + build, what CI checks
+
+# tests
+make test              # all tests with -race, writes coverage.out (integration ones need Docker)
+make test-unit         # unit tests only, no Docker
+make test-integration  # internal/app against a PostgreSQL in testcontainers
+make cover             # tests + coverage report (cover-html opens it in a browser)
+
+# code quality
+make lint              # golangci-lint, expects 0 issues (lint-fix applies fixes)
+make fmt               # format the code
+
+# database
+make db-up             # start PostgreSQL (db-down stops it, the data stays)
+make db-migrate        # apply migrations (db-rollback undoes the latest)
+make db-status         # show migration status (db-redo, db-validate)
+make db-reset          # drop all local data and migrate from scratch, asks first
+make db-gen            # regenerate db/generated from db/queries (sqlc)
+
+# Docker
+make docker-up         # the image with PostgreSQL, as on Render (docker-down, docker-build)
+
+# API docs and tools
+make api-lint          # validate openapi/openapi.yaml (api-html opens the docs)
+make tools             # golangci-lint binary; sqlc, goose, air from tools/go.mod
 ```
 
-`make help` lists every target.
+sqlc, goose and air are pinned in `tools/go.mod` and run through `go tool -modfile=tools/go.mod`,
+so their dependencies never mix with the app's. To bump one:
+`cd tools && go get -tool <module>@<version> && go mod tidy`.
+
+`sqlc` does not delete stale files: after renaming or removing a file in `db/queries`,
+remove its `.sql.go` from `db/generated` before `make db-gen`.
 
 ## Architecture
 

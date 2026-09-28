@@ -1,19 +1,11 @@
-# Docker
-.PHONY: docker-build docker-run docker-stop docker-clean
+##@ Docker (the image Render builds)
+.PHONY: docker-build docker-up docker-down
 
-docker-build: ## Build the image
-	docker build -t $(IMAGE_NAME) .
+docker-build: ## Build the image: API, dashboard, Caddy
+	docker compose --profile app build app
 
-docker-run: ## Run the container
-	docker run -d --name $(IMAGE_NAME) \
-		-p 8080:8080 \
-		-p 80:80 \
-		--env-file .env \
-		$(IMAGE_NAME)
+docker-up: ## Start the image with PostgreSQL, on http://localhost; migrations run on start
+	docker compose --profile app up -d --build --wait
 
-docker-stop: ## Stop and remove the container
-	docker stop $(IMAGE_NAME) || true
-	docker rm $(IMAGE_NAME) || true
-
-docker-clean: docker-stop ## Stop the container and remove the image
-	docker rmi $(IMAGE_NAME) || true
+docker-down: ## Stop the image, PostgreSQL keeps running
+	docker compose --profile app rm --stop --force app

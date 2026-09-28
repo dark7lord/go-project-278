@@ -1,4 +1,4 @@
-# API docs
+##@ API docs
 .PHONY: api-lint api-html
 REDOCLY := npx --yes @redocly/cli@2.54.3
 

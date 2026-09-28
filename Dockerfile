@@ -16,9 +16,10 @@ COPY go.mod go.sum ./
 RUN --mount=type=cache,target=/go/pkg/mod \
   go mod download
 
-# Keep in sync with GOOSE_VERSION in make/db.mk
-ARG GOOSE_VERSION=v3.28.0
-RUN go install github.com/pressly/goose/v3/cmd/goose@${GOOSE_VERSION}
+# goose at the version pinned in tools/go.mod, the same one make db-migrate runs
+COPY tools/go.mod tools/go.sum tools/
+RUN --mount=type=cache,target=/go/pkg/mod \
+  go install -modfile=tools/go.mod github.com/pressly/goose/v3/cmd/goose
 
 COPY . .
 

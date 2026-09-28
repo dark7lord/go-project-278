@@ -1,17 +1,12 @@
-# Linters
-# $(GOBIN), not bare `golangci-lint`: run the pinned binary lint-install put there, not whatever comes first in PATH
-.PHONY: lint-install lint lint-fix fmt
-GOLANGCI_LINT_VERSION := v2.14.0
+##@ Code quality
+# $(GOBIN), not bare `golangci-lint`: the pinned binary from `make tools`, not whatever comes first in PATH
+.PHONY: lint lint-fix fmt
 
-# Prebuilt, not `go install` (builds with the local Go toolchain): https://golangci-lint.run/docs/welcome/install/local
-lint-install: ## Install golangci-lint (prebuilt binary)
-	curl -sSfL https://golangci-lint.run/install.sh | sh -s -- -b $(GOBIN) $(GOLANGCI_LINT_VERSION)
-
-lint: ## Run golangci-lint (expect 0 issues)
+lint: ## golangci-lint, expects 0 issues
 	$(GOBIN)/golangci-lint run
 
-lint-fix: ## Run golangci-lint and fix issues
+lint-fix: ## golangci-lint with fixes applied
 	$(GOBIN)/golangci-lint run --fix
 
-fmt: ## Format code (golangci-lint fmt)
+fmt: ## Format the code
 	$(GOBIN)/golangci-lint fmt
