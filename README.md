@@ -16,8 +16,16 @@ Shortens links, redirects through them and records every visit; comes with a rea
 
 Requirements: Go 1.26, Node.js, PostgreSQL, Docker (for integration tests and the image).
 
+`.env.example` works as is against a local PostgreSQL; to start one in Docker:
+
 ```bash
-cp .env.example .env   # then set DATABASE_URL and BASE_URL
+docker run -d --name link-shortener-db -p 5432:5432 \
+  -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=link_shortener \
+  postgres:17-alpine
+```
+
+```bash
+cp .env.example .env
 make tools             # golangci-lint, sqlc, goose (pinned versions)
 make deps              # Go modules and the frontend package
 make goose-up          # apply migrations
@@ -34,6 +42,9 @@ The image bundles the API, the built dashboard and Caddy; migrations run on star
 make docker-build
 make docker-run        # reads .env, serves on :80
 ```
+
+Inside the container `localhost` is the container itself: point `DATABASE_URL`
+at `host.docker.internal` to reach a database on the host.
 
 ## Configuration
 
