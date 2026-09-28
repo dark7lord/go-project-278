@@ -208,6 +208,7 @@ Dependencies point inward: `domain ← application ← adapters ← app`.
 
 | Path                          | Role                                                              |
 |-------------------------------|-------------------------------------------------------------------|
+| `cmd/api`                     | Entry point: loads `.env` and runs the app                        |
 | `internal/domain`             | Value types and their validation (URL, short code)                |
 | `internal/application`        | Use cases and the ports they need                                 |
 | `internal/adapters/http`      | gin handlers, the JSON contract, range/sort parsing, middleware   |

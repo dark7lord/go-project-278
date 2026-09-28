@@ -1,7 +1,7 @@
 # Development
 .PHONY: build clean run run-front deps
 build: ## Build the app binary
-	go build -o $(BIN) .
+	go build -o $(BIN) ./cmd/api
 
 clean: ## Remove build and test artifacts
 	rm -rf $(BIN) coverage*.out tmp
