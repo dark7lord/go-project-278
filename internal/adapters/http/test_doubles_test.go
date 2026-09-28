@@ -33,11 +33,6 @@ func (m *mockLinkUseCase) GetLinkByShortName(ctx context.Context, shortName stri
 	return args.Get(0).(application.LinkView), args.Error(1)
 }
 
-func (m *mockLinkUseCase) ListLinks(ctx context.Context) ([]application.LinkView, error) {
-	args := m.Called(ctx)
-	return args.Get(0).([]application.LinkView), args.Error(1)
-}
-
 func (m *mockLinkUseCase) PageLinks(
 	ctx context.Context,
 	q application.ListLinksQuery,
@@ -61,11 +56,6 @@ func (m *mockLinkUseCase) DeleteLink(ctx context.Context, id int64) (application
 }
 
 type mockVisitUseCase struct{ mock.Mock }
-
-func (m *mockVisitUseCase) ListLinkVisits(ctx context.Context) ([]application.VisitView, error) {
-	args := m.Called(ctx)
-	return args.Get(0).([]application.VisitView), args.Error(1)
-}
 
 func (m *mockVisitUseCase) PageLinkVisits(
 	ctx context.Context,

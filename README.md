@@ -67,28 +67,34 @@ The contract is described in [`openapi/openapi.yaml`](openapi/openapi.yaml)
 |----------|--------------------|-----------------------------------------------------|
 | `GET`    | `/ping`            | Health check, answers `pong`                        |
 | `GET`    | `/r/{code}`        | `302` to the original URL, records a visit          |
-| `GET`    | `/api/links`       | List links (paginated with a range)                 |
+| `GET`    | `/api/links`       | A page of links                                     |
 | `POST`   | `/api/links`       | Create a link; `short_name` is generated if omitted |
 | `GET`    | `/api/links/{id}`  | Get a link                                          |
 | `PUT`    | `/api/links/{id}`  | Update a link; `short_name` is generated if omitted |
 | `DELETE` | `/api/links/{id}`  | Delete a link and its visits                        |
-| `GET`    | `/api/link_visits` | List visits (paginated with a range)                |
+| `GET`    | `/api/link_visits` | A page of visits                                    |
 
 A link body is `{"original_url": "...", "short_name": "..."}`: `original_url` is required
 and must be an `http(s)` URL, `short_name` is 3–32 characters.
 
 ### Pagination and sorting
 
-Collections take an inclusive range `[start,end]`, as the `range` query parameter
-or the `Range` header (the query parameter wins), which is what `ra-data-simple-rest` sends.
+Collections are read by pages. `ra-data-simple-rest` sends both ways of asking for one:
 
-- A page answers `200` with `Content-Range: <collection> <first>-<last>/<total>`.
-- A range past the end answers `416` with `Content-Range: <collection> */<total>`;
-  an empty collection answers `200 []` with `*/0`.
-- A page holds at most 1000 items; a wider range answers `400`.
-- Without a range the whole collection is returned, with no `Content-Range`.
+- the `range` query parameter, `[start,end]` inclusive, answered with `200`; it wins over the header,
+  and a malformed value answers `400`;
+- an RFC 9110 `Range` header whose unit is the collection name, answered with `206`:
+  `links=0-9`, `links=10-` (from 10 on) or `links=-20` (the last 20).
+  A header with another unit, a malformed value or several ranges is ignored.
 
-`sort=["field","ASC|DESC"]` orders a page and requires a range.
+Without either the first page is read, as if `links=0-` were sent.
+
+- Every page carries `Content-Range: <collection> <first>-<last>/<total>` and `Accept-Ranges: <collection>`.
+- A page holds at most 1000 items: a wider range is cut, and `Content-Range` shows what came back.
+- A range past the end, or the empty suffix `-0`, answers `416` with `Content-Range: <collection> */<total>`;
+  an empty collection answers `200 []` with `*/0` whatever the range.
+
+`sort=["field","ASC|DESC"]` orders the collection before the page is cut.
 Links sort by `id`, `original_url`, `short_name`;
 visits by `id`, `link_id`, `created_at`, `ip`, `user_agent`, `referer`, `status`.
 
@@ -163,17 +169,30 @@ Content-Range: links 0-1/3
 [{"id":3,"original_url":"https://hexlet.io","short_name":"gacize-235272","short_url":"http://localhost:8080/r/gacize-235272"},{"id":2,"original_url":"https://go.dev","short_name":"gixi-938028","short_url":"http://localhost:8080/r/gixi-938028"}]
 ```
 
-Visits, with the range in a header:
+Visits, with an RFC range header:
 
 ```bash
-curl -i localhost:8080/api/link_visits -H 'Range: [0,1]'
+curl -i localhost:8080/api/link_visits -H 'Range: link_visits=0-1'
 ```
 
 ```
-HTTP/1.1 200 OK
+HTTP/1.1 206 Partial Content
 Content-Range: link_visits 0-0/1
 
-[{"id":1,"link_id":1,"created_at":"2026-09-28T16:18:00.072583+05:00","ip":"::1","user_agent":"curl/8.7.1","status":302}]
+[{"id":1,"link_id":1,"created_at":"2026-09-28T18:36:35.585766+05:00","ip":"::1","user_agent":"curl/8.7.1","status":302}]
+```
+
+The last link, with a suffix range:
+
+```bash
+curl -i localhost:8080/api/links -H 'Range: links=-1'
+```
+
+```
+HTTP/1.1 206 Partial Content
+Content-Range: links 2-2/3
+
+[{"id":3,"original_url":"https://hexlet.io","short_name":"gacize-235272","short_url":"http://localhost:8080/r/gacize-235272"}]
 ```
 
 A range past the end:

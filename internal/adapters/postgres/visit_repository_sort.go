@@ -1,4 +1,3 @@
-// Package postgres contains PostgreSQL adapters for application ports.
 package postgres
 
 import (
@@ -26,7 +25,10 @@ func (r *VisitRepository) pickVisitsRange(
 ) ([]db.LinkVisit, error) {
 	switch {
 	case sort == nil || (sort.Field == fieldID && sort.Asc):
-		return r.queries.GetLinkVisitsRange(ctx, db.GetLinkVisitsRangeParams{Limit: limit, Offset: offset})
+		return r.queries.GetLinkVisitsRangeIdAsc(
+			ctx,
+			db.GetLinkVisitsRangeIdAscParams{Limit: limit, Offset: offset},
+		)
 	case sort.Field == fieldID:
 		return r.queries.GetLinkVisitsRangeIdDesc(
 			ctx,

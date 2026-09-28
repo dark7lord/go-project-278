@@ -5,10 +5,13 @@ info:
   description: |
     REST API of the link shortener: links, redirects and recorded visits.
 
-    Collections are paginated by an inclusive `[start,end]` range, passed as the
-    `range` query parameter or the `Range` header (the query parameter wins).
-    A paginated response carries `Content-Range: <collection> <first>-<last>/<total>`.
-    Without a range the whole collection is returned, with no `Content-Range`.
+    Collections are read by pages. A page is picked by the `range` query
+    parameter, `[start,end]`, or by an RFC 9110 `Range` header whose unit is the
+    collection name: `links=0-9`, `links=10-` (from 10 on) or `links=-20` (the
+    last 20). The query parameter wins. Without either, the first page is read,
+    as if `links=0-` were sent. A page holds at most 1000 items: a wider range is
+    cut, and `Content-Range: <collection> <first>-<last>/<total>` tells which
+    items came back.
 
     Every JSON endpoint may answer `503 {"error": "request timeout"}` once the
     request exceeds `REQUEST_TIMEOUT`, and `500 {"error": "internal error"}`.
@@ -79,17 +82,32 @@ paths:
         - name: sort
           in: query
           description: |
-            `["field","ASC|DESC"]`, requires a range.
+            `["field","ASC|DESC"]`, orders the collection before the page is cut.
             Sortable fields: `id`, `original_url`, `short_name`.
           schema:
             type: string
             examples: ['["short_name","ASC"]']
       responses:
         '200':
-          description: Links; paginated when a range is given.
+          description: A page of links, picked by `range` or the first page.
           headers:
             Content-Range:
               $ref: '#/components/headers/ContentRange'
+            Accept-Ranges:
+              $ref: '#/components/headers/AcceptRanges'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Link'
+        '206':
+          description: A page of links, picked by an honoured `Range` header.
+          headers:
+            Content-Range:
+              $ref: '#/components/headers/ContentRange'
+            Accept-Ranges:
+              $ref: '#/components/headers/AcceptRanges'
           content:
             application/json:
               schema:
@@ -199,17 +217,33 @@ paths:
         - name: sort
           in: query
           description: |
-            `["field","ASC|DESC"]`, requires a range. Sortable fields: `id`, `link_id`,
-            `created_at`, `ip`, `user_agent`, `referer`, `status`.
+            `["field","ASC|DESC"]`, orders the collection before the page is cut.
+            Sortable fields: `id`, `link_id`, `created_at`, `ip`, `user_agent`,
+            `referer`, `status`.
           schema:
             type: string
             examples: ['["created_at","DESC"]']
       responses:
         '200':
-          description: Visits; paginated when a range is given.
+          description: A page of visits, picked by `range` or the first page.
           headers:
             Content-Range:
               $ref: '#/components/headers/ContentRange'
+            Accept-Ranges:
+              $ref: '#/components/headers/AcceptRanges'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Visit'
+        '206':
+          description: A page of visits, picked by an honoured `Range` header.
+          headers:
+            Content-Range:
+              $ref: '#/components/headers/ContentRange'
+            Accept-Ranges:
+              $ref: '#/components/headers/AcceptRanges'
           content:
             application/json:
               schema:
@@ -238,26 +272,35 @@ components:
     RangeQuery:
       name: range
       in: query
-      description: Inclusive `[start,end]`, at most 1000 items. Takes precedence over the `Range` header.
+      description: Inclusive `[start,end]`; wins over the `Range` header. A malformed value answers 400.
       schema:
         type: string
         examples: ['[0,9]']
     RangeHeader:
       name: Range
       in: header
-      description: Same `[start,end]` format as the `range` query parameter.
+      description: |
+        RFC 9110 range with the collection name as the unit: `links=0-9`,
+        `links=10-` or `links=-20`. Ignored when the unit is another one, the
+        value is malformed or it holds several ranges. Honoured, it answers 206.
       schema:
         type: string
-        examples: ['[0,9]']
+        examples: ['links=0-9']
 
   headers:
     ContentRange:
       description: |
-        Present only on paginated responses: `<collection> <first>-<last>/<total>`,
-        or `<collection> */<total>` for an empty collection or an unsatisfiable range.
+        `<collection> <first>-<last>/<total>`, or `<collection> */<total>` for an
+        empty collection or an unsatisfiable range. Sent on every collection
+        response: react-admin reads the total from it.
       schema:
         type: string
         examples: ['links 0-9/42']
+    AcceptRanges:
+      description: The unit the `Range` header takes here, the collection name.
+      schema:
+        type: string
+        examples: ['links']
 
   requestBodies:
     LinkRequest:
@@ -283,7 +326,9 @@ components:
           example:
             error: link not found
     RangeNotSatisfiable:
-      description: The range starts past the end of a non-empty collection.
+      description: |
+        The range misses a non-empty collection: it starts past the end, or it is
+        the empty suffix `-0`.
       headers:
         Content-Range:
           $ref: '#/components/headers/ContentRange'

@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"code/db/generated"
 	"code/internal/application"
 )
 
@@ -57,10 +58,10 @@ func TestVisitsPagination(t *testing.T) {
 			wantLen:    5,
 		},
 		{
-			name:       "no range returns all",
-			rangeQuery: "",
+			name:       "no range reads the first page",
 			seedCount:  15,
 			wantStatus: http.StatusOK,
+			wantRange:  "link_visits 0-14/15",
 			wantLen:    15,
 		},
 		{
@@ -83,18 +84,27 @@ func TestVisitsPagination(t *testing.T) {
 			wantStatus: http.StatusBadRequest,
 		},
 		{
-			name:        "range header first page",
-			rangeHeader: "[2,6]",
+			name:        "range header answers 206",
+			rangeHeader: "link_visits=2-6",
 			seedCount:   15,
 			start:       2,
-			wantStatus:  http.StatusOK,
+			wantStatus:  http.StatusPartialContent,
 			wantRange:   "link_visits 2-6/15",
 			wantLen:     5,
 		},
 		{
+			name:        "suffix range header reads the last items",
+			rangeHeader: "link_visits=-4",
+			seedCount:   15,
+			start:       11,
+			wantStatus:  http.StatusPartialContent,
+			wantRange:   "link_visits 11-14/15",
+			wantLen:     4,
+		},
+		{
 			name:        "query param overrides range header",
 			rangeQuery:  "[3,7]",
-			rangeHeader: "[0,9]",
+			rangeHeader: "link_visits=0-9",
 			seedCount:   15,
 			start:       3,
 			wantStatus:  http.StatusOK,
@@ -143,7 +153,7 @@ func TestVisitsPagination(t *testing.T) {
 				assert.Equal(t, tt.wantRange, w.Header().Get("Content-Range"))
 			}
 
-			if w.Code == http.StatusOK {
+			if w.Code == http.StatusOK || w.Code == http.StatusPartialContent {
 				var visits []visitResponse
 				decode(t, w, &visits)
 				assert.Len(t, visits, tt.wantLen)
@@ -177,8 +187,11 @@ func TestRedirectRecordsVisit(t *testing.T) {
 
 	assert.Equal(t, http.StatusFound, w.Code)
 
-	visits, err := tx.svc.ListLinkVisits(ctx)
+	page, err := tx.svc.PageLinkVisits(ctx, application.ListLinkVisitsQuery{
+		Range: application.Range{First: 0, Last: 9},
+	})
 	require.NoError(t, err)
+	visits := page.Items
 	require.Len(t, visits, 1)
 
 	assert.Equal(t, created.ID, visits[0].LinkID)
@@ -186,7 +199,7 @@ func TestRedirectRecordsVisit(t *testing.T) {
 	assert.Equal(t, "test-agent", visits[0].UserAgent)
 	assert.Equal(t, int32(http.StatusFound), visits[0].Status)
 
-	stored, err := tx.queries.GetLinkVisits(ctx)
+	stored, err := tx.queries.GetLinkVisitsRangeIdAsc(ctx, db.GetLinkVisitsRangeIdAscParams{Limit: 10})
 	require.NoError(t, err)
 	require.Len(t, stored, 1)
 	require.NotNil(t, stored[0].Referer)

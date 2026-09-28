@@ -31,8 +31,6 @@ var visitsSortableFields = map[application.SortField]struct{}{
 var (
 	// ErrSortFormat indicates the sort value does not match [field,ASC|DESC].
 	ErrSortFormat = errors.New(`invalid sort, expected [field,ASC|DESC]`)
-	// ErrSortWithoutRange indicates a sort request without a range.
-	ErrSortWithoutRange = errors.New("sort requires a range")
 )
 
 // parseSortParam parses a "sort" query parameter value into a sort request;

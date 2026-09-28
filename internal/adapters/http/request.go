@@ -37,12 +37,3 @@ func bindLinkRequest(c *gin.Context) (LinkRequest, bool) {
 
 	return req, true
 }
-
-// requestRange returns the range parameter from query string or Range header.
-func requestRange(c *gin.Context) string {
-	if q := c.Query("range"); q != "" {
-		return q
-	}
-
-	return c.GetHeader("Range")
-}

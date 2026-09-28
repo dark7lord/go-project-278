@@ -55,10 +55,10 @@ func TestLinksPagination(t *testing.T) {
 			wantLen:    5,
 		},
 		{
-			name:       "no range returns all",
-			rangeQuery: "",
+			name:       "no range reads the first page",
 			seedCount:  15,
 			wantStatus: http.StatusOK,
+			wantRange:  "links 0-14/15",
 			wantLen:    15,
 		},
 		{
@@ -69,18 +69,72 @@ func TestLinksPagination(t *testing.T) {
 			wantRange:  "links */5",
 		},
 		{
-			name:        "range header applies without query param",
-			rangeHeader: "[2,6]",
+			name:        "closed range header answers 206",
+			rangeHeader: "links=2-6",
 			seedCount:   15,
 			start:       2,
-			wantStatus:  http.StatusOK,
+			wantStatus:  http.StatusPartialContent,
 			wantRange:   "links 2-6/15",
 			wantLen:     5,
 		},
 		{
+			name:        "open range header reads to the end",
+			rangeHeader: "links=10-",
+			seedCount:   15,
+			start:       10,
+			wantStatus:  http.StatusPartialContent,
+			wantRange:   "links 10-14/15",
+			wantLen:     5,
+		},
+		{
+			name:        "suffix range header reads the last items",
+			rangeHeader: "links=-3",
+			seedCount:   15,
+			start:       12,
+			wantStatus:  http.StatusPartialContent,
+			wantRange:   "links 12-14/15",
+			wantLen:     3,
+		},
+		{
+			name:        "suffix longer than total reads everything",
+			rangeHeader: "links=-50",
+			seedCount:   15,
+			wantStatus:  http.StatusPartialContent,
+			wantRange:   "links 0-14/15",
+			wantLen:     15,
+		},
+		{
+			name:        "zero suffix returns 416",
+			rangeHeader: "links=-0",
+			seedCount:   15,
+			wantStatus:  http.StatusRequestedRangeNotSatisfiable,
+			wantRange:   "links */15",
+		},
+		{
+			name:        "open range header past the end returns 416",
+			rangeHeader: "links=20-",
+			seedCount:   15,
+			wantStatus:  http.StatusRequestedRangeNotSatisfiable,
+			wantRange:   "links */15",
+		},
+		{
+			name:        "range header on an empty collection answers 200 []",
+			rangeHeader: "links=0-9",
+			wantStatus:  http.StatusOK,
+			wantRange:   "links */0",
+		},
+		{
+			name:        "foreign range unit is ignored",
+			rangeHeader: "bytes=0-1",
+			seedCount:   15,
+			wantStatus:  http.StatusOK,
+			wantRange:   "links 0-14/15",
+			wantLen:     15,
+		},
+		{
 			name:        "query param overrides range header",
 			rangeQuery:  "[3,7]",
-			rangeHeader: "[0,9]",
+			rangeHeader: "links=0-9",
 			seedCount:   15,
 			start:       3,
 			wantStatus:  http.StatusOK,
@@ -119,7 +173,7 @@ func TestLinksPagination(t *testing.T) {
 				assert.Equal(t, tt.wantRange, w.Header().Get("Content-Range"))
 			}
 
-			if w.Code == http.StatusOK {
+			if w.Code == http.StatusOK || w.Code == http.StatusPartialContent {
 				var responses []linkResponse
 				decode(t, w, &responses)
 				links := make([]application.LinkView, len(responses))
@@ -129,11 +183,6 @@ func TestLinksPagination(t *testing.T) {
 				assert.Len(t, links, tt.wantLen)
 
 				if tt.wantLen == 0 {
-					return
-				}
-				if tt.rangeQuery == "" && tt.rangeHeader == "" {
-					assert.Equal(t, seeds, links)
-
 					return
 				}
 				assert.Equal(t, seeds[tt.start:tt.start+tt.wantLen], links)

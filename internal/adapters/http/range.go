@@ -1,85 +1,98 @@
 package httpadapter
 
 import (
-	"errors"
 	"fmt"
+	"math"
 	"net/http"
-	"regexp"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 
 	"code/internal/application"
 )
 
-var rangeRe = regexp.MustCompile(`^\s*\[\s*(\d+)\s*,\s*(\d+)\s*\]\s*$`)
-
+// maxPageSize bounds a page: a wider range is cut to it, and Content-Range
+// tells the client which items it got.
 const maxPageSize int64 = 1000
 
-var (
-	// ErrRangeFormat indicates the range value does not match [start,end].
-	ErrRangeFormat = errors.New("invalid range, expected [start,end]")
-	// ErrRangeStart indicates the start value is not a number.
-	ErrRangeStart = errors.New("invalid start value")
-	// ErrRangeEnd indicates the end value is not a number.
-	ErrRangeEnd = errors.New("invalid end value")
-	// ErrRangeInverted indicates end is lower than start.
-	ErrRangeInverted = errors.New("invalid range, end must not be less than start")
-	// ErrRangeTooLarge indicates a range requests more than maxPageSize items.
-	ErrRangeTooLarge = errors.New("range exceeds maximum page size of 1000")
+// Collection names double as the units of their Range headers.
+const (
+	linksUnit      = "links"
+	linkVisitsUnit = "link_visits"
 )
 
-// parseRangeParam parses a "range" query parameter value into start and end.
-func parseRangeParam(rangeParam string) (start, end int64, err error) {
-	matches := rangeRe.FindStringSubmatch(rangeParam)
-	if len(matches) != 3 {
-		return 0, 0, ErrRangeFormat
+// requestRange picks the page a collection request asks for, cut to
+// maxPageSize. The range query parameter (react-admin and the task send it) is
+// strict and wins; the Range header follows RFC 9110 and is ignored when it is
+// not understood; with neither, the request reads "0-", the first page.
+// fromHeader reports an honoured Range header, which is answered with 206.
+func requestRange(c *gin.Context, unit string) (r application.Range, fromHeader bool, err error) {
+	if param := c.Query("range"); param != "" {
+		r, err = parseRangeParam(param)
+		if err != nil {
+			return application.Range{}, false, err
+		}
+
+		return capRange(r), false, nil
 	}
 
-	start, err = strconv.ParseInt(matches[1], 10, 64)
-	if err != nil {
-		return 0, 0, ErrRangeStart
-	}
-	end, err = strconv.ParseInt(matches[2], 10, 64)
-	if err != nil {
-		return 0, 0, ErrRangeEnd
+	if r, ok := parseRangeHeader(c.GetHeader("Range"), unit); ok {
+		return capRange(r), true, nil
 	}
 
-	if start > end {
-		return 0, 0, ErrRangeInverted
-	}
-	if end-start >= maxPageSize {
-		return 0, 0, ErrRangeTooLarge
+	return capRange(application.Range{First: 0, Last: math.MaxInt64}), false, nil
+}
+
+// capRange cuts a range to at most maxPageSize items.
+func capRange(r application.Range) application.Range {
+	if r.Suffix {
+		r.Length = min(r.Length, maxPageSize)
+	} else if r.Last-r.First >= maxPageSize {
+		r.Last = r.First + maxPageSize - 1
 	}
 
-	return start, end, nil
+	return r
 }
 
 // contentRange builds a Content-Range value for a returned item range.
-func contentRange(collection string, start, lastPos, total int64) string {
-	return fmt.Sprintf("%s %d-%d/%d", collection, start, lastPos, total)
+func contentRange(unit string, start, lastPos, total int64) string {
+	return fmt.Sprintf("%s %d-%d/%d", unit, start, lastPos, total)
 }
 
 // unsatisfiedRange builds a Content-Range value for an unsatisfied range.
-func unsatisfiedRange(collection string, total int64) string {
-	return fmt.Sprintf("%s */%d", collection, total)
+func unsatisfiedRange(unit string, total int64) string {
+	return fmt.Sprintf("%s */%d", unit, total)
 }
 
-// writeRangePage resolves the range status against the page total and writes
-// the Content-Range header and response body for a paginated page.
-func writeRangePage[T any](c *gin.Context, collection string, page application.RangePage[T]) {
+// writeRangePage writes a page with its Content-Range: 416 when the range
+// misses a non-empty collection, 206 for an honoured Range header, 200
+// otherwise. An empty collection answers 200 [] whatever the range, so a
+// client sees an empty list rather than an error.
+func writeRangePage[T any](
+	c *gin.Context,
+	unit string,
+	fromHeader bool,
+	page application.RangePage[T],
+) {
+	c.Header("Accept-Ranges", unit)
+
 	if page.Total == 0 {
-		c.Header("Content-Range", unsatisfiedRange(collection, page.Total))
+		c.Header("Content-Range", unsatisfiedRange(unit, page.Total))
 		c.JSON(http.StatusOK, page.Items)
 		return
 	}
 
-	if page.Start >= page.Total || len(page.Items) == 0 {
-		c.Header("Content-Range", unsatisfiedRange(collection, page.Total))
+	if len(page.Items) == 0 {
+		c.Header("Content-Range", unsatisfiedRange(unit, page.Total))
 		c.JSON(http.StatusRequestedRangeNotSatisfiable, errJSON("range not satisfiable"))
 		return
 	}
 
-	c.Header("Content-Range", contentRange(collection, page.Start, page.Start+int64(len(page.Items))-1, page.Total))
-	c.JSON(http.StatusOK, page.Items)
+	status := http.StatusOK
+	if fromHeader {
+		status = http.StatusPartialContent
+	}
+
+	lastPos := page.First + int64(len(page.Items)) - 1
+	c.Header("Content-Range", contentRange(unit, page.First, lastPos, page.Total))
+	c.JSON(status, page.Items)
 }

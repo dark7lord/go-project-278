@@ -8,39 +8,21 @@ import (
 	"code/internal/application"
 )
 
-// ListVisits handles listing all link visits.
+// ListVisits handles listing a page of link visits.
 func (h *Handler) ListVisits(c *gin.Context) {
-	rangeParam := requestRange(c)
-
 	sort, err := parseSortParam(c.Query("sort"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, errJSON(err.Error()))
 		return
 	}
 	if sort != nil {
-		if rangeParam == "" {
-			c.JSON(http.StatusBadRequest, errJSON(ErrSortWithoutRange.Error()))
-			return
-		}
 		if _, ok := visitsSortableFields[sort.Field]; !ok {
 			c.JSON(http.StatusBadRequest, errJSON(application.ErrSortField.Error()))
 			return
 		}
 	}
 
-	if rangeParam == "" {
-		visits, err := h.visitService.ListLinkVisits(c.Request.Context())
-		if err != nil {
-			writeServiceError(c, err)
-			return
-		}
-
-		c.JSON(http.StatusOK, toVisitResponses(visits))
-
-		return
-	}
-
-	start, end, err := parseRangeParam(rangeParam)
+	pageRange, fromHeader, err := requestRange(c, linkVisitsUnit)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, errJSON(err.Error()))
 		return
@@ -48,20 +30,16 @@ func (h *Handler) ListVisits(c *gin.Context) {
 
 	page, err := h.visitService.PageLinkVisits(
 		c.Request.Context(),
-		application.ListLinkVisitsQuery{
-			Start: start,
-			End:   end,
-			Sort:  sort,
-		},
+		application.ListLinkVisitsQuery{Range: pageRange, Sort: sort},
 	)
 	if err != nil {
 		writeServiceError(c, err)
 		return
 	}
 
-	writeRangePage(c, "link_visits", application.RangePage[visitResponse]{
+	writeRangePage(c, linkVisitsUnit, fromHeader, application.RangePage[visitResponse]{
 		Items: toVisitResponses(page.Items),
-		Start: page.Start,
+		First: page.First,
 		Total: page.Total,
 	})
 }

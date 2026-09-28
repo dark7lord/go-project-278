@@ -3,17 +3,11 @@ package postgres
 
 import (
 	"context"
-	"errors"
 	"fmt"
-
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 
 	"code/db/generated"
 	"code/internal/application"
 )
-
-const shortNameConstraint = "links_short_name_key"
 
 // LinkRepository adapts generated SQL queries to the application persistence ports.
 type LinkRepository struct {
@@ -47,22 +41,6 @@ func toLinkViews(links []db.Link) []application.LinkView {
 	return views
 }
 
-func mapStorageError(err error) error {
-	if errors.Is(err, pgx.ErrNoRows) {
-		return application.ErrNotFound
-	}
-
-	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) && pgErr.Code == "23505" && pgErr.ConstraintName == shortNameConstraint {
-		return &application.FieldError{
-			Field: string(fieldShortName),
-			Err:   application.ErrShortNameAlreadyUse,
-		}
-	}
-
-	return err
-}
-
 // GetLinkByID retrieves a link by its ID.
 func (r *LinkRepository) GetLinkByID(ctx context.Context, id int64) (application.LinkView, error) {
 	link, err := r.queries.GetLinkByID(ctx, id)
@@ -83,16 +61,6 @@ func (r *LinkRepository) GetLinkByShortName(ctx context.Context, shortName strin
 	return toLinkView(link), nil
 }
 
-// ListLinks retrieves all links.
-func (r *LinkRepository) ListLinks(ctx context.Context) ([]application.LinkView, error) {
-	links, err := r.queries.GetLinks(ctx)
-	if err != nil {
-		return nil, mapStorageError(err)
-	}
-
-	return toLinkViews(links), nil
-}
-
 // PageLinks retrieves a paginated page of links together with the total count.
 func (r *LinkRepository) PageLinks(
 	ctx context.Context,
@@ -103,9 +71,12 @@ func (r *LinkRepository) PageLinks(
 		return application.RangePage[application.LinkView]{}, fmt.Errorf("count links: %w", err)
 	}
 
-	limit, offset := pageRange(q.Start, q.End)
+	first, last, ok := q.Range.Resolve(total)
+	if !ok {
+		return application.RangePage[application.LinkView]{Total: total}, nil
+	}
 
-	links, err := r.pickLinksRange(ctx, q.Sort, limit, offset)
+	links, err := r.pickLinksRange(ctx, q.Sort, last-first+1, first)
 	if err != nil {
 		return application.RangePage[application.LinkView]{}, fmt.Errorf(
 			"list links range: %w",
@@ -115,7 +86,7 @@ func (r *LinkRepository) PageLinks(
 
 	return application.RangePage[application.LinkView]{
 		Items: toLinkViews(links),
-		Start: q.Start,
+		First: first,
 		Total: total,
 	}, nil
 }

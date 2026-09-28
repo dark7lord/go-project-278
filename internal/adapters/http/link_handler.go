@@ -48,39 +48,21 @@ func (h *Handler) GetLink(c *gin.Context) {
 	c.JSON(http.StatusOK, h.linkResponse(link))
 }
 
-// ListLinks handles listing all links.
+// ListLinks handles listing a page of links.
 func (h *Handler) ListLinks(c *gin.Context) {
-	rangeParam := requestRange(c)
-
 	sort, err := parseSortParam(c.Query("sort"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, errJSON(err.Error()))
 		return
 	}
 	if sort != nil {
-		if rangeParam == "" {
-			c.JSON(http.StatusBadRequest, errJSON(ErrSortWithoutRange.Error()))
-			return
-		}
 		if _, ok := linksSortableFields[sort.Field]; !ok {
 			c.JSON(http.StatusBadRequest, errJSON(application.ErrSortField.Error()))
 			return
 		}
 	}
 
-	if rangeParam == "" {
-		links, err := h.linkService.ListLinks(c.Request.Context())
-		if err != nil {
-			writeServiceError(c, err)
-			return
-		}
-
-		c.JSON(http.StatusOK, h.linkResponses(links))
-
-		return
-	}
-
-	start, end, err := parseRangeParam(rangeParam)
+	pageRange, fromHeader, err := requestRange(c, linksUnit)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, errJSON(err.Error()))
 		return
@@ -88,16 +70,16 @@ func (h *Handler) ListLinks(c *gin.Context) {
 
 	page, err := h.linkService.PageLinks(
 		c.Request.Context(),
-		application.ListLinksQuery{Start: start, End: end, Sort: sort},
+		application.ListLinksQuery{Range: pageRange, Sort: sort},
 	)
 	if err != nil {
 		writeServiceError(c, err)
 		return
 	}
 
-	writeRangePage(c, "links", application.RangePage[linkResponse]{
+	writeRangePage(c, linksUnit, fromHeader, application.RangePage[linkResponse]{
 		Items: h.linkResponses(page.Items),
-		Start: page.Start,
+		First: page.First,
 		Total: page.Total,
 	})
 }

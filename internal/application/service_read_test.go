@@ -9,22 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestServiceReadLinks(t *testing.T) {
-	expected := []LinkView{{
-		ID:        1,
-		ShortName: "first",
-	}}
-	svc := NewServiceWithGenerator(
-		serviceDeps(&fakeLinkReader{links: expected}, nil, nil, nil),
-		&fakeShortCodeGenerator{value: testShortCode},
-	)
-
-	links, err := svc.ListLinks(context.Background())
-
-	require.NoError(t, err)
-	assert.Equal(t, expected, links)
-}
-
 func TestServicePageLinks(t *testing.T) {
 	expected := []LinkView{{
 		ID:        2,
@@ -33,7 +17,7 @@ func TestServicePageLinks(t *testing.T) {
 	reader := &fakeLinkReader{
 		linkPage: RangePage[LinkView]{
 			Items: expected,
-			Start: 5,
+			First: 5,
 			Total: 10,
 		},
 	}
@@ -42,12 +26,12 @@ func TestServicePageLinks(t *testing.T) {
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
-	page, err := svc.PageLinks(context.Background(), ListLinksQuery{Start: 5, End: 9})
+	page, err := svc.PageLinks(context.Background(), ListLinksQuery{Range: Range{First: 5, Last: 9}})
 
 	require.NoError(t, err)
 	assert.Equal(t, expected, page.Items)
 	assert.Equal(t, int64(10), page.Total)
-	assert.Equal(t, int64(5), page.Start)
+	assert.Equal(t, int64(5), page.First)
 }
 
 func TestServicePageLinksPropagatesReaderError(t *testing.T) {
@@ -57,7 +41,7 @@ func TestServicePageLinksPropagatesReaderError(t *testing.T) {
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
-	_, err := svc.PageLinks(context.Background(), ListLinksQuery{Start: 0, End: 4})
+	_, err := svc.PageLinks(context.Background(), ListLinksQuery{Range: Range{First: 0, Last: 4}})
 
 	assert.ErrorIs(t, err, repoErr)
 }

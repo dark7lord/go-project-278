@@ -77,14 +77,21 @@ func (q *Queries) GetLinkByShortName(ctx context.Context, shortName string) (Lin
 	return i, err
 }
 
-const getLinks = `-- name: GetLinks :many
+const getLinksRangeIdAsc = `-- name: GetLinksRangeIdAsc :many
 SELECT id, original_url, short_name
 FROM links
-ORDER BY id
+ORDER BY id ASC
+OFFSET $1::bigint
+LIMIT $2::bigint
 `
 
-func (q *Queries) GetLinks(ctx context.Context) ([]Link, error) {
-	rows, err := q.db.Query(ctx, getLinks)
+type GetLinksRangeIdAscParams struct {
+	Offset int64 `json:"offset"`
+	Limit  int64 `json:"limit"`
+}
+
+func (q *Queries) GetLinksRangeIdAsc(ctx context.Context, arg GetLinksRangeIdAscParams) ([]Link, error) {
+	rows, err := q.db.Query(ctx, getLinksRangeIdAsc, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
@@ -103,21 +110,153 @@ func (q *Queries) GetLinks(ctx context.Context) ([]Link, error) {
 	return items, nil
 }
 
-const getLinksRange = `-- name: GetLinksRange :many
+const getLinksRangeIdDesc = `-- name: GetLinksRangeIdDesc :many
 SELECT id, original_url, short_name
 FROM links
-ORDER BY id
+ORDER BY id DESC
 OFFSET $1::bigint
 LIMIT $2::bigint
 `
 
-type GetLinksRangeParams struct {
+type GetLinksRangeIdDescParams struct {
 	Offset int64 `json:"offset"`
 	Limit  int64 `json:"limit"`
 }
 
-func (q *Queries) GetLinksRange(ctx context.Context, arg GetLinksRangeParams) ([]Link, error) {
-	rows, err := q.db.Query(ctx, getLinksRange, arg.Offset, arg.Limit)
+func (q *Queries) GetLinksRangeIdDesc(ctx context.Context, arg GetLinksRangeIdDescParams) ([]Link, error) {
+	rows, err := q.db.Query(ctx, getLinksRangeIdDesc, arg.Offset, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Link
+	for rows.Next() {
+		var i Link
+		if err := rows.Scan(&i.ID, &i.OriginalURL, &i.ShortName); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getLinksRangeOriginalURLAsc = `-- name: GetLinksRangeOriginalURLAsc :many
+SELECT id, original_url, short_name
+FROM links
+ORDER BY original_url ASC, id ASC
+OFFSET $1::bigint
+LIMIT $2::bigint
+`
+
+type GetLinksRangeOriginalURLAscParams struct {
+	Offset int64 `json:"offset"`
+	Limit  int64 `json:"limit"`
+}
+
+func (q *Queries) GetLinksRangeOriginalURLAsc(ctx context.Context, arg GetLinksRangeOriginalURLAscParams) ([]Link, error) {
+	rows, err := q.db.Query(ctx, getLinksRangeOriginalURLAsc, arg.Offset, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Link
+	for rows.Next() {
+		var i Link
+		if err := rows.Scan(&i.ID, &i.OriginalURL, &i.ShortName); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getLinksRangeOriginalURLDesc = `-- name: GetLinksRangeOriginalURLDesc :many
+SELECT id, original_url, short_name
+FROM links
+ORDER BY original_url DESC, id ASC
+OFFSET $1::bigint
+LIMIT $2::bigint
+`
+
+type GetLinksRangeOriginalURLDescParams struct {
+	Offset int64 `json:"offset"`
+	Limit  int64 `json:"limit"`
+}
+
+func (q *Queries) GetLinksRangeOriginalURLDesc(ctx context.Context, arg GetLinksRangeOriginalURLDescParams) ([]Link, error) {
+	rows, err := q.db.Query(ctx, getLinksRangeOriginalURLDesc, arg.Offset, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Link
+	for rows.Next() {
+		var i Link
+		if err := rows.Scan(&i.ID, &i.OriginalURL, &i.ShortName); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getLinksRangeShortNameAsc = `-- name: GetLinksRangeShortNameAsc :many
+SELECT id, original_url, short_name
+FROM links
+ORDER BY short_name ASC, id ASC
+OFFSET $1::bigint
+LIMIT $2::bigint
+`
+
+type GetLinksRangeShortNameAscParams struct {
+	Offset int64 `json:"offset"`
+	Limit  int64 `json:"limit"`
+}
+
+func (q *Queries) GetLinksRangeShortNameAsc(ctx context.Context, arg GetLinksRangeShortNameAscParams) ([]Link, error) {
+	rows, err := q.db.Query(ctx, getLinksRangeShortNameAsc, arg.Offset, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Link
+	for rows.Next() {
+		var i Link
+		if err := rows.Scan(&i.ID, &i.OriginalURL, &i.ShortName); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getLinksRangeShortNameDesc = `-- name: GetLinksRangeShortNameDesc :many
+SELECT id, original_url, short_name
+FROM links
+ORDER BY short_name DESC, id ASC
+OFFSET $1::bigint
+LIMIT $2::bigint
+`
+
+type GetLinksRangeShortNameDescParams struct {
+	Offset int64 `json:"offset"`
+	Limit  int64 `json:"limit"`
+}
+
+func (q *Queries) GetLinksRangeShortNameDesc(ctx context.Context, arg GetLinksRangeShortNameDescParams) ([]Link, error) {
+	rows, err := q.db.Query(ctx, getLinksRangeShortNameDesc, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}

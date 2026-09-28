@@ -58,16 +58,6 @@ func (s *Service) GetLinkByShortName(ctx context.Context, shortName string) (Lin
 	return link, nil
 }
 
-// ListLinks retrieves all links.
-func (s *Service) ListLinks(ctx context.Context) ([]LinkView, error) {
-	links, err := s.linkReader.ListLinks(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("list links: %w", err)
-	}
-
-	return links, nil
-}
-
 // PageLinks retrieves a paginated page of links.
 func (s *Service) PageLinks(ctx context.Context, q ListLinksQuery) (RangePage[LinkView], error) {
 	page, err := s.linkReader.PageLinks(ctx, q)

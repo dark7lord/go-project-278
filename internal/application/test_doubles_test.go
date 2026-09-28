@@ -9,8 +9,6 @@ import (
 type fakeLinkReader struct {
 	gotLink       LinkView
 	getLinkError  error
-	links         []LinkView
-	linksError    error
 	linkPage      RangePage[LinkView]
 	linkPageError error
 }
@@ -21,10 +19,6 @@ func (f *fakeLinkReader) GetLinkByID(_ context.Context, _ int64) (LinkView, erro
 
 func (f *fakeLinkReader) GetLinkByShortName(_ context.Context, _ string) (LinkView, error) {
 	return f.gotLink, f.getLinkError
-}
-
-func (f *fakeLinkReader) ListLinks(_ context.Context) ([]LinkView, error) {
-	return f.links, f.linksError
 }
 
 func (f *fakeLinkReader) PageLinks(_ context.Context, _ ListLinksQuery) (RangePage[LinkView], error) {
@@ -64,13 +58,8 @@ func (m *mockLinkWriter) DeleteLink(ctx context.Context, id int64) (LinkView, er
 }
 
 type fakeVisitReader struct {
-	visits         []VisitView
 	visitPage      RangePage[VisitView]
 	visitPageError error
-}
-
-func (f *fakeVisitReader) ListLinkVisits(_ context.Context) ([]VisitView, error) {
-	return f.visits, nil
 }
 
 func (f *fakeVisitReader) PageLinkVisits(

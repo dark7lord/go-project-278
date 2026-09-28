@@ -2,7 +2,6 @@ package application
 
 import (
 	"context"
-	"fmt"
 )
 
 // createLinkVisit records a visit for the given link.
@@ -14,16 +13,6 @@ func (s *Service) createLinkVisit(
 	status int32,
 ) (VisitView, error) {
 	return s.visitRecorder.CreateLinkVisit(ctx, linkID, ip, userAgent, referer, status)
-}
-
-// ListLinkVisits retrieves all link visits.
-func (s *Service) ListLinkVisits(ctx context.Context) ([]VisitView, error) {
-	visits, err := s.visitReader.ListLinkVisits(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("list link visits: %w", err)
-	}
-
-	return visits, nil
 }
 
 // PageLinkVisits retrieves a paginated page of link visits.

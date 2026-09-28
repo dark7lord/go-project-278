@@ -14,7 +14,7 @@ func TestServicePageLinkVisits(t *testing.T) {
 	reader := &fakeVisitReader{
 		visitPage: RangePage[VisitView]{
 			Items: expected,
-			Start: 5,
+			First: 5,
 			Total: 10,
 		},
 	}
@@ -23,12 +23,12 @@ func TestServicePageLinkVisits(t *testing.T) {
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
-	page, err := svc.PageLinkVisits(context.Background(), ListLinkVisitsQuery{Start: 5, End: 9})
+	page, err := svc.PageLinkVisits(context.Background(), ListLinkVisitsQuery{Range: Range{First: 5, Last: 9}})
 
 	require.NoError(t, err)
 	assert.Equal(t, expected, page.Items)
 	assert.Equal(t, int64(10), page.Total)
-	assert.Equal(t, int64(5), page.Start)
+	assert.Equal(t, int64(5), page.First)
 }
 
 func TestServicePageLinkVisitsPropagatesReaderError(t *testing.T) {
@@ -38,7 +38,7 @@ func TestServicePageLinkVisitsPropagatesReaderError(t *testing.T) {
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
-	_, err := svc.PageLinkVisits(context.Background(), ListLinkVisitsQuery{Start: 0, End: 4})
+	_, err := svc.PageLinkVisits(context.Background(), ListLinkVisitsQuery{Range: Range{First: 0, Last: 4}})
 
 	assert.ErrorIs(t, err, repoErr)
 }

@@ -19,3 +19,10 @@ type RedirectCommand struct {
 	VisitMeta VisitMeta
 	Status    int32
 }
+
+// VisitMeta contains metadata captured at the redirect boundary.
+type VisitMeta struct {
+	IP        string
+	UserAgent string
+	Referer   *string
+}

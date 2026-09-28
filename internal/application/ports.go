@@ -9,7 +9,6 @@ import (
 type LinkReader interface {
 	GetLinkByID(ctx context.Context, id int64) (LinkView, error)
 	GetLinkByShortName(ctx context.Context, shortName string) (LinkView, error)
-	ListLinks(ctx context.Context) ([]LinkView, error)
 	PageLinks(ctx context.Context, q ListLinksQuery) (RangePage[LinkView], error)
 }
 
@@ -22,7 +21,6 @@ type LinkWriter interface {
 
 // VisitReader defines persistence operations for reading visits.
 type VisitReader interface {
-	ListLinkVisits(ctx context.Context) ([]VisitView, error)
 	PageLinkVisits(ctx context.Context, q ListLinkVisitsQuery) (RangePage[VisitView], error)
 }
 
@@ -51,7 +49,6 @@ type LinkUseCase interface {
 	Redirect(ctx context.Context, cmd RedirectCommand) (LinkView, error)
 	GetLinkByID(ctx context.Context, id int64) (LinkView, error)
 	GetLinkByShortName(ctx context.Context, shortName string) (LinkView, error)
-	ListLinks(ctx context.Context) ([]LinkView, error)
 	PageLinks(ctx context.Context, q ListLinksQuery) (RangePage[LinkView], error)
 	UpdateLink(ctx context.Context, id int64, cmd UpdateLinkCommand) (LinkView, error)
 	DeleteLink(ctx context.Context, id int64) (LinkView, error)
@@ -59,7 +56,6 @@ type LinkUseCase interface {
 
 // VisitUseCase defines the visit operations required by the HTTP transport.
 type VisitUseCase interface {
-	ListLinkVisits(ctx context.Context) ([]VisitView, error)
 	PageLinkVisits(ctx context.Context, q ListLinkVisitsQuery) (RangePage[VisitView], error)
 }
 

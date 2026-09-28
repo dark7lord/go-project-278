@@ -1,4 +1,3 @@
-// Package postgres contains PostgreSQL adapters for application ports.
 package postgres
 
 import (
@@ -65,16 +64,6 @@ func (r *VisitRepository) CreateLinkVisit(
 	return toVisitView(visit), nil
 }
 
-// ListLinkVisits retrieves all link visits.
-func (r *VisitRepository) ListLinkVisits(ctx context.Context) ([]application.VisitView, error) {
-	visits, err := r.queries.GetLinkVisits(ctx)
-	if err != nil {
-		return nil, mapStorageError(err)
-	}
-
-	return toVisitViews(visits), nil
-}
-
 // PageLinkVisits retrieves a paginated page of link visits together with the total count.
 func (r *VisitRepository) PageLinkVisits(
 	ctx context.Context,
@@ -85,9 +74,12 @@ func (r *VisitRepository) PageLinkVisits(
 		return application.RangePage[application.VisitView]{}, fmt.Errorf("count link visits: %w", err)
 	}
 
-	limit, offset := pageRange(q.Start, q.End)
+	first, last, ok := q.Range.Resolve(total)
+	if !ok {
+		return application.RangePage[application.VisitView]{Total: total}, nil
+	}
 
-	visits, err := r.pickVisitsRange(ctx, q.Sort, limit, offset)
+	visits, err := r.pickVisitsRange(ctx, q.Sort, last-first+1, first)
 	if err != nil {
 		return application.RangePage[application.VisitView]{}, fmt.Errorf(
 			"list link visits range: %w",
@@ -97,7 +89,7 @@ func (r *VisitRepository) PageLinkVisits(
 
 	return application.RangePage[application.VisitView]{
 		Items: toVisitViews(visits),
-		Start: q.Start,
+		First: first,
 		Total: total,
 	}, nil
 }

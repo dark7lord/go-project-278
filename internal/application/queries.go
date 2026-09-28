@@ -22,23 +22,14 @@ type Sort struct {
 	Asc   bool
 }
 
-// ListLinksQuery requests a paginated list of links.
+// ListLinksQuery requests a page of links.
 type ListLinksQuery struct {
-	Start int64
-	End   int64
+	Range Range
 	Sort  *Sort
 }
 
-// ListLinkVisitsQuery requests a paginated list of link visits.
+// ListLinkVisitsQuery requests a page of link visits.
 type ListLinkVisitsQuery struct {
-	Start int64
-	End   int64
+	Range Range
 	Sort  *Sort
-}
-
-// RangePage is the result of a paginated range query.
-type RangePage[T any] struct {
-	Items []T
-	Start int64
-	Total int64
 }
