@@ -84,7 +84,8 @@ paths:
           in: query
           description: |
             `["field","ASC|DESC"]`, orders the collection before the page is cut.
-            Sortable fields: `id`, `original_url`, `short_name`.
+            Sortable fields: `id`, `original_url`, `short_name`, and `short_url`
+            (sorts as `short_name`).
           schema:
             type: string
             examples: ['["short_name","ASC"]']
@@ -220,7 +221,7 @@ paths:
           description: |
             `["field","ASC|DESC"]`, orders the collection before the page is cut.
             Sortable fields: `id`, `link_id`, `created_at`, `ip`, `user_agent`,
-            `referer`, `status`.
+            `referer`, `status`, and `reffer`, the dashboard's spelling of `referer`.
           schema:
             type: string
             examples: ['["created_at","DESC"]']

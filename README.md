@@ -102,8 +102,9 @@ Without either the first page is read, as if `links=0-` were sent.
   an empty collection answers `200 []` with `*/0` whatever the range.
 
 `sort=["field","ASC|DESC"]` orders the collection before the page is cut.
-Links sort by `id`, `original_url`, `short_name`;
-visits by `id`, `link_id`, `created_at`, `ip`, `user_agent`, `referer`, `status`.
+Links sort by `id`, `original_url`, `short_name` (`short_url` sorts as `short_name`);
+visits by `id`, `link_id`, `created_at`, `ip`, `user_agent`, `referer`, `status`
+(`reffer`, the dashboard's spelling, sorts as `referer`).
 
 ### Errors and limits
 

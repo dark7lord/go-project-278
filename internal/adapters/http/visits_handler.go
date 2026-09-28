@@ -10,16 +10,10 @@ import (
 
 // ListVisits handles listing a page of link visits.
 func (h *Handler) ListVisits(c *gin.Context) {
-	sort, err := parseSortParam(c.Query("sort"))
+	sort, err := parseSortParam(c.Query("sort"), visitsSortFields)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, errJSON(err.Error()))
 		return
-	}
-	if sort != nil {
-		if _, ok := visitsSortableFields[sort.Field]; !ok {
-			c.JSON(http.StatusBadRequest, errJSON(application.ErrSortField.Error()))
-			return
-		}
 	}
 
 	pageRange, fromHeader, err := requestRange(c, linkVisitsUnit)

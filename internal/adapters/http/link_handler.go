@@ -50,16 +50,10 @@ func (h *Handler) GetLink(c *gin.Context) {
 
 // ListLinks handles listing a page of links.
 func (h *Handler) ListLinks(c *gin.Context) {
-	sort, err := parseSortParam(c.Query("sort"))
+	sort, err := parseSortParam(c.Query("sort"), linksSortFields)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, errJSON(err.Error()))
 		return
-	}
-	if sort != nil {
-		if _, ok := linksSortableFields[sort.Field]; !ok {
-			c.JSON(http.StatusBadRequest, errJSON(application.ErrSortField.Error()))
-			return
-		}
 	}
 
 	pageRange, fromHeader, err := requestRange(c, linksUnit)
