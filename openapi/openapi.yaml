@@ -17,7 +17,8 @@ info:
     request exceeds `REQUEST_TIMEOUT`, and `500 {"error": "internal error"}`.
 
     Every response except the `503` timeout carries a server-generated
-    `X-Request-ID`; the Sentry event of a failed request is tagged with it.
+    `X-Request-ID`; the request log line and the Sentry event of a failed
+    request carry the same id.
 servers:
   - url: http://localhost:8080
 

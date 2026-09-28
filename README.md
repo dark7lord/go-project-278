@@ -105,7 +105,9 @@ visits by `id`, `link_id`, `created_at`, `ip`, `user_agent`, `referer`, `status`
 - A request body is limited to 1 MiB.
 - A request running longer than `REQUEST_TIMEOUT` answers `503 {"error": "request timeout"}`.
 - Every response except the `503` timeout carries a generated `X-Request-ID`;
-  the Sentry event of a `500` is tagged with it.
+  the request log line and the Sentry event of a `500` carry the same id.
+- Logs are `log/slog` text lines; a `5xx` is logged at `ERROR` with the internal error
+  the client never sees.
 
 ## Examples
 

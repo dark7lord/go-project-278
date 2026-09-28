@@ -2,7 +2,9 @@ package httpadapter
 
 import (
 	"crypto/rand"
+	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	sentrygin "github.com/getsentry/sentry-go/gin"
@@ -58,5 +60,34 @@ func RequestID() gin.HandlerFunc {
 		if hub := sentrygin.GetHubFromContext(c); hub != nil {
 			hub.Scope().SetTag("request_id", id)
 		}
+	}
+}
+
+// RequestLog writes one line per request with its request id. A 5xx is logged
+// as an error together with the internal errors the client never sees. It
+// must run first, so the latency covers the whole chain.
+func RequestLog(logger *slog.Logger) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		start := time.Now()
+		c.Next()
+
+		status := c.Writer.Status()
+		attrs := []any{
+			"method", c.Request.Method,
+			"path", c.Request.URL.Path,
+			"status", status,
+			"latency", time.Since(start),
+			"ip", c.ClientIP(),
+			"request_id", c.Writer.Header().Get(RequestIDHeader),
+		}
+
+		if status < http.StatusInternalServerError {
+			logger.Info("request", attrs...)
+			return
+		}
+		if len(c.Errors) > 0 {
+			attrs = append(attrs, "error", strings.Join(c.Errors.Errors(), "; "))
+		}
+		logger.Error("request", attrs...)
 	}
 }

@@ -4,7 +4,7 @@ package app
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -40,7 +40,7 @@ func connectDB(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
 // setupRouter creates and configures the gin engine with all routes.
 func setupRouter(linkHandler *httpadapter.Handler) *gin.Engine {
 	router := gin.New()
-	router.Use(gin.Logger())
+	router.Use(httpadapter.RequestLog(slog.Default()))
 	router.Use(sentrygin.New(sentrygin.Options{Repanic: true}))
 	router.Use(httpadapter.RequestID())
 	router.Use(httpadapter.NewCORS())
@@ -157,7 +157,7 @@ func serveUntilSignal(server *http.Server) error {
 
 	errCh := make(chan error, 1)
 	go func() {
-		log.Printf("[server] listening on %s", server.Addr)
+		slog.Info("server listening", "addr", server.Addr)
 		errCh <- server.ListenAndServe()
 	}()
 
@@ -166,7 +166,7 @@ func serveUntilSignal(server *http.Server) error {
 		return fmt.Errorf("failed to run server: %w", err)
 
 	case <-sigCtx.Done():
-		log.Printf("[server] signal received, shutting down gracefully (timeout 10s)...")
+		slog.Info("signal received, shutting down", "timeout", "10s")
 
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
@@ -174,7 +174,7 @@ func serveUntilSignal(server *http.Server) error {
 			return fmt.Errorf("graceful shutdown: %w", err)
 		}
 
-		log.Printf("[server] drained in-flight requests, exiting")
+		slog.Info("in-flight requests drained, exiting")
 
 		return nil
 	}

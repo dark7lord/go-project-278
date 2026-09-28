@@ -2,7 +2,8 @@
 package main
 
 import (
-	"log"
+	"log/slog"
+	"os"
 
 	"github.com/joho/godotenv"
 
@@ -10,11 +11,14 @@ import (
 )
 
 func main() {
+	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, nil)))
+
 	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found, using system environment variables")
+		slog.Info("no .env file, using the environment")
 	}
 
 	if err := app.Run(); err != nil {
-		log.Fatal(err)
+		slog.Error("app stopped", "error", err)
+		os.Exit(1)
 	}
 }
