@@ -80,7 +80,13 @@ func (r *VisitRepository) PageLinkVisits(
 		return application.RangePage[application.VisitView]{Total: total}, nil
 	}
 
-	visits, err := r.pickVisitsRange(ctx, q.Sort, last-first+1, first)
+	field, asc := sortParams(q.Sort)
+	visits, err := r.queries.GetLinkVisitsPage(ctx, db.GetLinkVisitsPageParams{
+		SortField: field,
+		SortAsc:   asc,
+		Offset:    first,
+		Limit:     last - first + 1,
+	})
 	if err != nil {
 		return application.RangePage[application.VisitView]{}, fmt.Errorf(
 			"list link visits range: %w",

@@ -76,7 +76,13 @@ func (r *LinkRepository) PageLinks(
 		return application.RangePage[application.LinkView]{Total: total}, nil
 	}
 
-	links, err := r.pickLinksRange(ctx, q.Sort, last-first+1, first)
+	field, asc := sortParams(q.Sort)
+	links, err := r.queries.GetLinksPage(ctx, db.GetLinksPageParams{
+		SortField: field,
+		SortAsc:   asc,
+		Offset:    first,
+		Limit:     last - first + 1,
+	})
 	if err != nil {
 		return application.RangePage[application.LinkView]{}, fmt.Errorf(
 			"list links range: %w",

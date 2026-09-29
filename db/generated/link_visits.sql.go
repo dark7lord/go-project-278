@@ -55,7 +55,7 @@ func (q *Queries) CreateLinkVisit(ctx context.Context, arg CreateLinkVisitParams
 	return i, err
 }
 
-const getLinkVisitsRangeCreatedAtAsc = `-- name: GetLinkVisitsRangeCreatedAtAsc :many
+const getLinkVisitsPage = `-- name: GetLinkVisitsPage :many
 SELECT
     id,
     link_id,
@@ -65,642 +65,67 @@ SELECT
     referer,
     status
 FROM link_visits
-ORDER BY created_at ASC, id ASC
-OFFSET $1::bigint
-LIMIT $2::bigint
+ORDER BY
+    CASE WHEN $1::text = 'link_id'
+        AND $2::boolean
+        THEN link_id END ASC,
+    CASE WHEN $1::text = 'link_id'
+        AND NOT $2::boolean
+        THEN link_id END DESC,
+    CASE WHEN $1::text = 'created_at'
+        AND $2::boolean
+        THEN created_at END ASC,
+    CASE WHEN $1::text = 'created_at'
+        AND NOT $2::boolean
+        THEN created_at END DESC,
+    CASE WHEN $1::text = 'ip'
+        AND $2::boolean
+        THEN ip END ASC,
+    CASE WHEN $1::text = 'ip'
+        AND NOT $2::boolean
+        THEN ip END DESC,
+    CASE WHEN $1::text = 'user_agent'
+        AND $2::boolean
+        THEN user_agent END ASC,
+    CASE WHEN $1::text = 'user_agent'
+        AND NOT $2::boolean
+        THEN user_agent END DESC,
+    CASE WHEN $1::text = 'status'
+        AND $2::boolean
+        THEN status END ASC,
+    CASE WHEN $1::text = 'status'
+        AND NOT $2::boolean
+        THEN status END DESC,
+    CASE WHEN $1::text = 'referer'
+        AND $2::boolean
+        THEN referer END ASC NULLS LAST,
+    CASE WHEN $1::text = 'referer'
+        AND NOT $2::boolean
+        THEN referer END DESC NULLS LAST,
+    CASE WHEN $1::text = 'id'
+        AND NOT $2::boolean
+        THEN id END DESC,
+    id ASC
+OFFSET $3::bigint
+LIMIT $4::bigint
 `
 
-type GetLinkVisitsRangeCreatedAtAscParams struct {
-	Offset int64 `json:"offset"`
-	Limit  int64 `json:"limit"`
+type GetLinkVisitsPageParams struct {
+	SortField string `json:"sort_field"`
+	SortAsc   bool   `json:"sort_asc"`
+	Offset    int64  `json:"offset"`
+	Limit     int64  `json:"limit"`
 }
 
-func (q *Queries) GetLinkVisitsRangeCreatedAtAsc(ctx context.Context, arg GetLinkVisitsRangeCreatedAtAscParams) ([]LinkVisit, error) {
-	rows, err := q.db.Query(ctx, getLinkVisitsRangeCreatedAtAsc, arg.Offset, arg.Limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []LinkVisit
-	for rows.Next() {
-		var i LinkVisit
-		if err := rows.Scan(
-			&i.ID,
-			&i.LinkID,
-			&i.CreatedAt,
-			&i.IP,
-			&i.UserAgent,
-			&i.Referer,
-			&i.Status,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getLinkVisitsRangeCreatedAtDesc = `-- name: GetLinkVisitsRangeCreatedAtDesc :many
-SELECT
-    id,
-    link_id,
-    created_at,
-    ip,
-    user_agent,
-    referer,
-    status
-FROM link_visits
-ORDER BY created_at DESC, id ASC
-OFFSET $1::bigint
-LIMIT $2::bigint
-`
-
-type GetLinkVisitsRangeCreatedAtDescParams struct {
-	Offset int64 `json:"offset"`
-	Limit  int64 `json:"limit"`
-}
-
-func (q *Queries) GetLinkVisitsRangeCreatedAtDesc(ctx context.Context, arg GetLinkVisitsRangeCreatedAtDescParams) ([]LinkVisit, error) {
-	rows, err := q.db.Query(ctx, getLinkVisitsRangeCreatedAtDesc, arg.Offset, arg.Limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []LinkVisit
-	for rows.Next() {
-		var i LinkVisit
-		if err := rows.Scan(
-			&i.ID,
-			&i.LinkID,
-			&i.CreatedAt,
-			&i.IP,
-			&i.UserAgent,
-			&i.Referer,
-			&i.Status,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getLinkVisitsRangeIdAsc = `-- name: GetLinkVisitsRangeIdAsc :many
-SELECT
-    id,
-    link_id,
-    created_at,
-    ip,
-    user_agent,
-    referer,
-    status
-FROM link_visits
-ORDER BY id ASC
-OFFSET $1::bigint
-LIMIT $2::bigint
-`
-
-type GetLinkVisitsRangeIdAscParams struct {
-	Offset int64 `json:"offset"`
-	Limit  int64 `json:"limit"`
-}
-
-func (q *Queries) GetLinkVisitsRangeIdAsc(ctx context.Context, arg GetLinkVisitsRangeIdAscParams) ([]LinkVisit, error) {
-	rows, err := q.db.Query(ctx, getLinkVisitsRangeIdAsc, arg.Offset, arg.Limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []LinkVisit
-	for rows.Next() {
-		var i LinkVisit
-		if err := rows.Scan(
-			&i.ID,
-			&i.LinkID,
-			&i.CreatedAt,
-			&i.IP,
-			&i.UserAgent,
-			&i.Referer,
-			&i.Status,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getLinkVisitsRangeIdDesc = `-- name: GetLinkVisitsRangeIdDesc :many
-SELECT
-    id,
-    link_id,
-    created_at,
-    ip,
-    user_agent,
-    referer,
-    status
-FROM link_visits
-ORDER BY id DESC
-OFFSET $1::bigint
-LIMIT $2::bigint
-`
-
-type GetLinkVisitsRangeIdDescParams struct {
-	Offset int64 `json:"offset"`
-	Limit  int64 `json:"limit"`
-}
-
-func (q *Queries) GetLinkVisitsRangeIdDesc(ctx context.Context, arg GetLinkVisitsRangeIdDescParams) ([]LinkVisit, error) {
-	rows, err := q.db.Query(ctx, getLinkVisitsRangeIdDesc, arg.Offset, arg.Limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []LinkVisit
-	for rows.Next() {
-		var i LinkVisit
-		if err := rows.Scan(
-			&i.ID,
-			&i.LinkID,
-			&i.CreatedAt,
-			&i.IP,
-			&i.UserAgent,
-			&i.Referer,
-			&i.Status,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getLinkVisitsRangeIpAsc = `-- name: GetLinkVisitsRangeIpAsc :many
-SELECT
-    id,
-    link_id,
-    created_at,
-    ip,
-    user_agent,
-    referer,
-    status
-FROM link_visits
-ORDER BY ip ASC, id ASC
-OFFSET $1::bigint
-LIMIT $2::bigint
-`
-
-type GetLinkVisitsRangeIpAscParams struct {
-	Offset int64 `json:"offset"`
-	Limit  int64 `json:"limit"`
-}
-
-func (q *Queries) GetLinkVisitsRangeIpAsc(ctx context.Context, arg GetLinkVisitsRangeIpAscParams) ([]LinkVisit, error) {
-	rows, err := q.db.Query(ctx, getLinkVisitsRangeIpAsc, arg.Offset, arg.Limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []LinkVisit
-	for rows.Next() {
-		var i LinkVisit
-		if err := rows.Scan(
-			&i.ID,
-			&i.LinkID,
-			&i.CreatedAt,
-			&i.IP,
-			&i.UserAgent,
-			&i.Referer,
-			&i.Status,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getLinkVisitsRangeIpDesc = `-- name: GetLinkVisitsRangeIpDesc :many
-SELECT
-    id,
-    link_id,
-    created_at,
-    ip,
-    user_agent,
-    referer,
-    status
-FROM link_visits
-ORDER BY ip DESC, id ASC
-OFFSET $1::bigint
-LIMIT $2::bigint
-`
-
-type GetLinkVisitsRangeIpDescParams struct {
-	Offset int64 `json:"offset"`
-	Limit  int64 `json:"limit"`
-}
-
-func (q *Queries) GetLinkVisitsRangeIpDesc(ctx context.Context, arg GetLinkVisitsRangeIpDescParams) ([]LinkVisit, error) {
-	rows, err := q.db.Query(ctx, getLinkVisitsRangeIpDesc, arg.Offset, arg.Limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []LinkVisit
-	for rows.Next() {
-		var i LinkVisit
-		if err := rows.Scan(
-			&i.ID,
-			&i.LinkID,
-			&i.CreatedAt,
-			&i.IP,
-			&i.UserAgent,
-			&i.Referer,
-			&i.Status,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getLinkVisitsRangeLinkIdAsc = `-- name: GetLinkVisitsRangeLinkIdAsc :many
-SELECT
-    id,
-    link_id,
-    created_at,
-    ip,
-    user_agent,
-    referer,
-    status
-FROM link_visits
-ORDER BY link_id ASC, id ASC
-OFFSET $1::bigint
-LIMIT $2::bigint
-`
-
-type GetLinkVisitsRangeLinkIdAscParams struct {
-	Offset int64 `json:"offset"`
-	Limit  int64 `json:"limit"`
-}
-
-func (q *Queries) GetLinkVisitsRangeLinkIdAsc(ctx context.Context, arg GetLinkVisitsRangeLinkIdAscParams) ([]LinkVisit, error) {
-	rows, err := q.db.Query(ctx, getLinkVisitsRangeLinkIdAsc, arg.Offset, arg.Limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []LinkVisit
-	for rows.Next() {
-		var i LinkVisit
-		if err := rows.Scan(
-			&i.ID,
-			&i.LinkID,
-			&i.CreatedAt,
-			&i.IP,
-			&i.UserAgent,
-			&i.Referer,
-			&i.Status,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getLinkVisitsRangeLinkIdDesc = `-- name: GetLinkVisitsRangeLinkIdDesc :many
-SELECT
-    id,
-    link_id,
-    created_at,
-    ip,
-    user_agent,
-    referer,
-    status
-FROM link_visits
-ORDER BY link_id DESC, id ASC
-OFFSET $1::bigint
-LIMIT $2::bigint
-`
-
-type GetLinkVisitsRangeLinkIdDescParams struct {
-	Offset int64 `json:"offset"`
-	Limit  int64 `json:"limit"`
-}
-
-func (q *Queries) GetLinkVisitsRangeLinkIdDesc(ctx context.Context, arg GetLinkVisitsRangeLinkIdDescParams) ([]LinkVisit, error) {
-	rows, err := q.db.Query(ctx, getLinkVisitsRangeLinkIdDesc, arg.Offset, arg.Limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []LinkVisit
-	for rows.Next() {
-		var i LinkVisit
-		if err := rows.Scan(
-			&i.ID,
-			&i.LinkID,
-			&i.CreatedAt,
-			&i.IP,
-			&i.UserAgent,
-			&i.Referer,
-			&i.Status,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getLinkVisitsRangeRefererAsc = `-- name: GetLinkVisitsRangeRefererAsc :many
-SELECT
-    id,
-    link_id,
-    created_at,
-    ip,
-    user_agent,
-    referer,
-    status
-FROM link_visits
-ORDER BY referer ASC NULLS LAST, id ASC
-OFFSET $1::bigint
-LIMIT $2::bigint
-`
-
-type GetLinkVisitsRangeRefererAscParams struct {
-	Offset int64 `json:"offset"`
-	Limit  int64 `json:"limit"`
-}
-
-func (q *Queries) GetLinkVisitsRangeRefererAsc(ctx context.Context, arg GetLinkVisitsRangeRefererAscParams) ([]LinkVisit, error) {
-	rows, err := q.db.Query(ctx, getLinkVisitsRangeRefererAsc, arg.Offset, arg.Limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []LinkVisit
-	for rows.Next() {
-		var i LinkVisit
-		if err := rows.Scan(
-			&i.ID,
-			&i.LinkID,
-			&i.CreatedAt,
-			&i.IP,
-			&i.UserAgent,
-			&i.Referer,
-			&i.Status,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getLinkVisitsRangeRefererDesc = `-- name: GetLinkVisitsRangeRefererDesc :many
-SELECT
-    id,
-    link_id,
-    created_at,
-    ip,
-    user_agent,
-    referer,
-    status
-FROM link_visits
-ORDER BY referer DESC NULLS LAST, id ASC
-OFFSET $1::bigint
-LIMIT $2::bigint
-`
-
-type GetLinkVisitsRangeRefererDescParams struct {
-	Offset int64 `json:"offset"`
-	Limit  int64 `json:"limit"`
-}
-
-func (q *Queries) GetLinkVisitsRangeRefererDesc(ctx context.Context, arg GetLinkVisitsRangeRefererDescParams) ([]LinkVisit, error) {
-	rows, err := q.db.Query(ctx, getLinkVisitsRangeRefererDesc, arg.Offset, arg.Limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []LinkVisit
-	for rows.Next() {
-		var i LinkVisit
-		if err := rows.Scan(
-			&i.ID,
-			&i.LinkID,
-			&i.CreatedAt,
-			&i.IP,
-			&i.UserAgent,
-			&i.Referer,
-			&i.Status,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getLinkVisitsRangeStatusAsc = `-- name: GetLinkVisitsRangeStatusAsc :many
-SELECT
-    id,
-    link_id,
-    created_at,
-    ip,
-    user_agent,
-    referer,
-    status
-FROM link_visits
-ORDER BY status ASC, id ASC
-OFFSET $1::bigint
-LIMIT $2::bigint
-`
-
-type GetLinkVisitsRangeStatusAscParams struct {
-	Offset int64 `json:"offset"`
-	Limit  int64 `json:"limit"`
-}
-
-func (q *Queries) GetLinkVisitsRangeStatusAsc(ctx context.Context, arg GetLinkVisitsRangeStatusAscParams) ([]LinkVisit, error) {
-	rows, err := q.db.Query(ctx, getLinkVisitsRangeStatusAsc, arg.Offset, arg.Limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []LinkVisit
-	for rows.Next() {
-		var i LinkVisit
-		if err := rows.Scan(
-			&i.ID,
-			&i.LinkID,
-			&i.CreatedAt,
-			&i.IP,
-			&i.UserAgent,
-			&i.Referer,
-			&i.Status,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getLinkVisitsRangeStatusDesc = `-- name: GetLinkVisitsRangeStatusDesc :many
-SELECT
-    id,
-    link_id,
-    created_at,
-    ip,
-    user_agent,
-    referer,
-    status
-FROM link_visits
-ORDER BY status DESC, id ASC
-OFFSET $1::bigint
-LIMIT $2::bigint
-`
-
-type GetLinkVisitsRangeStatusDescParams struct {
-	Offset int64 `json:"offset"`
-	Limit  int64 `json:"limit"`
-}
-
-func (q *Queries) GetLinkVisitsRangeStatusDesc(ctx context.Context, arg GetLinkVisitsRangeStatusDescParams) ([]LinkVisit, error) {
-	rows, err := q.db.Query(ctx, getLinkVisitsRangeStatusDesc, arg.Offset, arg.Limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []LinkVisit
-	for rows.Next() {
-		var i LinkVisit
-		if err := rows.Scan(
-			&i.ID,
-			&i.LinkID,
-			&i.CreatedAt,
-			&i.IP,
-			&i.UserAgent,
-			&i.Referer,
-			&i.Status,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getLinkVisitsRangeUserAgentAsc = `-- name: GetLinkVisitsRangeUserAgentAsc :many
-SELECT
-    id,
-    link_id,
-    created_at,
-    ip,
-    user_agent,
-    referer,
-    status
-FROM link_visits
-ORDER BY user_agent ASC, id ASC
-OFFSET $1::bigint
-LIMIT $2::bigint
-`
-
-type GetLinkVisitsRangeUserAgentAscParams struct {
-	Offset int64 `json:"offset"`
-	Limit  int64 `json:"limit"`
-}
-
-func (q *Queries) GetLinkVisitsRangeUserAgentAsc(ctx context.Context, arg GetLinkVisitsRangeUserAgentAscParams) ([]LinkVisit, error) {
-	rows, err := q.db.Query(ctx, getLinkVisitsRangeUserAgentAsc, arg.Offset, arg.Limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []LinkVisit
-	for rows.Next() {
-		var i LinkVisit
-		if err := rows.Scan(
-			&i.ID,
-			&i.LinkID,
-			&i.CreatedAt,
-			&i.IP,
-			&i.UserAgent,
-			&i.Referer,
-			&i.Status,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getLinkVisitsRangeUserAgentDesc = `-- name: GetLinkVisitsRangeUserAgentDesc :many
-SELECT
-    id,
-    link_id,
-    created_at,
-    ip,
-    user_agent,
-    referer,
-    status
-FROM link_visits
-ORDER BY user_agent DESC, id ASC
-OFFSET $1::bigint
-LIMIT $2::bigint
-`
-
-type GetLinkVisitsRangeUserAgentDescParams struct {
-	Offset int64 `json:"offset"`
-	Limit  int64 `json:"limit"`
-}
-
-func (q *Queries) GetLinkVisitsRangeUserAgentDesc(ctx context.Context, arg GetLinkVisitsRangeUserAgentDescParams) ([]LinkVisit, error) {
-	rows, err := q.db.Query(ctx, getLinkVisitsRangeUserAgentDesc, arg.Offset, arg.Limit)
+// One page in the requested order, as GetLinksPage. referer keeps visits
+// without one last in both directions.
+func (q *Queries) GetLinkVisitsPage(ctx context.Context, arg GetLinkVisitsPageParams) ([]LinkVisit, error) {
+	rows, err := q.db.Query(ctx, getLinkVisitsPage,
+		arg.SortField,
+		arg.SortAsc,
+		arg.Offset,
+		arg.Limit,
+	)
 	if err != nil {
 		return nil, err
 	}

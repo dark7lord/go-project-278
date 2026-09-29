@@ -1,9 +1,11 @@
 package app
 
 import (
+	"cmp"
 	"fmt"
 	"net/http"
 	"net/url"
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -206,6 +208,105 @@ func TestVisitsRangeSortCreatedAt(t *testing.T) {
 			for i, visit := range visits {
 				assert.Equal(t, visitIP(tt.want[i]), visit.IP)
 			}
+		})
+	}
+}
+
+// sortedPage reads one page of a collection in the given sort order.
+func sortedPage[T any](t *testing.T, tx *testDB, path, sort string) []T {
+	t.Helper()
+
+	query := url.Values{"range": {"[0,9]"}, "sort": {sort}}.Encode()
+	w := performRequest(t, tx.router, http.MethodGet, path+"?"+query, "")
+	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
+
+	var items []T
+	decode(t, w, &items)
+
+	return items
+}
+
+// assertSortsBothWays checks that field orders a page ascending and descending.
+func assertSortsBothWays[T any](t *testing.T, tx *testDB, path, field string, compare func(a, b T) int) {
+	t.Helper()
+
+	asc := sortedPage[T](t, tx, path, `["`+field+`","ASC"]`)
+	require.Len(t, asc, 3)
+	assert.True(t, slices.IsSortedFunc(asc, compare), "ASC by %s: %+v", field, asc)
+
+	desc := sortedPage[T](t, tx, path, `["`+field+`","DESC"]`)
+	descending := func(a, b T) int { return compare(b, a) }
+	assert.True(t, slices.IsSortedFunc(desc, descending), "DESC by %s: %+v", field, desc)
+}
+
+// TestLinksSortEveryField covers every links sort field the page query knows,
+// on seeds whose field order differs from their insertion order.
+func TestLinksSortEveryField(t *testing.T) {
+	td := setupTestDB(t)
+	tx := setupTestTx(t, td)
+
+	for _, seed := range []struct{ url, name string }{
+		{url: "https://c.example", name: "banana"},
+		{url: "https://a.example", name: "cherry"},
+		{url: "https://b.example", name: "apple"},
+	} {
+		_, err := tx.linkRepo.CreateLink(t.Context(), seed.url, seed.name)
+		require.NoError(t, err)
+	}
+
+	for _, tt := range []struct {
+		field   string
+		compare func(a, b linkResponse) int
+	}{
+		{"id", func(a, b linkResponse) int { return cmp.Compare(a.ID, b.ID) }},
+		{"short_name", func(a, b linkResponse) int { return cmp.Compare(a.ShortName, b.ShortName) }},
+		{"short_url", func(a, b linkResponse) int { return cmp.Compare(a.ShortURL, b.ShortURL) }},
+		{"original_url", func(a, b linkResponse) int { return cmp.Compare(a.OriginalURL, b.OriginalURL) }},
+	} {
+		t.Run(tt.field, func(t *testing.T) {
+			assertSortsBothWays(t, tx, "/api/links", tt.field, tt.compare)
+		})
+	}
+}
+
+// TestVisitsSortEveryField does the same for the visits fields not covered by
+// the dedicated ip, referer and created_at tests above.
+func TestVisitsSortEveryField(t *testing.T) {
+	td := setupTestDB(t)
+	tx := setupTestTx(t, td)
+
+	linkIDs := make([]int64, 3)
+	for i := range linkIDs {
+		l := linkFactory(i)
+		created, err := tx.linkRepo.CreateLink(t.Context(), l.OriginalURL, l.ShortName)
+		require.NoError(t, err)
+		linkIDs[i] = created.ID
+	}
+
+	for _, seed := range []struct {
+		link   int
+		agent  string
+		status int32
+	}{
+		{link: 2, agent: "b-agent", status: 302},
+		{link: 0, agent: "c-agent", status: 301},
+		{link: 1, agent: "a-agent", status: 307},
+	} {
+		_, err := tx.visitRepo.CreateLinkVisit(t.Context(), linkIDs[seed.link], visitIP(0), seed.agent, nil, seed.status)
+		require.NoError(t, err)
+	}
+
+	for _, tt := range []struct {
+		field   string
+		compare func(a, b visitResponse) int
+	}{
+		{"id", func(a, b visitResponse) int { return cmp.Compare(a.ID, b.ID) }},
+		{"link_id", func(a, b visitResponse) int { return cmp.Compare(a.LinkID, b.LinkID) }},
+		{"user_agent", func(a, b visitResponse) int { return cmp.Compare(a.UserAgent, b.UserAgent) }},
+		{"status", func(a, b visitResponse) int { return cmp.Compare(a.Status, b.Status) }},
+	} {
+		t.Run(tt.field, func(t *testing.T) {
+			assertSortsBothWays(t, tx, "/api/link_visits", tt.field, tt.compare)
 		})
 	}
 }

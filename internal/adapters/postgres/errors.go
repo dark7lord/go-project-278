@@ -19,7 +19,7 @@ func mapStorageError(err error) error {
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) && pgErr.Code == "23505" && pgErr.ConstraintName == shortNameConstraint {
 		return &application.FieldError{
-			Field: string(fieldShortName),
+			Field: string(application.SortFieldShortName),
 			Err:   application.ErrShortNameAlreadyUse,
 		}
 	}

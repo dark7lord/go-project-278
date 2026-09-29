@@ -29,44 +29,27 @@ DELETE FROM links
 WHERE id = @id
 RETURNING id, original_url, short_name;
 
--- name: GetLinksRangeIdAsc :many
+-- name: GetLinksPage :many
+-- One page in the requested order. Each CASE is live for one field and
+-- direction and NULL otherwise; id comes last, so ties and no sort go by id.
 SELECT id, original_url, short_name
 FROM links
-ORDER BY id ASC
-OFFSET sqlc.arg('offset')::bigint
-LIMIT sqlc.arg('limit')::bigint;
-
--- name: GetLinksRangeShortNameAsc :many
-SELECT id, original_url, short_name
-FROM links
-ORDER BY short_name ASC, id ASC
-OFFSET sqlc.arg('offset')::bigint
-LIMIT sqlc.arg('limit')::bigint;
-
--- name: GetLinksRangeShortNameDesc :many
-SELECT id, original_url, short_name
-FROM links
-ORDER BY short_name DESC, id ASC
-OFFSET sqlc.arg('offset')::bigint
-LIMIT sqlc.arg('limit')::bigint;
-
--- name: GetLinksRangeOriginalURLAsc :many
-SELECT id, original_url, short_name
-FROM links
-ORDER BY original_url ASC, id ASC
-OFFSET sqlc.arg('offset')::bigint
-LIMIT sqlc.arg('limit')::bigint;
-
--- name: GetLinksRangeOriginalURLDesc :many
-SELECT id, original_url, short_name
-FROM links
-ORDER BY original_url DESC, id ASC
-OFFSET sqlc.arg('offset')::bigint
-LIMIT sqlc.arg('limit')::bigint;
-
--- name: GetLinksRangeIdDesc :many
-SELECT id, original_url, short_name
-FROM links
-ORDER BY id DESC
+ORDER BY
+    CASE WHEN sqlc.arg(sort_field)::text = 'short_name'
+        AND sqlc.arg(sort_asc)::boolean
+        THEN short_name END ASC,
+    CASE WHEN sqlc.arg(sort_field)::text = 'short_name'
+        AND NOT sqlc.arg(sort_asc)::boolean
+        THEN short_name END DESC,
+    CASE WHEN sqlc.arg(sort_field)::text = 'original_url'
+        AND sqlc.arg(sort_asc)::boolean
+        THEN original_url END ASC,
+    CASE WHEN sqlc.arg(sort_field)::text = 'original_url'
+        AND NOT sqlc.arg(sort_asc)::boolean
+        THEN original_url END DESC,
+    CASE WHEN sqlc.arg(sort_field)::text = 'id'
+        AND NOT sqlc.arg(sort_asc)::boolean
+        THEN id END DESC,
+    id ASC
 OFFSET sqlc.arg('offset')::bigint
 LIMIT sqlc.arg('limit')::bigint;
