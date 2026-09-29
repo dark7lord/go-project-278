@@ -17,6 +17,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"code/db/generated"
+	"code/db/migrations"
 	httpadapter "code/internal/adapters/http"
 	"code/internal/adapters/postgres"
 	shortcodeadapter "code/internal/adapters/shortcode"
@@ -142,6 +143,10 @@ func Run() error {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 	defer dbConn.Close()
+
+	if err := migrations.Up(ctx, dbConn); err != nil {
+		return err
+	}
 
 	router := buildApp(cfg, dbConn)
 

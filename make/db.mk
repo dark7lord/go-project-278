@@ -1,6 +1,7 @@
 ##@ Database (the compose PostgreSQL)
-.PHONY: db-up db-down db-migrate db-rollback db-status db-redo db-validate db-reset db-gen
-GOOSE := $(GOTOOL) goose -dir db/migrations postgres "$(DATABASE_URL)"
+.PHONY: db-up db-down db-migrate db-rollback db-status db-redo db-reset db-gen
+# The migrations embedded in the binary, through the same goose library the app uses
+MIGRATE := go run ./cmd/migrate
 
 db-up: ## Start PostgreSQL in Docker, the data lives in the pgdata volume
 	docker compose up -d --wait db
@@ -8,20 +9,17 @@ db-up: ## Start PostgreSQL in Docker, the data lives in the pgdata volume
 db-down: ## Stop PostgreSQL, the data stays
 	docker compose stop db
 
-db-migrate: ## Apply the migrations
-	$(GOOSE) up
+db-migrate: ## Apply the migrations (the app also does on start)
+	$(MIGRATE) up
 
 db-rollback: ## Roll back the latest migration
-	$(GOOSE) down
+	$(MIGRATE) down
 
 db-status: ## Show the migration status
-	$(GOOSE) status
+	$(MIGRATE) status
 
 db-redo: ## Re-run the latest migration
-	$(GOOSE) redo
-
-db-validate: ## Check the migration files without running them
-	$(GOOSE) validate
+	$(MIGRATE) redo
 
 db-reset: ## Drop all local data and migrate from scratch (asks first)
 	@printf "Drop all data of the compose PostgreSQL? [y/N] "; read answer; [ "$$answer" = y ] \

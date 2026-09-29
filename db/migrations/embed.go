@@ -1,4 +1,4 @@
-// Package migrations provides embedded SQL migration files.
+// Package migrations holds the SQL migrations, embedded in the binary, and applies them.
 package migrations
 
 import "embed"

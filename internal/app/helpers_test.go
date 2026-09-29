@@ -15,8 +15,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/jackc/pgx/v5/stdlib"
-	"github.com/pressly/goose/v3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
@@ -89,17 +87,11 @@ func startTestDB(ctx context.Context) (*testDB, error) {
 		return nil, fmt.Errorf("connect to postgres: %w", err)
 	}
 
-	sqlDB := stdlib.OpenDBFromPool(pool)
-	provider, err := goose.NewProvider("postgres", sqlDB, migrations.FS)
-	if err != nil {
+	// The same path the app takes on start
+	if err := migrations.Up(ctx, pool); err != nil {
 		pool.Close()
 		_ = pg.Terminate(ctx)
-		return nil, fmt.Errorf("create goose provider: %w", err)
-	}
-	if _, err := provider.Up(ctx); err != nil {
-		pool.Close()
-		_ = pg.Terminate(ctx)
-		return nil, fmt.Errorf("run migrations: %w", err)
+		return nil, err
 	}
 
 	td := newTestDB(db.New(pool))
