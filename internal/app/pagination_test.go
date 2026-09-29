@@ -1,7 +1,6 @@
 package app
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -15,7 +14,7 @@ import (
 
 func TestLinksPagination(t *testing.T) {
 	td := setupTestDB(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	tests := []struct {
 		name        string

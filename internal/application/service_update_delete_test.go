@@ -1,7 +1,6 @@
 package application
 
 import (
-	"context"
 	"errors"
 	"testing"
 
@@ -26,7 +25,7 @@ func TestServiceUpdateLink(t *testing.T) {
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
-	updated, err := svc.UpdateLink(context.Background(), 7, UpdateLinkCommand{
+	updated, err := svc.UpdateLink(t.Context(), 7, UpdateLinkCommand{
 		OriginalURL: "https://updated.com",
 		ShortName:   "updated-link",
 	})
@@ -52,7 +51,7 @@ func TestServiceUpdateLinkTrimsShortName(t *testing.T) {
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
-	updated, err := svc.UpdateLink(context.Background(), 7, UpdateLinkCommand{
+	updated, err := svc.UpdateLink(t.Context(), 7, UpdateLinkCommand{
 		OriginalURL: "https://updated.com",
 		ShortName:   " updated-link ",
 	})
@@ -69,7 +68,7 @@ func TestServiceUpdateLinkRejectsInvalidURL(t *testing.T) {
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
-	_, err := svc.UpdateLink(context.Background(), 7, UpdateLinkCommand{
+	_, err := svc.UpdateLink(t.Context(), 7, UpdateLinkCommand{
 		OriginalURL: "ftp://bad",
 		ShortName:   "ok",
 	})
@@ -97,7 +96,7 @@ func TestServiceUpdateLinkGeneratesShortName(t *testing.T) {
 		generator,
 	)
 
-	updated, err := svc.UpdateLink(context.Background(), 7, UpdateLinkCommand{
+	updated, err := svc.UpdateLink(t.Context(), 7, UpdateLinkCommand{
 		OriginalURL: testOKURL,
 		ShortName:   "",
 	})
@@ -119,7 +118,7 @@ func TestServiceUpdateLinkExhaustsGeneratedCodes(t *testing.T) {
 		On("UpdateLink", mock.Anything, int64(7), testOKURL, testGeneratedCode).
 		Return(LinkView{}, &FieldError{Field: fieldShortName, Err: ErrShortNameAlreadyUse})
 
-	_, err := svc.UpdateLink(context.Background(), 7, UpdateLinkCommand{
+	_, err := svc.UpdateLink(t.Context(), 7, UpdateLinkCommand{
 		OriginalURL: testOKURL,
 		ShortName:   "",
 	})
@@ -144,7 +143,7 @@ func TestServiceDeleteLink(t *testing.T) {
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
-	deleted, err := svc.DeleteLink(context.Background(), 7)
+	deleted, err := svc.DeleteLink(t.Context(), 7)
 
 	require.NoError(t, err)
 	assert.Equal(t, expected, deleted)
@@ -163,7 +162,7 @@ func TestServiceDeleteLinkWrapsRepositoryError(t *testing.T) {
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
-	_, err := svc.DeleteLink(context.Background(), 1)
+	_, err := svc.DeleteLink(t.Context(), 1)
 
 	assert.ErrorIs(t, err, repoErr)
 	writer.AssertExpectations(t)

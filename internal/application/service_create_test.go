@@ -1,7 +1,6 @@
 package application
 
 import (
-	"context"
 	"errors"
 	"testing"
 
@@ -95,7 +94,7 @@ func TestServiceCreateLink(t *testing.T) {
 				call.Return(expected, nil).Once()
 			}
 
-			link, err := svc.CreateLink(context.Background(), tt.command)
+			link, err := svc.CreateLink(t.Context(), tt.command)
 
 			require.NoError(t, err)
 			assert.Equal(t, tt.wantURL, link.OriginalURL)
@@ -133,7 +132,7 @@ func TestServiceCreateLinkRejectsInvalidInput(t *testing.T) {
 				&fakeShortCodeGenerator{value: testShortCode},
 			)
 
-			_, err := svc.CreateLink(context.Background(), tt.command)
+			_, err := svc.CreateLink(t.Context(), tt.command)
 
 			var fieldErr *FieldError
 			require.ErrorAs(t, err, &fieldErr)
@@ -155,7 +154,7 @@ func TestServiceCreateLinkReturnsRepositoryError(t *testing.T) {
 		Return(LinkView{}, repoErr).
 		Once()
 
-	_, err := svc.CreateLink(context.Background(), CreateLinkCommand{
+	_, err := svc.CreateLink(t.Context(), CreateLinkCommand{
 		OriginalURL: testExampleURL,
 		ShortName:   testShortName,
 	})
@@ -178,7 +177,7 @@ func TestServiceCreateLinkExhaustsGeneratedCodes(t *testing.T) {
 			Err:   ErrShortNameAlreadyUse,
 		})
 
-	_, err := svc.CreateLink(context.Background(), CreateLinkCommand{
+	_, err := svc.CreateLink(t.Context(), CreateLinkCommand{
 		OriginalURL: testExampleURL,
 	})
 
@@ -203,7 +202,7 @@ func TestServiceCreateLinkDoesNotRetryNonCollisionFieldError(t *testing.T) {
 		Return(LinkView{}, fieldErr).
 		Once()
 
-	_, err := svc.CreateLink(context.Background(), CreateLinkCommand{
+	_, err := svc.CreateLink(t.Context(), CreateLinkCommand{
 		OriginalURL: testExampleURL,
 	})
 

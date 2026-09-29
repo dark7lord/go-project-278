@@ -1,7 +1,6 @@
 package application
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -34,7 +33,7 @@ func TestServiceCreateLinkUsesInjectedGenerator(t *testing.T) {
 			ShortName:   testGeneratedCode,
 		}, nil).
 		Once()
-	link, err := svc.CreateLink(context.Background(), CreateLinkCommand{
+	link, err := svc.CreateLink(t.Context(), CreateLinkCommand{
 		OriginalURL: testExampleURL,
 		ShortName:   "",
 	})

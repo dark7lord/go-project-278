@@ -1,7 +1,6 @@
 package app
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -12,12 +11,12 @@ import (
 )
 
 func TestConnectDBInvalidDSN(t *testing.T) {
-	_, err := connectDB(context.Background(), "not-a-valid-dsn")
+	_, err := connectDB(t.Context(), "not-a-valid-dsn")
 	require.Error(t, err)
 }
 
 func TestConnectDBUnreachable(t *testing.T) {
-	_, err := connectDB(context.Background(), "postgres://user:pass@127.0.0.1:1/db?sslmode=disable")
+	_, err := connectDB(t.Context(), "postgres://user:pass@127.0.0.1:1/db?sslmode=disable")
 	require.Error(t, err)
 }
 

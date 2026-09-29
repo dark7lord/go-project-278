@@ -1,7 +1,6 @@
 package application
 
 import (
-	"context"
 	"errors"
 	"testing"
 
@@ -23,7 +22,7 @@ func TestServicePageLinkVisits(t *testing.T) {
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
-	page, err := svc.PageLinkVisits(context.Background(), ListLinkVisitsQuery{Range: Range{First: 5, Last: 9}})
+	page, err := svc.PageLinkVisits(t.Context(), ListLinkVisitsQuery{Range: Range{First: 5, Last: 9}})
 
 	require.NoError(t, err)
 	assert.Equal(t, expected, page.Items)
@@ -38,7 +37,7 @@ func TestServicePageLinkVisitsPropagatesReaderError(t *testing.T) {
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
-	_, err := svc.PageLinkVisits(context.Background(), ListLinkVisitsQuery{Range: Range{First: 0, Last: 4}})
+	_, err := svc.PageLinkVisits(t.Context(), ListLinkVisitsQuery{Range: Range{First: 0, Last: 4}})
 
 	assert.ErrorIs(t, err, repoErr)
 }

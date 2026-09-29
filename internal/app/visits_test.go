@@ -1,7 +1,6 @@
 package app
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -17,7 +16,7 @@ import (
 
 func TestVisitsPagination(t *testing.T) {
 	td := setupTestDB(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	tests := []struct {
 		name        string
@@ -170,7 +169,7 @@ func TestVisitsPagination(t *testing.T) {
 
 func TestRedirectRecordsVisit(t *testing.T) {
 	td := setupTestDB(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	tx := setupTestTx(t, td)
 
@@ -234,7 +233,7 @@ func TestListVisitsEmpty(t *testing.T) {
 // stored as wall-clock time: a non-UTC session must not shift the API value.
 func TestVisitCreatedAtIgnoresSessionTimeZone(t *testing.T) {
 	td := setupTestDB(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	tx := setupTestTx(t, td)
 

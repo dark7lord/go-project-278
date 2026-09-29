@@ -1,7 +1,6 @@
 package application
 
 import (
-	"context"
 	"errors"
 	"testing"
 
@@ -26,7 +25,7 @@ func TestServicePageLinks(t *testing.T) {
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
-	page, err := svc.PageLinks(context.Background(), ListLinksQuery{Range: Range{First: 5, Last: 9}})
+	page, err := svc.PageLinks(t.Context(), ListLinksQuery{Range: Range{First: 5, Last: 9}})
 
 	require.NoError(t, err)
 	assert.Equal(t, expected, page.Items)
@@ -41,7 +40,7 @@ func TestServicePageLinksPropagatesReaderError(t *testing.T) {
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
-	_, err := svc.PageLinks(context.Background(), ListLinksQuery{Range: Range{First: 0, Last: 4}})
+	_, err := svc.PageLinks(t.Context(), ListLinksQuery{Range: Range{First: 0, Last: 4}})
 
 	assert.ErrorIs(t, err, repoErr)
 }
@@ -56,7 +55,7 @@ func TestServiceGetLink(t *testing.T) {
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
-	link, err := svc.GetLinkByID(context.Background(), expected.ID)
+	link, err := svc.GetLinkByID(t.Context(), expected.ID)
 
 	require.NoError(t, err)
 	assert.Equal(t, expected, link)
@@ -69,7 +68,7 @@ func TestServiceGetLinkWrapsRepositoryError(t *testing.T) {
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
-	_, err := svc.GetLinkByShortName(context.Background(), testTargetName)
+	_, err := svc.GetLinkByShortName(t.Context(), testTargetName)
 
 	assert.ErrorIs(t, err, repoErr)
 }

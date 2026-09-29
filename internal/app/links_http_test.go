@@ -1,7 +1,6 @@
 package app
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"testing"
@@ -15,7 +14,7 @@ import (
 
 func TestCreateLink(t *testing.T) {
 	td := setupTestDB(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("ok", func(t *testing.T) {
 		tx := setupTestTx(t, td)
@@ -50,7 +49,7 @@ func TestCreateLink(t *testing.T) {
 
 func TestGetLink(t *testing.T) {
 	td := setupTestDB(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	tx := setupTestTx(t, td)
 	created, err := tx.linkRepo.CreateLink(ctx, "https://gettest.com", "get-test")
@@ -69,7 +68,7 @@ func TestGetLink(t *testing.T) {
 
 func TestUpdateLink(t *testing.T) {
 	td := setupTestDB(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("ok", func(t *testing.T) {
 		tx := setupTestTx(t, td)
@@ -133,7 +132,7 @@ func TestUpdateLink(t *testing.T) {
 
 func TestDeleteLink(t *testing.T) {
 	td := setupTestDB(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	tx := setupTestTx(t, td)
 	created, err := tx.linkRepo.CreateLink(ctx, "https://deletetest.com", "delete-test")
@@ -149,7 +148,7 @@ func TestDeleteLink(t *testing.T) {
 
 func TestListLinks(t *testing.T) {
 	td := setupTestDB(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("returns all", func(t *testing.T) {
 		tx := setupTestTx(t, td)

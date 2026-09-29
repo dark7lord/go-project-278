@@ -1,7 +1,6 @@
 package app
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -17,7 +16,7 @@ func visitIP(i int) string {
 
 func TestLinksRangeSortShortName(t *testing.T) {
 	td := setupTestDB(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	tx := setupTestTx(t, td)
 
@@ -59,7 +58,7 @@ func TestLinksRangeSortShortName(t *testing.T) {
 
 func TestVisitsRangeSortByIP(t *testing.T) {
 	td := setupTestDB(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	tx := setupTestTx(t, td)
 
@@ -105,7 +104,7 @@ func TestVisitsRangeSortByIP(t *testing.T) {
 
 func TestVisitsRangeSortRefererNullsLast(t *testing.T) {
 	td := setupTestDB(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	tx := setupTestTx(t, td)
 
@@ -158,7 +157,7 @@ func TestVisitsRangeSortRefererNullsLast(t *testing.T) {
 
 func TestVisitsRangeSortCreatedAt(t *testing.T) {
 	td := setupTestDB(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	tx := setupTestTx(t, td)
 

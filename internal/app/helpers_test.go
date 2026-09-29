@@ -16,13 +16,11 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
-	"github.com/moby/moby/api/types/network"
 	"github.com/pressly/goose/v3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
-	"github.com/testcontainers/testcontainers-go/wait"
 
 	"code/db/generated"
 	"code/db/migrations"
@@ -62,23 +60,18 @@ type testDB struct {
 	linkRepo  *postgresadapter.LinkRepository
 	visitRepo *postgresadapter.VisitRepository
 	svc       *application.Service
-	handler   *httpadapter.Handler
 	router    *gin.Engine
 	tx        pgx.Tx
 }
 
 func startTestDB(ctx context.Context) (*testDB, error) {
+	// The same major version as compose.yaml, so tests run against what development does
 	pg, err := postgres.Run(ctx,
-		"postgres:16-alpine",
+		"postgres:17-alpine",
 		postgres.WithDatabase("test"),
 		postgres.WithUsername("test"),
 		postgres.WithPassword("test"),
-		testcontainers.WithWaitStrategyAndDeadline(
-			60*time.Second,
-			wait.ForSQL("5432/tcp", "pgx", func(host string, port network.Port) string {
-				return fmt.Sprintf("postgres://test:test@%s:%d/test?sslmode=disable", host, port.Num())
-			}),
-		),
+		postgres.BasicWaitStrategies(),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("start postgres container: %w", err)
@@ -109,32 +102,31 @@ func startTestDB(ctx context.Context) (*testDB, error) {
 		return nil, fmt.Errorf("run migrations: %w", err)
 	}
 
-	return newTestDB(pg, pool), nil
+	td := newTestDB(db.New(pool))
+	td.pg = pg
+	td.conn = pool
+
+	return td, nil
 }
 
-func newTestDB(pg testcontainers.Container, pool *pgxpool.Pool) *testDB {
-	queries := db.New(pool)
+// newTestDB wires the app around queries, the pool's or a transaction's.
+func newTestDB(queries *db.Queries) *testDB {
 	linkRepo := postgresadapter.NewLinkRepository(queries)
 	visitRepo := postgresadapter.NewVisitRepository(queries)
-	linkSvc := application.NewServiceWithGenerator(application.ServiceDeps{
+	svc := application.NewServiceWithGenerator(application.ServiceDeps{
 		LinkReader:    linkRepo,
 		LinkWriter:    linkRepo,
 		VisitReader:   visitRepo,
 		VisitRecorder: visitRepo,
 	},
 		stubGenerator{})
-	linkHandler := httpadapter.NewHandler(linkSvc, linkSvc, "http://localhost:8080")
-	router := setupRouter(linkHandler)
 
 	return &testDB{
-		pg:        pg,
-		conn:      pool,
 		queries:   queries,
 		linkRepo:  linkRepo,
 		visitRepo: visitRepo,
-		svc:       linkSvc,
-		handler:   linkHandler,
-		router:    router,
+		svc:       svc,
+		router:    setupRouter(httpadapter.NewHandler(svc, svc, "http://localhost:8080")),
 	}
 }
 
@@ -149,33 +141,16 @@ func setupTestDB(t *testing.T) *testDB {
 
 func setupTestTx(t *testing.T, td *testDB) *testDB {
 	t.Helper()
-	tx, err := td.conn.Begin(context.Background())
+	tx, err := td.conn.Begin(t.Context())
 	require.NoError(t, err)
+	// Not t.Context(): it is already canceled when cleanups run
 	t.Cleanup(func() { _ = tx.Rollback(context.Background()) })
 
-	txQueries := td.queries.WithTx(tx)
-	txRepo := postgresadapter.NewLinkRepository(txQueries)
-	txVisitRepo := postgresadapter.NewVisitRepository(txQueries)
-	txSvc := application.NewServiceWithGenerator(application.ServiceDeps{
-		LinkReader:    txRepo,
-		LinkWriter:    txRepo,
-		VisitReader:   txVisitRepo,
-		VisitRecorder: txVisitRepo,
-	},
-		stubGenerator{})
-	txHandler := httpadapter.NewHandler(txSvc, txSvc, "http://localhost:8080")
-	router := setupRouter(txHandler)
+	txDB := newTestDB(td.queries.WithTx(tx))
+	txDB.conn = td.conn
+	txDB.tx = tx
 
-	return &testDB{
-		conn:      td.conn,
-		queries:   txQueries,
-		linkRepo:  txRepo,
-		visitRepo: txVisitRepo,
-		svc:       txSvc,
-		handler:   txHandler,
-		router:    router,
-		tx:        tx,
-	}
+	return txDB
 }
 
 func linkFactory(i int) db.Link {

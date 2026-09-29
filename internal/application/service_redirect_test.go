@@ -1,7 +1,6 @@
 package application
 
 import (
-	"context"
 	"errors"
 	"testing"
 
@@ -28,7 +27,7 @@ func TestServiceRedirectRecordsVisit(t *testing.T) {
 		Return(VisitView{}, nil).
 		Once()
 
-	result, err := svc.Redirect(context.Background(), RedirectCommand{
+	result, err := svc.Redirect(t.Context(), RedirectCommand{
 		ShortName: testTargetName,
 		VisitMeta: VisitMeta{
 			IP:        "192.0.2.1",
@@ -55,7 +54,7 @@ func TestServiceRedirectRejectsInvalidStoredURL(t *testing.T) {
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
-	_, err := svc.Redirect(context.Background(), RedirectCommand{ShortName: testTargetName})
+	_, err := svc.Redirect(t.Context(), RedirectCommand{ShortName: testTargetName})
 
 	assert.Error(t, err)
 	m := mock.Anything
@@ -77,7 +76,7 @@ func TestServiceRedirectReturnsVisitError(t *testing.T) {
 		Return(VisitView{}, visitErr).
 		Once()
 
-	_, err := svc.Redirect(context.Background(), RedirectCommand{
+	_, err := svc.Redirect(t.Context(), RedirectCommand{
 		ShortName: testTargetName,
 		Status:    testRedirectStatus,
 	})
