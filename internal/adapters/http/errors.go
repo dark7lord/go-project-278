@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"regexp"
-	"strings"
 
 	"github.com/getsentry/sentry-go"
 	sentrygin "github.com/getsentry/sentry-go/gin"
@@ -19,13 +17,6 @@ const errInternal = "internal error"
 
 func errJSON(msg string) gin.H {
 	return gin.H{"error": msg}
-}
-
-var camelRe = regexp.MustCompile(`([a-z0-9])([A-Z])`)
-
-// toSnakeCase converts "ShortName" to "short_name" and "OriginalURL" to "original_url".
-func toSnakeCase(s string) string {
-	return strings.ToLower(camelRe.ReplaceAllString(s, `${1}_${2}`))
 }
 
 // bindMessage translates a validator tag into a human-readable message.
@@ -48,7 +39,7 @@ func writeBindErrors(c *gin.Context, err error) {
 	if errors.As(err, &validationErrors) {
 		result := make(map[string]string)
 		for _, fieldErr := range validationErrors {
-			result[toSnakeCase(fieldErr.Field())] = bindMessage(fieldErr)
+			result[fieldErr.Field()] = bindMessage(fieldErr)
 		}
 		c.JSON(http.StatusUnprocessableEntity, gin.H{"errors": result})
 

@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"log/slog"
 	"net/http"
+	"reflect"
 	"strings"
 	"time"
 
@@ -11,11 +12,27 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	"github.com/go-playground/validator/v10"
 )
 
-// The decoder flag is process-global, so the transport that decodes bodies owns it.
+// Both settings are process-global, so the transport that decodes bodies owns
+// them: unknown JSON fields are rejected, and validation errors name a field
+// the way the client wrote it, by its json tag.
 func init() {
 	binding.EnableDecoderDisallowUnknownFields = true
+	if validate, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		validate.RegisterTagNameFunc(jsonFieldName)
+	}
+}
+
+// jsonFieldName names a struct field by its json tag; an untagged field keeps its Go name.
+func jsonFieldName(field reflect.StructField) string {
+	name, _, _ := strings.Cut(field.Tag.Get("json"), ",")
+	if name == "-" {
+		return ""
+	}
+
+	return name
 }
 
 // MaxRequestBodyBytes bounds JSON request bodies from above (1 MiB headroom).

@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gin-gonic/gin/binding"
+	"github.com/go-playground/validator/v10"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -291,4 +293,16 @@ func TestHandlerUpdateLinkHidesInternalError(t *testing.T) {
 	assert.JSONEq(t, `{"error": "internal error"}`, w.Body.String())
 	assert.NotContains(t, w.Body.String(), "connection refused")
 	linkService.AssertExpectations(t)
+}
+
+func TestValidationErrorsNameFieldsByJSONTag(t *testing.T) {
+	var body struct {
+		Target string `json:"target_url" binding:"required"`
+	}
+
+	err := binding.Validator.ValidateStruct(&body)
+
+	var validationErrors validator.ValidationErrors
+	require.ErrorAs(t, err, &validationErrors)
+	assert.Equal(t, "target_url", validationErrors[0].Field(), "the json tag, not the Go name")
 }
