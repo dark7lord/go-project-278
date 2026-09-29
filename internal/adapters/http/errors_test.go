@@ -19,8 +19,8 @@ import (
 )
 
 func TestHandlerCreateLinkValidationDoesNotCallUseCase(t *testing.T) {
-	linkService := &mockLinkUseCase{}
-	handler := newTestHandler(linkService, &mockVisitUseCase{})
+	linkService := NewMockLinkUseCase(t)
+	handler := newTestHandler(linkService, NewMockVisitUseCase(t))
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodPost, "/links", nil)
@@ -46,8 +46,8 @@ func TestHandlerIDValidationDoesNotCallUseCase(t *testing.T) {
 		{method: http.MethodDelete, path: "/links/12a"},
 	} {
 		t.Run(tc.method+" "+tc.path, func(t *testing.T) {
-			linkService := &mockLinkUseCase{}
-			handler := newTestHandler(linkService, &mockVisitUseCase{})
+			linkService := NewMockLinkUseCase(t)
+			handler := newTestHandler(linkService, NewMockVisitUseCase(t))
 
 			w := httptest.NewRecorder()
 			req := httptest.NewRequest(tc.method, tc.path, nil)
@@ -139,8 +139,8 @@ func TestHandlerLinkBindErrorsMapToUnprocessable(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			linkService := &mockLinkUseCase{}
-			handler := newTestHandler(linkService, &mockVisitUseCase{})
+			linkService := NewMockLinkUseCase(t)
+			handler := newTestHandler(linkService, NewMockVisitUseCase(t))
 
 			req := httptest.NewRequest(tc.method, tc.path, strings.NewReader(tc.body))
 			req.Header.Set("Content-Type", "application/json")
@@ -156,9 +156,9 @@ func TestHandlerLinkBindErrorsMapToUnprocessable(t *testing.T) {
 }
 
 func TestHandlerCreateLinkFieldErrorMapsToUnprocessable(t *testing.T) {
-	linkService := &mockLinkUseCase{}
-	linkService.
-		On("CreateLink", mock.Anything, application.CreateLinkCommand{
+	linkService := NewMockLinkUseCase(t)
+	linkService.EXPECT().
+		CreateLink(mock.Anything, application.CreateLinkCommand{
 			OriginalURL: "ftp://example.com",
 			ShortName:   "ok-link",
 		}).
@@ -167,7 +167,7 @@ func TestHandlerCreateLinkFieldErrorMapsToUnprocessable(t *testing.T) {
 			Err:   errors.New("unsupported scheme"),
 		}).
 		Once()
-	handler := newTestHandler(linkService, &mockVisitUseCase{})
+	handler := newTestHandler(linkService, NewMockVisitUseCase(t))
 
 	req := httptest.NewRequest(
 		http.MethodPost,
@@ -180,13 +180,12 @@ func TestHandlerCreateLinkFieldErrorMapsToUnprocessable(t *testing.T) {
 
 	assert.Equal(t, http.StatusUnprocessableEntity, w.Code)
 	assert.JSONEq(t, `{"errors": {"original_url": "unsupported scheme"}}`, w.Body.String())
-	linkService.AssertExpectations(t)
 }
 
 func TestHandlerUpdateLinkFieldErrorMapsToUnprocessable(t *testing.T) {
-	linkService := &mockLinkUseCase{}
-	linkService.
-		On("UpdateLink", mock.Anything, int64(1), application.UpdateLinkCommand{
+	linkService := NewMockLinkUseCase(t)
+	linkService.EXPECT().
+		UpdateLink(mock.Anything, int64(1), application.UpdateLinkCommand{
 			OriginalURL: "https://example.com",
 			ShortName:   "bad/name",
 		}).
@@ -195,7 +194,7 @@ func TestHandlerUpdateLinkFieldErrorMapsToUnprocessable(t *testing.T) {
 			Err:   errors.New("invalid short code"),
 		}).
 		Once()
-	handler := newTestHandler(linkService, &mockVisitUseCase{})
+	handler := newTestHandler(linkService, NewMockVisitUseCase(t))
 
 	req := httptest.NewRequest(
 		http.MethodPut,
@@ -208,11 +207,10 @@ func TestHandlerUpdateLinkFieldErrorMapsToUnprocessable(t *testing.T) {
 
 	assert.Equal(t, http.StatusUnprocessableEntity, w.Code)
 	assert.JSONEq(t, `{"errors": {"short_name": "invalid short code"}}`, w.Body.String())
-	linkService.AssertExpectations(t)
 }
 
 func TestHandlerGetLinkRejectsInvalidID(t *testing.T) {
-	handler := newTestHandler(&mockLinkUseCase{}, &mockVisitUseCase{})
+	handler := newTestHandler(NewMockLinkUseCase(t), NewMockVisitUseCase(t))
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/links/not-an-id", nil)
@@ -226,15 +224,15 @@ func TestHandlerGetLinkRejectsInvalidID(t *testing.T) {
 
 func TestHandlerCreateLinkHidesInternalError(t *testing.T) {
 	rawErr := errors.New("postgres: dial tcp 127.0.0.1:5432: connection refused")
-	linkService := &mockLinkUseCase{}
-	linkService.
-		On("CreateLink", mock.Anything, application.CreateLinkCommand{
+	linkService := NewMockLinkUseCase(t)
+	linkService.EXPECT().
+		CreateLink(mock.Anything, application.CreateLinkCommand{
 			OriginalURL: "https://boom.example",
 			ShortName:   "boomlink",
 		}).
 		Return(application.LinkView{}, rawErr).
 		Once()
-	handler := newTestHandler(linkService, &mockVisitUseCase{})
+	handler := newTestHandler(linkService, NewMockVisitUseCase(t))
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(
@@ -248,16 +246,15 @@ func TestHandlerCreateLinkHidesInternalError(t *testing.T) {
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 	assert.JSONEq(t, `{"error": "internal error"}`, w.Body.String())
 	assert.NotContains(t, w.Body.String(), "connection refused")
-	linkService.AssertExpectations(t)
 }
 
 func TestHandlerContextDeadlineMapsTo503(t *testing.T) {
-	linkService := &mockLinkUseCase{}
-	linkService.
-		On("PageLinks", mock.Anything, linksQuery(0, firstPageLast, nil)).
+	linkService := NewMockLinkUseCase(t)
+	linkService.EXPECT().
+		PageLinks(mock.Anything, linksQuery(0, firstPageLast, nil)).
 		Return(application.RangePage[application.LinkView]{}, context.DeadlineExceeded).
 		Once()
-	handler := newTestHandler(linkService, &mockVisitUseCase{})
+	handler := newTestHandler(linkService, NewMockVisitUseCase(t))
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/links", nil)
@@ -265,20 +262,19 @@ func TestHandlerContextDeadlineMapsTo503(t *testing.T) {
 
 	assert.Equal(t, http.StatusServiceUnavailable, w.Code)
 	assert.JSONEq(t, `{"error": "request timeout"}`, w.Body.String())
-	linkService.AssertExpectations(t)
 }
 
 func TestHandlerUpdateLinkHidesInternalError(t *testing.T) {
 	rawErr := errors.New("postgres: dial tcp 127.0.0.1:5432: connection refused")
-	linkService := &mockLinkUseCase{}
-	linkService.
-		On("UpdateLink", mock.Anything, int64(1), application.UpdateLinkCommand{
+	linkService := NewMockLinkUseCase(t)
+	linkService.EXPECT().
+		UpdateLink(mock.Anything, int64(1), application.UpdateLinkCommand{
 			OriginalURL: "https://boom.example",
 			ShortName:   "boomlink",
 		}).
 		Return(application.LinkView{}, rawErr).
 		Once()
-	handler := newTestHandler(linkService, &mockVisitUseCase{})
+	handler := newTestHandler(linkService, NewMockVisitUseCase(t))
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(
@@ -292,7 +288,6 @@ func TestHandlerUpdateLinkHidesInternalError(t *testing.T) {
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 	assert.JSONEq(t, `{"error": "internal error"}`, w.Body.String())
 	assert.NotContains(t, w.Body.String(), "connection refused")
-	linkService.AssertExpectations(t)
 }
 
 func TestValidationErrorsNameFieldsByJSONTag(t *testing.T) {

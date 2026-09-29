@@ -32,7 +32,7 @@ then does the steps you could also run by hand:
 
 ```bash
 cp .env.example .env   # only when there is no .env yet
-make tools             # golangci-lint binary; sqlc, goose, air built from tools/go.mod
+make tools             # golangci-lint binary; sqlc, goose, air, mockery built from tools/go.mod
 make deps              # Go modules and the frontend package
 make db-up             # PostgreSQL 17 in Docker, data kept in the pgdata volume
 make db-migrate        # apply migrations
@@ -235,6 +235,7 @@ make test              # all tests with -race, writes coverage.out (integration 
 make test-unit         # unit tests only, no Docker
 make test-integration  # internal/app against a PostgreSQL in testcontainers
 make cover             # tests + coverage report (cover-html opens it in a browser)
+make mocks             # regenerate the testify mocks listed in .mockery.yml
 
 # code quality
 make lint              # golangci-lint, expects 0 issues (lint-fix applies fixes)
@@ -252,10 +253,10 @@ make docker-up         # the image with PostgreSQL, as on Render (docker-down, d
 
 # API docs and tools
 make api-lint          # validate openapi/openapi.yaml (api-html opens the docs)
-make tools             # golangci-lint binary; sqlc, goose, air from tools/go.mod
+make tools             # golangci-lint binary; sqlc, goose, air, mockery from tools/go.mod
 ```
 
-sqlc, goose and air are pinned in `tools/go.mod` and run through `go tool -modfile=tools/go.mod`,
+sqlc, goose, air and mockery are pinned in `tools/go.mod` and run through `go tool -modfile=tools/go.mod`,
 so their dependencies never mix with the app's. To bump one:
 `cd tools && go get -tool <module>@<version> && go mod tidy`.
 

@@ -10,14 +10,14 @@ import (
 )
 
 func TestServiceUpdateLink(t *testing.T) {
-	writer := &mockLinkWriter{}
+	writer := NewMockLinkWriter(t)
 	expected := LinkView{
 		ID:          7,
 		OriginalURL: "https://updated.com",
 		ShortName:   "updated-link",
 	}
-	writer.
-		On("UpdateLink", mock.Anything, int64(7), "https://updated.com", "updated-link").
+	writer.EXPECT().
+		UpdateLink(mock.Anything, int64(7), "https://updated.com", "updated-link").
 		Return(expected, nil).
 		Once()
 	svc := NewServiceWithGenerator(
@@ -32,18 +32,17 @@ func TestServiceUpdateLink(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, expected, updated)
-	writer.AssertExpectations(t)
 }
 
 func TestServiceUpdateLinkTrimsShortName(t *testing.T) {
-	writer := &mockLinkWriter{}
+	writer := NewMockLinkWriter(t)
 	expected := LinkView{
 		ID:          7,
 		OriginalURL: "https://updated.com",
 		ShortName:   "updated-link",
 	}
-	writer.
-		On("UpdateLink", mock.Anything, int64(7), "https://updated.com", "updated-link").
+	writer.EXPECT().
+		UpdateLink(mock.Anything, int64(7), "https://updated.com", "updated-link").
 		Return(expected, nil).
 		Once()
 	svc := NewServiceWithGenerator(
@@ -58,11 +57,10 @@ func TestServiceUpdateLinkTrimsShortName(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, expected, updated)
-	writer.AssertExpectations(t)
 }
 
 func TestServiceUpdateLinkRejectsInvalidURL(t *testing.T) {
-	writer := &mockLinkWriter{}
+	writer := NewMockLinkWriter(t)
 	svc := NewServiceWithGenerator(
 		serviceDeps(nil, writer, nil, nil),
 		&fakeShortCodeGenerator{value: testShortCode},
@@ -80,15 +78,15 @@ func TestServiceUpdateLinkRejectsInvalidURL(t *testing.T) {
 }
 
 func TestServiceUpdateLinkGeneratesShortName(t *testing.T) {
-	writer := &mockLinkWriter{}
+	writer := NewMockLinkWriter(t)
 	generator := &fakeShortCodeGenerator{value: "test-code"}
 	expected := LinkView{
 		ID:          7,
 		OriginalURL: testOKURL,
 		ShortName:   "test-code",
 	}
-	writer.
-		On("UpdateLink", mock.Anything, int64(7), testOKURL, "test-code").
+	writer.EXPECT().
+		UpdateLink(mock.Anything, int64(7), testOKURL, "test-code").
 		Return(expected, nil).
 		Once()
 	svc := NewServiceWithGenerator(
@@ -104,18 +102,17 @@ func TestServiceUpdateLinkGeneratesShortName(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, expected, updated)
 	assert.Equal(t, 1, generator.calls)
-	writer.AssertExpectations(t)
 }
 
 func TestServiceUpdateLinkExhaustsGeneratedCodes(t *testing.T) {
-	writer := &mockLinkWriter{}
+	writer := NewMockLinkWriter(t)
 	generator := &fakeShortCodeGenerator{value: testGeneratedCode}
 	svc := NewServiceWithGenerator(
 		serviceDeps(nil, writer, nil, nil),
 		generator,
 	)
-	writer.
-		On("UpdateLink", mock.Anything, int64(7), testOKURL, testGeneratedCode).
+	writer.EXPECT().
+		UpdateLink(mock.Anything, int64(7), testOKURL, testGeneratedCode).
 		Return(LinkView{}, &FieldError{Field: fieldShortName, Err: ErrShortNameAlreadyUse})
 
 	_, err := svc.UpdateLink(t.Context(), 7, UpdateLinkCommand{
@@ -129,13 +126,13 @@ func TestServiceUpdateLinkExhaustsGeneratedCodes(t *testing.T) {
 }
 
 func TestServiceDeleteLink(t *testing.T) {
-	writer := &mockLinkWriter{}
+	writer := NewMockLinkWriter(t)
 	expected := LinkView{
 		ID:        7,
 		ShortName: testTargetName,
 	}
-	writer.
-		On("DeleteLink", mock.Anything, int64(7)).
+	writer.EXPECT().
+		DeleteLink(mock.Anything, int64(7)).
 		Return(expected, nil).
 		Once()
 	svc := NewServiceWithGenerator(
@@ -147,14 +144,13 @@ func TestServiceDeleteLink(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, expected, deleted)
-	writer.AssertExpectations(t)
 }
 
 func TestServiceDeleteLinkWrapsRepositoryError(t *testing.T) {
 	repoErr := errors.New("delete failed")
-	writer := &mockLinkWriter{}
-	writer.
-		On("DeleteLink", mock.Anything, int64(1)).
+	writer := NewMockLinkWriter(t)
+	writer.EXPECT().
+		DeleteLink(mock.Anything, int64(1)).
 		Return(LinkView{}, repoErr).
 		Once()
 	svc := NewServiceWithGenerator(
@@ -165,5 +161,4 @@ func TestServiceDeleteLinkWrapsRepositoryError(t *testing.T) {
 	_, err := svc.DeleteLink(t.Context(), 1)
 
 	assert.ErrorIs(t, err, repoErr)
-	writer.AssertExpectations(t)
 }

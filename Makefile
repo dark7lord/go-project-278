@@ -1,7 +1,7 @@
 # Shared variables
 BIN := bin/app
 GOBIN := $(shell go env GOPATH)/bin
-# sqlc, goose and air are pinned in tools/go.mod, apart from the app's dependencies
+# sqlc, goose, air and mockery are pinned in tools/go.mod, apart from the app's dependencies
 GOTOOL := go tool -modfile=tools/go.mod
 
 .DEFAULT_GOAL := help

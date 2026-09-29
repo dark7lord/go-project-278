@@ -1,0 +1,20 @@
+# make mocks: testify mocks of the application ports, written as _test.go files
+# into the packages whose tests use them, so they never reach the build
+template: testify
+log-level: warn
+filename: mocks_test.go
+structname: '{{.Mock}}{{.InterfaceName}}'
+formatter: goimports
+packages:
+  code/internal/application:
+    interfaces:
+      # Use cases the HTTP handlers call
+      LinkUseCase:
+        config: &http
+          dir: internal/adapters/http
+          pkgname: httpadapter
+      VisitUseCase:
+        config: *http
+      # Write ports the service calls; its read ports have plain fakes
+      LinkWriter: {}
+      VisitRecorder: {}

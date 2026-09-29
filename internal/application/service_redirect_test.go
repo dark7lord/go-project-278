@@ -17,13 +17,13 @@ func TestServiceRedirectRecordsVisit(t *testing.T) {
 		ShortName:   testTargetName,
 	}
 	reader := &fakeLinkReader{gotLink: link}
-	recorder := &mockVisitRecorder{}
+	recorder := NewMockVisitRecorder(t)
 	svc := NewServiceWithGenerator(
 		serviceDeps(reader, nil, nil, recorder),
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
-	recorder.
-		On("CreateLinkVisit", mock.Anything, int64(42), "192.0.2.1", "test-agent", &referer, testRedirectStatus).
+	recorder.EXPECT().
+		CreateLinkVisit(mock.Anything, int64(42), "192.0.2.1", "test-agent", &referer, testRedirectStatus).
 		Return(VisitView{}, nil).
 		Once()
 
@@ -39,11 +39,10 @@ func TestServiceRedirectRecordsVisit(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, link, result)
-	recorder.AssertExpectations(t)
 }
 
 func TestServiceRedirectRejectsInvalidStoredURL(t *testing.T) {
-	recorder := &mockVisitRecorder{}
+	recorder := NewMockVisitRecorder(t)
 	svc := NewServiceWithGenerator(
 		serviceDeps(
 			&fakeLinkReader{gotLink: LinkView{ID: 1, OriginalURL: "ftp://example.com"}},
@@ -66,13 +65,13 @@ func TestServiceRedirectReturnsVisitError(t *testing.T) {
 	reader := &fakeLinkReader{
 		gotLink: LinkView{ID: 1, OriginalURL: testExampleURL},
 	}
-	recorder := &mockVisitRecorder{}
+	recorder := NewMockVisitRecorder(t)
 	svc := NewServiceWithGenerator(
 		serviceDeps(reader, nil, nil, recorder),
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
-	recorder.
-		On("CreateLinkVisit", mock.Anything, int64(1), "", "", (*string)(nil), testRedirectStatus).
+	recorder.EXPECT().
+		CreateLinkVisit(mock.Anything, int64(1), "", "", (*string)(nil), testRedirectStatus).
 		Return(VisitView{}, visitErr).
 		Once()
 
@@ -82,5 +81,4 @@ func TestServiceRedirectReturnsVisitError(t *testing.T) {
 	})
 
 	assert.ErrorIs(t, err, visitErr)
-	recorder.AssertExpectations(t)
 }

@@ -13,9 +13,9 @@ import (
 )
 
 func TestHandlerRedirectMapsVisitMetadata(t *testing.T) {
-	linkService := &mockLinkUseCase{}
-	linkService.
-		On("Redirect", mock.Anything, application.RedirectCommand{
+	linkService := NewMockLinkUseCase(t)
+	linkService.EXPECT().
+		Redirect(mock.Anything, application.RedirectCommand{
 			ShortName: "target",
 			VisitMeta: application.VisitMeta{
 				IP:        "192.0.2.1",
@@ -25,7 +25,7 @@ func TestHandlerRedirectMapsVisitMetadata(t *testing.T) {
 		}).
 		Return(application.LinkView{OriginalURL: testExampleURL}, nil).
 		Once()
-	handler := newTestHandler(linkService, &mockVisitUseCase{})
+	handler := newTestHandler(linkService, NewMockVisitUseCase(t))
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/r/target", nil)
@@ -34,13 +34,12 @@ func TestHandlerRedirectMapsVisitMetadata(t *testing.T) {
 
 	assert.Equal(t, http.StatusFound, w.Code)
 	assert.Equal(t, testExampleURL, w.Header().Get("Location"))
-	linkService.AssertExpectations(t)
 }
 
 func TestHandlerCreateLinkBuildsShortURL(t *testing.T) {
-	linkService := &mockLinkUseCase{}
-	linkService.
-		On("CreateLink", mock.Anything, application.CreateLinkCommand{
+	linkService := NewMockLinkUseCase(t)
+	linkService.EXPECT().
+		CreateLink(mock.Anything, application.CreateLinkCommand{
 			OriginalURL: testExampleURL,
 			ShortName:   "example",
 		}).
@@ -50,7 +49,7 @@ func TestHandlerCreateLinkBuildsShortURL(t *testing.T) {
 			ShortName:   "example",
 		}, nil).
 		Once()
-	handler := newTestHandler(linkService, &mockVisitUseCase{})
+	handler := newTestHandler(linkService, NewMockVisitUseCase(t))
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(
@@ -68,5 +67,4 @@ func TestHandlerCreateLinkBuildsShortURL(t *testing.T) {
 		"short_name": "example",
 		"short_url": "https://short.example/r/example"
 	}`, w.Body.String())
-	linkService.AssertExpectations(t)
 }
