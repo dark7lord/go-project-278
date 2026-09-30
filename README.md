@@ -260,11 +260,44 @@ sqlc, air and mockery are pinned in `tools/go.mod` and run through `go tool -mod
 so their dependencies never mix with the app's. To bump one:
 `cd tools && go get -tool <module>@<version> && go mod tidy`.
 
-Migrations live in `db/migrations`, are embedded in the binary and applied by the API on start
-under a PostgreSQL advisory lock; `cmd/migrate` (behind the `db-*` targets) runs the same code by hand.
-
 `sqlc` does not delete stale files: after renaming or removing a file in `db/queries`,
 remove its `.sql.go` from `db/generated` before `make db-gen`.
+
+### Migrations
+
+Migrations live in `db/migrations`, are embedded in the binary and applied by the API on start
+under a PostgreSQL advisory lock; `cmd/migrate` (behind the `db-*` targets) runs the same code by hand.
+Applied versions are recorded in the `goose_db_version` table of the database from `DATABASE_URL`.
+
+To add one, create the next numbered file with both directions:
+
+```sql
+-- db/migrations/002_links_note.sql
+-- +goose Up
+ALTER TABLE links ADD COLUMN note text;
+
+-- +goose Down
+ALTER TABLE links DROP COLUMN note;
+```
+
+```bash
+make db-migrate        # apply it
+make db-redo           # check the Down: roll back and apply again
+make db-status         # every file should be "applied"
+make db-gen            # when the queries in db/queries use the new schema
+```
+
+`TestMigrationsRoundTrip` also runs every Down and Up on a fresh database in `make test`.
+
+- Never edit a migration that is committed or deployed: databases that applied it will not
+  run it again. Fix it with a new migration.
+- Every Up needs a Down that undoes it exactly.
+
+If a version is marked applied but its changes are not in the database (for example, the file
+was edited after it ran), `db-rollback` fails. On a local database, delete the mark and apply again:
+`psql "$DATABASE_URL" -c 'DELETE FROM goose_db_version WHERE version_id = 2'`, then `make db-migrate`.
+Never do this on Render. For the compose database, `make db-reset` is simpler; it does not touch
+a database outside compose, such as a local PostgreSQL on another port in `DATABASE_URL`.
 
 ## Architecture
 
