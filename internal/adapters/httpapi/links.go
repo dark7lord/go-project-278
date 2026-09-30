@@ -10,11 +10,11 @@ import (
 	"code/internal/application"
 )
 
-// redirectStatus is the single source for the response status and for the
-// status recorded on the visit, so the two can never drift apart.
+// redirectStatus is both answered and recorded on the visit, so the two never
+// drift apart.
 const redirectStatus = http.StatusFound
 
-// CreateLink handles link creation.
+// CreateLink answers POST /api/links.
 func (h *Handler) CreateLink(c *gin.Context) {
 	req, ok := bindLinkRequest(c)
 	if !ok {
@@ -32,7 +32,7 @@ func (h *Handler) CreateLink(c *gin.Context) {
 	c.JSON(http.StatusCreated, h.linkResponse(link))
 }
 
-// GetLink handles link retrieval by ID.
+// GetLink answers GET /api/links/:id.
 func (h *Handler) GetLink(c *gin.Context) {
 	id, err := parsePositiveID(c.Param("id"))
 	if err != nil {
@@ -50,7 +50,7 @@ func (h *Handler) GetLink(c *gin.Context) {
 	c.JSON(http.StatusOK, h.linkResponse(link))
 }
 
-// ListLinks handles listing a page of links.
+// ListLinks answers GET /api/links with a page of links.
 func (h *Handler) ListLinks(c *gin.Context) {
 	sort, err := parseSortParam(c.Query("sort"), linksSortFields)
 	if err != nil {
@@ -80,7 +80,7 @@ func (h *Handler) ListLinks(c *gin.Context) {
 	})
 }
 
-// UpdateLink handles link updates.
+// UpdateLink answers PUT /api/links/:id.
 func (h *Handler) UpdateLink(c *gin.Context) {
 	id, err := parsePositiveID(c.Param("id"))
 	if err != nil {
@@ -104,7 +104,7 @@ func (h *Handler) UpdateLink(c *gin.Context) {
 	c.JSON(http.StatusOK, h.linkResponse(updated))
 }
 
-// DeleteLink handles link deletion.
+// DeleteLink answers DELETE /api/links/:id.
 func (h *Handler) DeleteLink(c *gin.Context) {
 	id, err := parsePositiveID(c.Param("id"))
 	if err != nil {
@@ -122,7 +122,7 @@ func (h *Handler) DeleteLink(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-// Redirect handles redirecting a short name to its original URL.
+// Redirect answers GET /r/:code: it records the visit and redirects to the link.
 func (h *Handler) Redirect(c *gin.Context) {
 	var referer *string
 	if ref := c.Request.Referer(); ref != "" {
@@ -156,14 +156,14 @@ func parsePositiveID(paramID string) (int64, error) {
 	return id, nil
 }
 
-// linkRequest represents the request body shared by link creation and update.
+// linkRequest is the body of create and update.
 type linkRequest struct {
 	OriginalURL string `json:"original_url" binding:"required"`
 	ShortName   string `json:"short_name" binding:"omitempty,min=3,max=32"`
 }
 
-// bindLinkRequest decodes the link body shared by create and update, writing
-// the error response itself when the body is invalid.
+// bindLinkRequest decodes a linkRequest; on a bad body it answers the error
+// itself and reports false.
 func bindLinkRequest(c *gin.Context) (linkRequest, bool) {
 	var req linkRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -175,7 +175,7 @@ func bindLinkRequest(c *gin.Context) (linkRequest, bool) {
 	return req, true
 }
 
-// linkResponse is the HTTP representation of a shortened link.
+// linkResponse is a link as the API returns it.
 type linkResponse struct {
 	ID          int64  `json:"id"`
 	OriginalURL string `json:"original_url"`

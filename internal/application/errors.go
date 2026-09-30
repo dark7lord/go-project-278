@@ -3,12 +3,11 @@ package application
 import "errors"
 
 var (
-	// ErrNotFound indicates that the requested entity does not exist.
+	// ErrNotFound reports a link that does not exist.
 	ErrNotFound = errors.New("link not found")
-	// ErrShortNameAlreadyUse indicates that a short name is already taken.
+	// ErrShortNameAlreadyUse reports a short name another link holds.
 	ErrShortNameAlreadyUse = errors.New("short name already in use")
-	// ErrShortCodeGenerationFailed indicates that generated short names kept
-	// colliding until the attempt budget ran out; storage is exhausted.
+	// ErrShortCodeGenerationFailed reports that every generated short name collided.
 	ErrShortCodeGenerationFailed = errors.New("short code generation failed")
 )
 

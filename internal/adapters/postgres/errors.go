@@ -11,6 +11,8 @@ import (
 
 const shortNameConstraint = "links_short_name_key"
 
+// mapStorageError turns a missing row and a taken short name into application
+// errors and passes anything else through.
 func mapStorageError(err error) error {
 	if errors.Is(err, pgx.ErrNoRows) {
 		return application.ErrNotFound

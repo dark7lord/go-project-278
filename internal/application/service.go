@@ -8,7 +8,7 @@ import (
 	"code/internal/domain/links"
 )
 
-// Service implements link application use cases.
+// Service implements UseCase over the stores.
 type Service struct {
 	links    LinkStore
 	visits   VisitStore
@@ -29,7 +29,7 @@ const (
 	fieldOriginalURL = "original_url"
 )
 
-// CreateLink creates a new link with the given URL and optional short name.
+// CreateLink stores a new link, generating a short name when in has none.
 func (s *Service) CreateLink(ctx context.Context, in LinkInput) (Link, error) {
 	return s.saveLinkFields(ctx, in, s.links.CreateLink)
 }
@@ -48,7 +48,7 @@ func (s *Service) Redirect(ctx context.Context, shortName string, visit VisitInp
 	return link, nil
 }
 
-// GetLinkByID retrieves a link by its ID.
+// GetLinkByID reads one link.
 func (s *Service) GetLinkByID(ctx context.Context, id int64) (Link, error) {
 	link, err := s.links.GetLinkByID(ctx, id)
 	if err != nil {
@@ -58,7 +58,7 @@ func (s *Service) GetLinkByID(ctx context.Context, id int64) (Link, error) {
 	return link, nil
 }
 
-// GetLinkByShortName retrieves a link by its short name.
+// GetLinkByShortName reads one link.
 func (s *Service) GetLinkByShortName(ctx context.Context, shortName string) (Link, error) {
 	link, err := s.links.GetLinkByShortName(ctx, shortName)
 	if err != nil {
@@ -68,17 +68,17 @@ func (s *Service) GetLinkByShortName(ctx context.Context, shortName string) (Lin
 	return link, nil
 }
 
-// PageLinks retrieves a paginated page of links.
+// PageLinks reads a page of links.
 func (s *Service) PageLinks(ctx context.Context, q PageQuery) (RangePage[Link], error) {
 	return s.links.PageLinks(ctx, q)
 }
 
-// PageLinkVisits retrieves a paginated page of link visits.
+// PageLinkVisits reads a page of visits.
 func (s *Service) PageLinkVisits(ctx context.Context, q PageQuery) (RangePage[Visit], error) {
 	return s.visits.PageLinkVisits(ctx, q)
 }
 
-// UpdateLink updates an existing link.
+// UpdateLink rewrites link id, checking in as CreateLink does.
 func (s *Service) UpdateLink(ctx context.Context, id int64, in LinkInput) (Link, error) {
 	persist := func(ctx context.Context, normalizedURL, name string) (Link, error) {
 		return s.links.UpdateLink(ctx, id, normalizedURL, name)
@@ -87,7 +87,7 @@ func (s *Service) UpdateLink(ctx context.Context, id int64, in LinkInput) (Link,
 	return s.saveLinkFields(ctx, in, persist)
 }
 
-// DeleteLink deletes a link by its ID.
+// DeleteLink removes link id.
 func (s *Service) DeleteLink(ctx context.Context, id int64) (Link, error) {
 	link, err := s.links.DeleteLink(ctx, id)
 	if err != nil {
@@ -97,8 +97,8 @@ func (s *Service) DeleteLink(ctx context.Context, id int64) (Link, error) {
 	return link, nil
 }
 
-// saveLinkFields validates the fields shared by create and update and persists
-// them through persist, which differs only in the writer call per operation.
+// saveLinkFields validates in and stores it through persist, the one step
+// create and update do differently.
 func (s *Service) saveLinkFields(
 	ctx context.Context,
 	in LinkInput,
@@ -137,9 +137,8 @@ func (s *Service) saveLinkFields(
 // maxShortCodeAttempts bounds retries when a generated short name collides.
 const maxShortCodeAttempts = 10
 
-// withGeneratedShortName keeps proposing generated short names until the
-// storage accepts one or the attempt budget is exhausted. Only short-name
-// collisions are retried; any other error ends the loop immediately.
+// withGeneratedShortName retries try with fresh names while they collide, up to
+// maxShortCodeAttempts; any other error stops it at once.
 func (s *Service) withGeneratedShortName(
 	ctx context.Context,
 	try func(ctx context.Context, shortName string) (Link, error),

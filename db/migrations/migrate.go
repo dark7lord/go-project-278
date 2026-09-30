@@ -92,8 +92,8 @@ func Status(ctx context.Context, pool *pgxpool.Pool, w io.Writer) error {
 	return nil
 }
 
-// newProvider runs the migrations embedded in FS against pool. A PostgreSQL
-// advisory lock keeps two instances from migrating at once.
+// newProvider migrates pool with the files in FS under a PostgreSQL advisory
+// lock, so two instances never migrate at once.
 func newProvider(pool *pgxpool.Pool) (*goose.Provider, error) {
 	locker, err := lock.NewPostgresSessionLocker()
 	if err != nil {

@@ -9,8 +9,8 @@ const (
 	testShortCode     = "test-code"
 )
 
-// testRedirectStatus is deliberately not 302, so the redirect assertions prove
-// that the service records the status it was handed instead of a literal 302.
+// testRedirectStatus is not 302 on purpose: the service must record the status
+// it is handed, not a literal 302.
 const testRedirectStatus = int32(307)
 
 // fakeGenerator proposes the same short name every time and counts the calls.

@@ -1,4 +1,4 @@
-// Package httpapi provides the Gin HTTP transport for link use cases.
+// Package httpapi serves the use cases as a JSON API over gin.
 package httpapi
 
 import (
@@ -9,18 +9,18 @@ import (
 	"code/internal/application"
 )
 
-// Handler handles HTTP requests for links and their visits.
+// Handler serves the links and visits API.
 type Handler struct {
 	service application.UseCase
 	baseURL string
 }
 
-// NewHandler creates a Handler from the use cases and the public link origin.
+// NewHandler serves service; short URLs start with baseURL, the public origin.
 func NewHandler(service application.UseCase, baseURL string) *Handler {
 	return &Handler{service: service, baseURL: baseURL}
 }
 
-// RegisterRootRoutes registers the non-API routes on the given router.
+// RegisterRootRoutes adds /ping and the /r/:code redirect.
 func (h *Handler) RegisterRootRoutes(router *gin.Engine) {
 	router.GET("/ping", func(c *gin.Context) {
 		c.String(http.StatusOK, "pong")
@@ -28,7 +28,7 @@ func (h *Handler) RegisterRootRoutes(router *gin.Engine) {
 	router.GET("/r/:code", h.Redirect)
 }
 
-// RegisterAPIRoutes registers the JSON API routes on the given router group.
+// RegisterAPIRoutes adds the JSON API to api, the /api group.
 func (h *Handler) RegisterAPIRoutes(api *gin.RouterGroup) {
 	api.POST("/links", h.CreateLink)
 	api.GET("/links", h.ListLinks)

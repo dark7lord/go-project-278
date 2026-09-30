@@ -1,4 +1,5 @@
-// Package application contains application-level ports and use-case contracts.
+// Package application holds the use cases: the service, its entities and the
+// ports it needs.
 package application
 
 import (

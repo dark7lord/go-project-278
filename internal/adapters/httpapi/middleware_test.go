@@ -15,10 +15,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// newCORSUnitEngine builds a bare gin engine carrying only the CORS
-// middleware and the API route whose responses must carry CORS headers.
-// It needs no database and no handler logic: the middleware is the unit
-// under test, so a stub route returning 200 suffices.
+// newCORSUnitEngine builds a bare engine with the CORS middleware in front of
+// a stub API route.
 func newCORSUnitEngine(routes func(*gin.RouterGroup)) *gin.Engine {
 	router := gin.New()
 	router.Use(NewCORS())
@@ -67,8 +65,8 @@ func TestCORSExposesContentRange(t *testing.T) {
 	assert.Contains(t, w.Header().Get("Access-Control-Expose-Headers"), "Content-Range")
 }
 
-// newRequestIDUnitEngine wires the request id middleware the way the app does,
-// after sentrygin, in front of stub routes.
+// newRequestIDUnitEngine puts the request id middleware after sentrygin, as the
+// app does, in front of stub routes.
 func newRequestIDUnitEngine() *gin.Engine {
 	router := gin.New()
 	router.Use(sentrygin.New(sentrygin.Options{}))
@@ -110,7 +108,7 @@ func TestRequestIDTagsSentryEvent(t *testing.T) {
 }
 
 // serveLogged runs one request through the request log and request id
-// middleware, the way the app wires them, and returns the log output.
+// middleware, wired as in the app, and returns the log line.
 func serveLogged(t *testing.T, path string) (*httptest.ResponseRecorder, string) {
 	t.Helper()
 

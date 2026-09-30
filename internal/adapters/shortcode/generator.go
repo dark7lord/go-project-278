@@ -1,4 +1,4 @@
-// Package shortcode provides short-code generators for the link adapters.
+// Package shortcode generates short names for links.
 package shortcode
 
 import (

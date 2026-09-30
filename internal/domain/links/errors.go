@@ -1,11 +1,11 @@
-// Package links contains link domain entities and value objects.
+// Package links holds the rules a link's URL and short name follow.
 package links
 
 import "errors"
 
 var (
-	// ErrInvalidURL indicates that a URL violates domain rules.
+	// ErrInvalidURL reports a URL that is not an http(s) link.
 	ErrInvalidURL = errors.New("invalid url")
-	// ErrInvalidShortCode indicates that a short code violates domain rules.
+	// ErrInvalidShortCode reports a short name outside [a-zA-Z0-9-]{3,32}.
 	ErrInvalidShortCode = errors.New("invalid short code")
 )

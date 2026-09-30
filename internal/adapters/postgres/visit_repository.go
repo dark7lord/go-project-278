@@ -8,7 +8,7 @@ import (
 	"code/internal/application"
 )
 
-// VisitRepository adapts generated visit queries to the application persistence ports.
+// VisitRepository is the PostgreSQL VisitStore.
 type VisitRepository struct {
 	queries *db.Queries
 }
@@ -16,7 +16,7 @@ type VisitRepository struct {
 // Compile-time check that the adapter implements the application port.
 var _ application.VisitStore = (*VisitRepository)(nil)
 
-// NewVisitRepository creates a PostgreSQL visit repository.
+// NewVisitRepository stores visits through queries.
 func NewVisitRepository(queries *db.Queries) *VisitRepository {
 	return &VisitRepository{queries: queries}
 }
@@ -33,7 +33,7 @@ func toVisit(visit db.LinkVisit) application.Visit {
 	}
 }
 
-// CreateLinkVisit records a visit for the given link.
+// CreateLinkVisit records a visit of the link linkID.
 func (r *VisitRepository) CreateLinkVisit(
 	ctx context.Context,
 	linkID int64,
@@ -53,7 +53,7 @@ func (r *VisitRepository) CreateLinkVisit(
 	return toVisit(created), nil
 }
 
-// PageLinkVisits retrieves a paginated page of link visits together with the total count.
+// PageLinkVisits reads the visits q selects, with their total.
 func (r *VisitRepository) PageLinkVisits(
 	ctx context.Context,
 	q application.PageQuery,

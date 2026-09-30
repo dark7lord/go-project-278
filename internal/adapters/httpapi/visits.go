@@ -9,7 +9,7 @@ import (
 	"code/internal/application"
 )
 
-// ListVisits handles listing a page of link visits.
+// ListVisits answers GET /api/link_visits with a page of visits.
 func (h *Handler) ListVisits(c *gin.Context) {
 	sort, err := parseSortParam(c.Query("sort"), visitsSortFields)
 	if err != nil {
@@ -39,7 +39,7 @@ func (h *Handler) ListVisits(c *gin.Context) {
 	})
 }
 
-// visitResponse is the HTTP representation of a recorded link visit.
+// visitResponse is a visit as the API returns it.
 type visitResponse struct {
 	ID        int64     `json:"id"`
 	LinkID    int64     `json:"link_id"`

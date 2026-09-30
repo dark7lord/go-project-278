@@ -228,8 +228,8 @@ func TestListVisitsEmpty(t *testing.T) {
 	assert.Equal(t, "[]", w.Body.String())
 }
 
-// TestVisitCreatedAtIgnoresSessionTimeZone guards created_at against being
-// stored as wall-clock time: a non-UTC session must not shift the API value.
+// TestVisitCreatedAtIgnoresSessionTimeZone checks that a non-UTC session does
+// not shift created_at: it is stored as an instant, not wall-clock time.
 func TestVisitCreatedAtIgnoresSessionTimeZone(t *testing.T) {
 	td := setupTestDB(t)
 	ctx := t.Context()

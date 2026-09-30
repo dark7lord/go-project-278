@@ -38,7 +38,7 @@ func connectDB(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
 	return pool, nil
 }
 
-// setupRouter creates and configures the gin engine with all routes.
+// setupRouter builds the gin engine: the middleware in order, then the routes.
 func setupRouter(handler *httpapi.Handler) *gin.Engine {
 	router := gin.New()
 	router.Use(httpapi.RequestLog(slog.Default()))
@@ -56,7 +56,7 @@ func setupRouter(handler *httpapi.Handler) *gin.Engine {
 	return router
 }
 
-// buildApp assembles the application dependencies and HTTP router in one explicit composition root.
+// buildApp wires the stores, the service and the handler into a router.
 func buildApp(cfg *config.Config, dbConn *pgxpool.Pool) *gin.Engine {
 	queries := db.New(dbConn)
 	linkRepo := postgres.NewLinkRepository(queries)
@@ -68,10 +68,8 @@ func buildApp(cfg *config.Config, dbConn *pgxpool.Pool) *gin.Engine {
 
 const timeoutErrorBody = `{"error": "request timeout"}`
 
-// withRequestTimeout bounds a request and answers an expired one in JSON.
-// The content type is set on the outer writer on purpose: http.TimeoutHandler
-// discards the handler's own headers on the timeout path, so a type set by the
-// handler or by gin would never reach the client.
+// withRequestTimeout answers a request over budget with a JSON 503. The content
+// type goes on the outer writer: http.TimeoutHandler drops the inner headers.
 func withRequestTimeout(h http.Handler, timeout time.Duration) http.Handler {
 	timed := http.TimeoutHandler(h, timeout, timeoutErrorBody)
 
@@ -84,13 +82,12 @@ func withRequestTimeout(h http.Handler, timeout time.Duration) http.Handler {
 // maxRequestBodyBytes bounds request bodies (1 MiB headroom for JSON).
 const maxRequestBodyBytes = 1 << 20
 
-// writeTimeoutGrace is the window the timeout handler gets to deliver its
-// response after the request budget is spent. Without it the socket deadline
-// races the middleware's 503 and the client sees a dropped connection instead.
+// writeTimeoutGrace lets the timeout 503 out before the write deadline, which
+// would otherwise drop the connection.
 const writeTimeoutGrace = 1 * time.Second
 
-// newServer builds the HTTP server. The write deadline is derived from the
-// request budget so it can never preempt the timeout handler's response.
+// newServer builds the HTTP server; its write deadline follows the request
+// budget, so the timeout answer always gets out.
 func newServer(cfg *config.Config, handler http.Handler) *http.Server {
 	limited := http.MaxBytesHandler(handler, maxRequestBodyBytes)
 
@@ -133,9 +130,8 @@ func Run() error {
 	return serveUntilSignal(newServer(cfg, router))
 }
 
-// serveUntilSignal serves HTTP requests until the server crashes on its own
-// or a shutdown signal (SIGINT/SIGTERM) arrives. On a signal it drains
-// in-flight requests via http.Server.Shutdown and returns nil.
+// serveUntilSignal serves until the server fails or SIGINT/SIGTERM arrives;
+// on a signal it drains in-flight requests and returns nil.
 func serveUntilSignal(server *http.Server) error {
 	sigCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()

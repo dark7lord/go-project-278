@@ -1,4 +1,4 @@
-// Package config provides application configuration from environment variables.
+// Package config reads the app settings from the environment.
 package config
 
 import (
@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// Config holds the application configuration loaded from environment variables.
+// Config holds the settings Load reads.
 type Config struct {
 	SentryDSN      string
 	DatabaseURL    string
@@ -24,7 +24,7 @@ const defaultBaseURL = "http://localhost:8080"
 // defaultRequestTimeout bounds the execution time of a single HTTP request.
 const defaultRequestTimeout = 10 * time.Second
 
-// Load reads configuration from environment variables.
+// Load reads and checks Config: DATABASE_URL is required, the rest has defaults.
 func Load() (*Config, error) {
 	cfg := &Config{
 		SentryDSN:   os.Getenv("SENTRY_DSN"),

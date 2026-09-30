@@ -14,8 +14,8 @@ import (
 	"code/db/migrations"
 )
 
-// freshDatabase creates an empty database in the test container, so migrations
-// can go up and down without touching the one the other tests share.
+// freshDatabase creates an empty database next to the shared one, so migrations
+// can go down and up without touching it.
 func freshDatabase(t *testing.T, td *testDB) *pgxpool.Pool {
 	t.Helper()
 

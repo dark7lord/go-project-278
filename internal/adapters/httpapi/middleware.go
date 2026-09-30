@@ -15,9 +15,8 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-// Both settings are process-global, so the transport that decodes bodies owns
-// them: unknown JSON fields are rejected, and validation errors name a field
-// the way the client wrote it, by its json tag.
+// Unknown JSON fields are rejected and validation errors name fields by json
+// tag; both settings are process-global, so the package that decodes owns them.
 func init() {
 	binding.EnableDecoderDisallowUnknownFields = true
 	if validate, ok := binding.Validator.Engine().(*validator.Validate); ok {
@@ -35,7 +34,7 @@ func jsonFieldName(field reflect.StructField) string {
 	return name
 }
 
-// NewCORS returns the CORS middleware used by the API transport.
+// NewCORS lets the Vite dev server on :5173 call the API.
 func NewCORS() gin.HandlerFunc {
 	return cors.New(cors.Config{
 		AllowOrigins: []string{"http://localhost:5173"},
@@ -69,9 +68,8 @@ func RequestID() gin.HandlerFunc {
 	}
 }
 
-// RequestLog writes one line per request with its request id. A 5xx is logged
-// as an error together with the internal errors the client never sees. It
-// must run first, so the latency covers the whole chain.
+// RequestLog writes one line per request with its id; a 5xx adds the errors
+// the client never sees. It must run first to time the whole chain.
 func RequestLog(logger *slog.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()

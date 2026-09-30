@@ -32,14 +32,12 @@ var sortAliases = map[string]string{
 }
 
 var (
-	// errSortFormat indicates the sort value is not a JSON array ["field","ASC|DESC"].
 	errSortFormat = errors.New(`invalid sort, expected [field,ASC|DESC]`)
-	// errSortField indicates an unsupported sort field.
-	errSortField = errors.New("unsupported sort field")
+	errSortField  = errors.New("unsupported sort field")
 )
 
-// parseSortParam parses a "sort" query parameter value into a sort request on
-// one of fields; an empty value means no sorting, the zero Sort.
+// parseSortParam parses the sort query value ["field","ASC|DESC"] for one of
+// fields; an empty value is the zero Sort, id order.
 func parseSortParam(sortParam string, fields []string) (application.Sort, error) {
 	if sortParam == "" {
 		return application.Sort{}, nil

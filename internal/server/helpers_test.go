@@ -62,8 +62,9 @@ type testDB struct {
 	tx        pgx.Tx
 }
 
+// startTestDB starts the PostgreSQL version compose.yaml runs and migrates it
+// as the app does on start.
 func startTestDB(ctx context.Context) (*testDB, error) {
-	// The same major version as compose.yaml, so tests run against what development does
 	pg, err := postgres.Run(ctx,
 		"postgres:17-alpine",
 		postgres.WithDatabase("test"),
@@ -87,7 +88,6 @@ func startTestDB(ctx context.Context) (*testDB, error) {
 		return nil, fmt.Errorf("connect to postgres: %w", err)
 	}
 
-	// The same path the app takes on start
 	if err := migrations.Up(ctx, pool); err != nil {
 		pool.Close()
 		_ = pg.Terminate(ctx)

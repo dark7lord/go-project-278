@@ -48,9 +48,8 @@ func writeBindErrors(c *gin.Context, err error) {
 	c.JSON(http.StatusBadRequest, errJSON("invalid request"))
 }
 
-// writeServiceError maps an application error to a stable HTTP response.
-// Only classified errors are exposed to the client; everything else is logged
-// and reported as a generic 500 so internal details never leak.
+// writeServiceError answers a known application error with its own text and
+// hides anything else behind a logged 500: wrap chains are for logs only.
 func writeServiceError(c *gin.Context, err error) {
 	var fe *application.FieldError
 	if errors.As(err, &fe) {
@@ -58,8 +57,6 @@ func writeServiceError(c *gin.Context, err error) {
 		return
 	}
 
-	// A classified error answers with its sentinel text: the wrap chain added
-	// by the use cases is for logs, not part of the contract.
 	if errors.Is(err, application.ErrNotFound) {
 		c.JSON(http.StatusNotFound, errJSON(application.ErrNotFound.Error()))
 		return
@@ -75,8 +72,8 @@ func writeServiceError(c *gin.Context, err error) {
 	c.JSON(http.StatusInternalServerError, errJSON(errInternal))
 }
 
-// captureException reports err through the request's Sentry hub, so the event
-// carries the request scope (request id); it falls back to the global hub.
+// captureException reports err to the request's Sentry hub, so the event
+// carries the request id, or to the global hub without one.
 func captureException(c *gin.Context, err error) {
 	if hub := sentrygin.GetHubFromContext(c); hub != nil {
 		hub.CaptureException(err)

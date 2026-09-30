@@ -161,6 +161,8 @@ func TestVisitsRangeSortRefererNullsLast(t *testing.T) {
 	}
 }
 
+// TestVisitsRangeSortCreatedAt backdates each visit: CURRENT_TIMESTAMP is the
+// same within a transaction, so created_at alone would tie.
 func TestVisitsRangeSortCreatedAt(t *testing.T) {
 	td := setupTestDB(t)
 	ctx := t.Context()
@@ -171,8 +173,6 @@ func TestVisitsRangeSortCreatedAt(t *testing.T) {
 	created, err := tx.linkRepo.CreateLink(ctx, link.OriginalURL, link.ShortName)
 	require.NoError(t, err)
 
-	// CURRENT_TIMESTAMP is constant within a transaction, so created_at is
-	// backdated per visit to make the ordering deterministic.
 	for i := range 3 {
 		visit, err := tx.visitRepo.CreateLinkVisit(ctx, created.ID, foundVisit(visitIP(i)))
 		require.NoError(t, err)
@@ -243,8 +243,8 @@ func assertSortsBothWays[T any](t *testing.T, tx *testDB, path, field string, co
 	assert.True(t, slices.IsSortedFunc(desc, descending), "DESC by %s: %+v", field, desc)
 }
 
-// TestLinksSortEveryField covers every links sort field the page query knows,
-// on seeds whose field order differs from their insertion order.
+// TestLinksSortEveryField sorts by every links field, on seeds whose field
+// order differs from their insertion order.
 func TestLinksSortEveryField(t *testing.T) {
 	td := setupTestDB(t)
 	tx := setupTestTx(t, td)
@@ -273,8 +273,8 @@ func TestLinksSortEveryField(t *testing.T) {
 	}
 }
 
-// TestVisitsSortEveryField does the same for the visits fields not covered by
-// the dedicated ip, referer and created_at tests above.
+// TestVisitsSortEveryField does the same for the visits fields the ip, referer
+// and created_at tests above leave out.
 func TestVisitsSortEveryField(t *testing.T) {
 	td := setupTestDB(t)
 	tx := setupTestTx(t, td)

@@ -1,4 +1,4 @@
-// Package postgres contains PostgreSQL adapters for application ports.
+// Package postgres stores links and visits in PostgreSQL through the sqlc queries.
 package postgres
 
 import (
@@ -9,7 +9,7 @@ import (
 	"code/internal/application"
 )
 
-// LinkRepository adapts generated SQL queries to the application persistence ports.
+// LinkRepository is the PostgreSQL LinkStore.
 type LinkRepository struct {
 	queries *db.Queries
 }
@@ -17,7 +17,7 @@ type LinkRepository struct {
 // Compile-time check that the adapter implements the application port.
 var _ application.LinkStore = (*LinkRepository)(nil)
 
-// NewLinkRepository creates a PostgreSQL link repository.
+// NewLinkRepository stores links through queries.
 func NewLinkRepository(queries *db.Queries) *LinkRepository {
 	return &LinkRepository{queries: queries}
 }
@@ -41,7 +41,7 @@ func mapSlice[T, U any](items []T, convert func(T) U) []U {
 	return result
 }
 
-// GetLinkByID retrieves a link by its ID.
+// GetLinkByID reads one link; an unknown id is application.ErrNotFound.
 func (r *LinkRepository) GetLinkByID(ctx context.Context, id int64) (application.Link, error) {
 	link, err := r.queries.GetLinkByID(ctx, id)
 	if err != nil {
@@ -51,7 +51,7 @@ func (r *LinkRepository) GetLinkByID(ctx context.Context, id int64) (application
 	return toLink(link), nil
 }
 
-// GetLinkByShortName retrieves a link by its short name.
+// GetLinkByShortName reads one link; an unknown name is application.ErrNotFound.
 func (r *LinkRepository) GetLinkByShortName(ctx context.Context, shortName string) (application.Link, error) {
 	link, err := r.queries.GetLinkByShortName(ctx, shortName)
 	if err != nil {
@@ -61,7 +61,7 @@ func (r *LinkRepository) GetLinkByShortName(ctx context.Context, shortName strin
 	return toLink(link), nil
 }
 
-// PageLinks retrieves a paginated page of links together with the total count.
+// PageLinks reads the links q selects, with their total.
 func (r *LinkRepository) PageLinks(
 	ctx context.Context,
 	q application.PageQuery,
@@ -96,7 +96,7 @@ func (r *LinkRepository) PageLinks(
 	}, nil
 }
 
-// CreateLink inserts a new link.
+// CreateLink inserts a link; a taken short name is an application.FieldError.
 func (r *LinkRepository) CreateLink(ctx context.Context, originalURL, shortName string) (application.Link, error) {
 	link, err := r.queries.CreateLink(ctx, db.CreateLinkParams{
 		OriginalURL: originalURL,
@@ -109,7 +109,7 @@ func (r *LinkRepository) CreateLink(ctx context.Context, originalURL, shortName 
 	return toLink(link), nil
 }
 
-// UpdateLink updates an existing link.
+// UpdateLink rewrites a link; errors as in GetLinkByID and CreateLink.
 func (r *LinkRepository) UpdateLink(
 	ctx context.Context,
 	id int64,
@@ -127,7 +127,7 @@ func (r *LinkRepository) UpdateLink(
 	return toLink(link), nil
 }
 
-// DeleteLink deletes a link by its ID.
+// DeleteLink removes a link and returns it; an unknown id is application.ErrNotFound.
 func (r *LinkRepository) DeleteLink(ctx context.Context, id int64) (application.Link, error) {
 	link, err := r.queries.DeleteLink(ctx, id)
 	if err != nil {

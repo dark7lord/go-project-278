@@ -15,8 +15,7 @@ import (
 	"code/internal/application"
 )
 
-// maxPageSize bounds a page: a wider range is cut to it, and Content-Range
-// tells the client which items it got.
+// maxPageSize caps a page; Content-Range tells the client what a cut range got.
 const maxPageSize int64 = 1000
 
 // Collection names double as the units of their Range headers.
@@ -25,11 +24,9 @@ const (
 	linkVisitsUnit = "link_visits"
 )
 
-// requestRange picks the page a collection request asks for, cut to
-// maxPageSize. The range query parameter (react-admin and the task send it) is
-// strict and wins; the Range header follows RFC 9110 and is ignored when it is
-// not understood; with neither, the request reads "0-", the first page.
-// fromHeader reports an honoured Range header, which is answered with 206.
+// requestRange picks the requested page, cut to maxPageSize: the strict range
+// query wins, then a Range header it understands, otherwise "0-". fromHeader
+// reports the header was used, which is answered with 206.
 func requestRange(c *gin.Context, unit string) (r application.Range, fromHeader bool, err error) {
 	if param := c.Query("range"); param != "" {
 		r, err = parseRangeParam(param)
@@ -58,10 +55,8 @@ func capRange(r application.Range) application.Range {
 	return r
 }
 
-// writeRangePage writes a page with its Content-Range: 416 when the range
-// misses a non-empty collection, 206 for an honoured Range header, 200
-// otherwise. An empty collection answers 200 [] whatever the range, so a
-// client sees an empty list rather than an error.
+// writeRangePage answers a page with its Content-Range: 200 [] for an empty
+// collection, 416 for a range that misses, 206 for a Range header, else 200.
 func writeRangePage[T any](
 	c *gin.Context,
 	unit string,
@@ -92,9 +87,7 @@ func writeRangePage[T any](
 }
 
 var (
-	// errRangeFormat indicates the range value is not a JSON array [start,end].
-	errRangeFormat = errors.New("invalid range, expected [start,end]")
-	// errRangeInverted indicates end is lower than start.
+	errRangeFormat   = errors.New("invalid range, expected [start,end]")
 	errRangeInverted = errors.New("invalid range, end must not be less than start")
 )
 
@@ -115,16 +108,15 @@ func parseRangeParam(rangeParam string) (application.Range, error) {
 // rangeSpecRe matches a single RFC 9110 range-spec: first-last, first- or -suffix.
 var rangeSpecRe = regexp.MustCompile(`^(\d*)-(\d*)$`)
 
-// parseRangeHeader parses an RFC 9110 Range header: unit=first-last,
-// unit=first- or unit=-suffix. It reports false, so the header is ignored,
-// for another unit, a malformed value or several ranges.
+// parseRangeHeader parses an RFC 9110 Range header: unit=a-b, unit=a- or
+// unit=-n. Another unit, a bad value or several ranges (a comma never matches)
+// report false, and the header is ignored.
 func parseRangeHeader(header, unit string) (application.Range, bool) {
 	gotUnit, spec, found := strings.Cut(header, "=")
 	if !found || !strings.EqualFold(gotUnit, unit) {
 		return application.Range{}, false
 	}
 
-	// Several ranges carry a comma, which never matches a single range-spec.
 	matches := rangeSpecRe.FindStringSubmatch(spec)
 	if matches == nil || matches[1] == "" && matches[2] == "" {
 		return application.Range{}, false
