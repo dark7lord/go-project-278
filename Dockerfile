@@ -4,8 +4,9 @@ WORKDIR /build/frontend
 
 COPY package*.json ./
 
+# Only the prebuilt dist is needed: no package gets to run install scripts
 RUN --mount=type=cache,target=/root/.npm \
-  npm ci --prefer-offline --no-audit
+  npm ci --prefer-offline --no-audit --ignore-scripts
 
 # 2) Build backend
 FROM golang:1.26-alpine AS backend-builder
@@ -24,7 +25,10 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # 3) Runtime
 FROM alpine:3.22
 
-RUN apk add --no-cache ca-certificates tzdata bash caddy
+# Caddy may bind :80 without root, and everything runs as the app user
+RUN apk add --no-cache ca-certificates tzdata bash caddy libcap-setcap \
+  && setcap cap_net_bind_service=+ep /usr/sbin/caddy \
+  && adduser -D app
 
 WORKDIR /app
 
@@ -39,6 +43,8 @@ COPY bin/run.sh /app/bin/run.sh
 RUN chmod +x /app/bin/run.sh
 
 COPY Caddyfile /etc/caddy/Caddyfile
+
+USER app
 
 EXPOSE 80
 
