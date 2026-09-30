@@ -47,6 +47,6 @@ func normalizeURL(raw string) (string, error) {
 	return parsed.String(), nil
 }
 
-func (s *Service) generateShortCode() (string, error) {
+func (s *Service) generateShortCode() string {
 	return s.shortCodeGenerator.Generate()
 }

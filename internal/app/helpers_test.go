@@ -192,8 +192,8 @@ func assertFieldErrors(t *testing.T, w *httptest.ResponseRecorder, field string)
 
 type stubGenerator struct{}
 
-func (stubGenerator) Generate() (string, error) {
-	return "test-code", nil
+func (stubGenerator) Generate() string {
+	return "test-code"
 }
 
 type linkResponse struct {

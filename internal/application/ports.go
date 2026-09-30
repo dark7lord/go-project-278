@@ -67,5 +67,5 @@ type UseCase interface {
 
 // ShortCodeGenerator creates link identifiers for new links.
 type ShortCodeGenerator interface {
-	Generate() (string, error)
+	Generate() string
 }

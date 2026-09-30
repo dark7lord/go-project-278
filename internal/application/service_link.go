@@ -136,10 +136,7 @@ func (s *Service) withGeneratedShortName(
 	try func(ctx context.Context, shortName string) (LinkView, error),
 ) (LinkView, error) {
 	for attempt := 0; attempt < maxShortCodeAttempts; attempt++ {
-		shortName, err := s.generateShortCode()
-		if err != nil {
-			return LinkView{}, fmt.Errorf("generate short code: %w", err)
-		}
+		shortName := s.generateShortCode()
 		if _, err := domainlinks.NewShortCode(shortName); err != nil {
 			continue
 		}
