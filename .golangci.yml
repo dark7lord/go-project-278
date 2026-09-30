@@ -19,7 +19,16 @@ linters:
     - unused
     - misspell
     - lll
+    - funlen
+    - gocognit
   settings:
+    # A function body fits a screen and reads without nesting puzzles;
+    # table-driven tests are long by nature and are exempt below.
+    funlen:
+      lines: 40
+      statements: 30
+    gocognit:
+      min-complexity: 15
     goconst:
       ignore-tests: true
     nlreturn:
@@ -27,6 +36,12 @@ linters:
     lll:
       line-length: 120
       tab-width: 1
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters:
+          - funlen
+          - gocognit
 
 formatters:
   enable:
