@@ -259,6 +259,8 @@ make tools             # golangci-lint binary; sqlc, air, mockery from tools/go.
 sqlc, air and mockery are pinned in `tools/go.mod` and run through `go tool -modfile=tools/go.mod`,
 so their dependencies never mix with the app's. To bump one:
 `cd tools && go get -tool <module>@<version> && go mod tidy`.
+The goose CLI is the exception: it is a tool of the root `go.mod`, because the Hexlet check
+runs `go tool goose ... up` without `-modfile`. Keep its version equal to the goose library's.
 
 `sqlc` does not delete stale files: after renaming or removing a file in `db/queries`,
 remove its `.sql.go` from `db/generated` before `make db-gen`.
