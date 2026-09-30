@@ -6,16 +6,12 @@ import (
 	"strings"
 )
 
-// URL is a validated HTTP or HTTPS URL.
-type URL struct {
-	value string
-}
-
-// NewURL creates a URL after normalizing and validating its value.
-func NewURL(raw string) (URL, error) {
+// NormalizeURL validates an HTTP or HTTPS URL and returns it normalized: trimmed,
+// with https:// added when the scheme is missing.
+func NormalizeURL(raw string) (string, error) {
 	candidate := strings.TrimSpace(raw)
 	if candidate == "" {
-		return URL{}, fmt.Errorf("%w: empty url", ErrInvalidURL)
+		return "", fmt.Errorf("%w: empty url", ErrInvalidURL)
 	}
 
 	if !strings.Contains(candidate, "://") {
@@ -24,18 +20,14 @@ func NewURL(raw string) (URL, error) {
 
 	u, err := url.Parse(candidate)
 	if err != nil {
-		return URL{}, fmt.Errorf("%w: %v", ErrInvalidURL, err)
+		return "", fmt.Errorf("%w: %v", ErrInvalidURL, err)
 	}
 	if u.Scheme != "http" && u.Scheme != "https" {
-		return URL{}, fmt.Errorf("%w: unsupported scheme %q", ErrInvalidURL, u.Scheme)
+		return "", fmt.Errorf("%w: unsupported scheme %q", ErrInvalidURL, u.Scheme)
 	}
 	if u.Host == "" {
-		return URL{}, fmt.Errorf("%w: missing host", ErrInvalidURL)
+		return "", fmt.Errorf("%w: missing host", ErrInvalidURL)
 	}
 
-	return URL{value: u.String()}, nil
-}
-
-func (u URL) String() string {
-	return u.value
+	return u.String(), nil
 }

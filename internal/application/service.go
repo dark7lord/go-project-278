@@ -1,9 +1,5 @@
 package application
 
-import (
-	domainlinks "code/internal/domain/links"
-)
-
 // Service implements link application use cases.
 type Service struct {
 	linkReader         LinkReader
@@ -37,15 +33,6 @@ const (
 	fieldShortName   = "short_name"
 	fieldOriginalURL = "original_url"
 )
-
-func normalizeURL(raw string) (string, error) {
-	parsed, err := domainlinks.NewURL(raw)
-	if err != nil {
-		return "", err
-	}
-
-	return parsed.String(), nil
-}
 
 func (s *Service) generateShortCode() string {
 	return s.shortCodeGenerator.Generate()

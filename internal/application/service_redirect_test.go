@@ -41,25 +41,6 @@ func TestServiceRedirectRecordsVisit(t *testing.T) {
 	assert.Equal(t, link, result)
 }
 
-func TestServiceRedirectRejectsInvalidStoredURL(t *testing.T) {
-	recorder := NewMockVisitRecorder(t)
-	svc := NewServiceWithGenerator(
-		serviceDeps(
-			&fakeLinkReader{gotLink: LinkView{ID: 1, OriginalURL: "ftp://example.com"}},
-			nil,
-			nil,
-			recorder,
-		),
-		&fakeShortCodeGenerator{value: testShortCode},
-	)
-
-	_, err := svc.Redirect(t.Context(), RedirectCommand{ShortName: testTargetName})
-
-	assert.Error(t, err)
-	m := mock.Anything
-	recorder.AssertNotCalled(t, "CreateLinkVisit", m, m, m, m, m, m)
-}
-
 func TestServiceRedirectReturnsVisitError(t *testing.T) {
 	visitErr := errors.New("record failed")
 	reader := &fakeLinkReader{

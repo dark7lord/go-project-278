@@ -13,15 +13,11 @@ func (s *Service) CreateLink(ctx context.Context, cmd CreateLinkCommand) (LinkVi
 	return s.saveLinkFields(ctx, cmd.OriginalURL, cmd.ShortName, s.linkWriter.CreateLink)
 }
 
-// Redirect resolves a short name, validates its destination, and records the visit.
+// Redirect resolves a short name and records the visit.
 func (s *Service) Redirect(ctx context.Context, cmd RedirectCommand) (LinkView, error) {
 	link, err := s.GetLinkByShortName(ctx, cmd.ShortName)
 	if err != nil {
 		return LinkView{}, err
-	}
-
-	if _, err := domainlinks.NewURL(link.OriginalURL); err != nil {
-		return LinkView{}, fmt.Errorf("normalize redirect URL: %w", err)
 	}
 
 	if _, err := s.createLinkVisit(
@@ -95,7 +91,7 @@ func (s *Service) saveLinkFields(
 	shortName string,
 	persist func(ctx context.Context, normalizedURL, name string) (LinkView, error),
 ) (LinkView, error) {
-	normalized, err := normalizeURL(originalURL)
+	normalized, err := domainlinks.NormalizeURL(originalURL)
 	if err != nil {
 		return LinkView{}, &FieldError{
 			Field: fieldOriginalURL,
@@ -109,7 +105,7 @@ func (s *Service) saveLinkFields(
 		})
 	}
 
-	code, err := domainlinks.NewShortCode(shortName)
+	code, err := domainlinks.NormalizeShortCode(shortName)
 	if err != nil {
 		return LinkView{}, &FieldError{
 			Field: fieldShortName,
@@ -117,7 +113,7 @@ func (s *Service) saveLinkFields(
 		}
 	}
 
-	link, err := persist(ctx, normalized, code.String())
+	link, err := persist(ctx, normalized, code)
 	if err != nil {
 		return LinkView{}, fmt.Errorf("persist link: %w", err)
 	}
@@ -136,12 +132,7 @@ func (s *Service) withGeneratedShortName(
 	try func(ctx context.Context, shortName string) (LinkView, error),
 ) (LinkView, error) {
 	for attempt := 0; attempt < maxShortCodeAttempts; attempt++ {
-		shortName := s.generateShortCode()
-		if _, err := domainlinks.NewShortCode(shortName); err != nil {
-			continue
-		}
-
-		link, err := try(ctx, shortName)
+		link, err := try(ctx, s.generateShortCode())
 		if err == nil {
 			return link, nil
 		}

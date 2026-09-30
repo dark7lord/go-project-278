@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestNewURL(t *testing.T) {
+func TestNormalizeURL(t *testing.T) {
 	tests := []struct {
 		name    string
 		input   string
@@ -31,13 +31,13 @@ func TestNewURL(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewURL(tt.input)
+			got, err := NormalizeURL(tt.input)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
 			}
 			require.NoError(t, err)
-			assert.Equal(t, tt.want, got.String())
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
