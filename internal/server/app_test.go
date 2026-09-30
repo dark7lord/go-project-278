@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	httpadapter "code/internal/adapters/http"
+	"code/internal/adapters/httpapi"
 )
 
 func TestConnectDBInvalidDSN(t *testing.T) {
@@ -21,7 +21,7 @@ func TestConnectDBUnreachable(t *testing.T) {
 }
 
 func TestPingRoute(t *testing.T) {
-	router := setupRouter(httpadapter.NewHandler(nil, "http://localhost:8080"))
+	router := setupRouter(httpapi.NewHandler(nil, "http://localhost:8080"))
 
 	w := performRequest(t, router, "GET", "/ping", "")
 

@@ -1,5 +1,5 @@
-// Package httpadapter provides the Gin HTTP transport for link use cases.
-package httpadapter
+// Package httpapi provides the Gin HTTP transport for link use cases.
+package httpapi
 
 import (
 	"code/internal/application"

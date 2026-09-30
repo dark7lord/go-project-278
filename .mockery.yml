@@ -11,8 +11,8 @@ packages:
       # The use cases the HTTP handlers call
       UseCase:
         config:
-          dir: internal/adapters/http
-          pkgname: httpadapter
+          dir: internal/adapters/httpapi
+          pkgname: httpapi
       # The storage ports the service calls
       LinkStore: {}
       VisitStore: {}

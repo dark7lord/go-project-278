@@ -311,7 +311,7 @@ Dependencies point inward: `domain ← application ← adapters ← app`.
 | `cmd/migrate`                 | Migrations by hand: up, down, redo, status (`db-*`)               |
 | `internal/domain`             | Link rules: URL and short-code normalization and validation       |
 | `internal/application`        | Use cases and the ports they need                                 |
-| `internal/adapters/http`      | gin handlers, the JSON contract, range/sort parsing, middleware   |
+| `internal/adapters/httpapi`   | gin handlers, the JSON contract, range/sort parsing, middleware   |
 | `internal/adapters/postgres`  | Repositories over the sqlc-generated code                         |
 | `internal/adapters/shortcode` | Random short-code generator (`word-123456`)                       |
 | `internal/server`             | Composition root: wiring, server, timeouts, graceful shutdown     |

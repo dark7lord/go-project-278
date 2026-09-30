@@ -18,7 +18,7 @@ import (
 
 	"code/db/generated"
 	"code/db/migrations"
-	httpadapter "code/internal/adapters/http"
+	"code/internal/adapters/httpapi"
 	"code/internal/adapters/postgres"
 	"code/internal/adapters/shortcode"
 	"code/internal/application"
@@ -39,19 +39,19 @@ func connectDB(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
 }
 
 // setupRouter creates and configures the gin engine with all routes.
-func setupRouter(linkHandler *httpadapter.Handler) *gin.Engine {
+func setupRouter(handler *httpapi.Handler) *gin.Engine {
 	router := gin.New()
-	router.Use(httpadapter.RequestLog(slog.Default()))
+	router.Use(httpapi.RequestLog(slog.Default()))
 	router.Use(sentrygin.New(sentrygin.Options{Repanic: true}))
-	router.Use(httpadapter.RequestID())
-	router.Use(httpadapter.NewCORS())
+	router.Use(httpapi.RequestID())
+	router.Use(httpapi.NewCORS())
 	router.Use(gin.Recovery())
 
 	router.TrustedPlatform = gin.PlatformCloudflare
 
-	linkHandler.RegisterRootRoutes(router)
+	handler.RegisterRootRoutes(router)
 
-	linkHandler.RegisterAPIRoutes(router.Group("/api"))
+	handler.RegisterAPIRoutes(router.Group("/api"))
 
 	return router
 }
@@ -63,7 +63,7 @@ func buildApp(cfg *config.Config, dbConn *pgxpool.Pool) *gin.Engine {
 	visitRepo := postgres.NewVisitRepository(queries)
 	service := application.NewService(linkRepo, visitRepo, shortcode.Generate)
 
-	return setupRouter(httpadapter.NewHandler(service, cfg.BaseURL))
+	return setupRouter(httpapi.NewHandler(service, cfg.BaseURL))
 }
 
 const timeoutErrorBody = `{"error": "request timeout"}`

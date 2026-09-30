@@ -22,7 +22,7 @@ import (
 
 	"code/db/generated"
 	"code/db/migrations"
-	httpadapter "code/internal/adapters/http"
+	"code/internal/adapters/httpapi"
 	postgresadapter "code/internal/adapters/postgres"
 	"code/internal/application"
 )
@@ -112,7 +112,7 @@ func newTestDB(queries *db.Queries) *testDB {
 		linkRepo:  linkRepo,
 		visitRepo: visitRepo,
 		svc:       svc,
-		router:    setupRouter(httpadapter.NewHandler(svc, "http://localhost:8080")),
+		router:    setupRouter(httpapi.NewHandler(svc, "http://localhost:8080")),
 	}
 }
 

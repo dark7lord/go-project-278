@@ -2,7 +2,7 @@
 // github.com/vektra/mockery
 // template: testify
 
-package httpadapter
+package httpapi
 
 import (
 	"code/internal/application"

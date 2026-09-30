@@ -1,4 +1,4 @@
-package httpadapter
+package httpapi
 
 import (
 	"time"
