@@ -25,7 +25,7 @@ run-front: ## The dashboard alone
 	npm run dev:front
 
 build: ## Build the API binary to bin/app
-	go build -o $(BIN) ./cmd/api
+	go build -o $(BIN) .
 
 deps: ## Install Go modules and the frontend package
 	go mod download
