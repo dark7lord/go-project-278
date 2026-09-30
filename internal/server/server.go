@@ -1,5 +1,5 @@
-// Package app provides application initialization and HTTP server setup.
-package app
+// Package server wires the application together and runs its HTTP server.
+package server
 
 import (
 	"context"

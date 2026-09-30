@@ -7,8 +7,8 @@ test: ## All tests with -race, writes coverage.out (integration ones need Docker
 test-unit: ## Unit tests only, no Docker
 	go test -short -race ./...
 
-test-integration: ## internal/app against a PostgreSQL in testcontainers
-	go test -race ./internal/app/...
+test-integration: ## internal/server against a PostgreSQL in testcontainers
+	go test -race ./internal/server/...
 
 cover: test ## Tests + coverage report
 	go tool cover -func=coverage.out

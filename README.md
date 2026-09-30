@@ -233,7 +233,7 @@ make check             # test + lint + build, what CI checks
 # tests
 make test              # all tests with -race, writes coverage.out (integration ones need Docker)
 make test-unit         # unit tests only, no Docker
-make test-integration  # internal/app against a PostgreSQL in testcontainers
+make test-integration  # internal/server against a PostgreSQL in testcontainers
 make cover             # tests + coverage report (cover-html opens it in a browser)
 make mocks             # regenerate the testify mocks listed in .mockery.yml
 
@@ -314,7 +314,7 @@ Dependencies point inward: `domain ← application ← adapters ← app`.
 | `internal/adapters/http`      | gin handlers, the JSON contract, range/sort parsing, middleware   |
 | `internal/adapters/postgres`  | Repositories over the sqlc-generated code                         |
 | `internal/adapters/shortcode` | Random short-code generator (`word-123456`)                       |
-| `internal/app`                | Composition root: wiring, server, timeouts, graceful shutdown     |
+| `internal/server`             | Composition root: wiring, server, timeouts, graceful shutdown     |
 | `internal/config`             | Configuration from the environment                                |
 | `db`                          | Migrations, SQL queries and the generated `db/generated`          |
 

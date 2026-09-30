@@ -7,7 +7,7 @@ import (
 
 	"github.com/joho/godotenv"
 
-	"code/internal/app"
+	"code/internal/server"
 )
 
 func main() {
@@ -17,7 +17,7 @@ func main() {
 		slog.Info("no .env file, using the environment")
 	}
 
-	if err := app.Run(); err != nil {
+	if err := server.Run(); err != nil {
 		slog.Error("app stopped", "error", err)
 		os.Exit(1)
 	}
