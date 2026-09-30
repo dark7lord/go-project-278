@@ -20,7 +20,7 @@ import (
 func TestHandlerListLinksRangeMapsRequest(t *testing.T) {
 	linkService := NewMockLinkUseCase(t)
 	linkService.EXPECT().
-		PageLinks(mock.Anything, linksQuery(5, 9, nil)).
+		PageLinks(mock.Anything, linksQuery(5, 9, application.Sort{})).
 		Return(application.RangePage[application.LinkView]{
 			Items: make([]application.LinkView, 5),
 			First: 5,
@@ -44,7 +44,7 @@ func TestHandlerListLinksRangeMapsRequest(t *testing.T) {
 func TestHandlerListLinksRangeUnsatisfiable(t *testing.T) {
 	linkService := NewMockLinkUseCase(t)
 	linkService.EXPECT().
-		PageLinks(mock.Anything, linksQuery(100, 200, nil)).
+		PageLinks(mock.Anything, linksQuery(100, 200, application.Sort{})).
 		Return(application.RangePage[application.LinkView]{
 			Items: []application.LinkView{},
 			First: 100,
@@ -78,7 +78,7 @@ func TestHandlerListLinksRangeEmptyCollection(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			linkService := NewMockLinkUseCase(t)
 			linkService.EXPECT().
-				PageLinks(mock.Anything, linksQuery(0, 4, nil)).
+				PageLinks(mock.Anything, linksQuery(0, 4, application.Sort{})).
 				Return(
 					application.RangePage[application.LinkView]{
 						Items: tt.items,
@@ -108,7 +108,7 @@ func TestHandlerListLinksRangeEmptyCollection(t *testing.T) {
 func TestHandlerListLinksRangeEmptyItems(t *testing.T) {
 	linkService := NewMockLinkUseCase(t)
 	linkService.EXPECT().
-		PageLinks(mock.Anything, linksQuery(5, 9, nil)).
+		PageLinks(mock.Anything, linksQuery(5, 9, application.Sort{})).
 		Return(application.RangePage[application.LinkView]{Items: []application.LinkView{}, First: 5, Total: 10}, nil).
 		Once()
 	handler := newTestHandler(linkService, NewMockVisitUseCase(t))
@@ -124,7 +124,7 @@ func TestHandlerListLinksRangeEmptyItems(t *testing.T) {
 func TestHandlerListLinksCutsRangeToMaximumPageSize(t *testing.T) {
 	linkService := NewMockLinkUseCase(t)
 	linkService.EXPECT().
-		PageLinks(mock.Anything, linksQuery(10, 10+firstPageLast, nil)).
+		PageLinks(mock.Anything, linksQuery(10, 10+firstPageLast, application.Sort{})).
 		Return(application.RangePage[application.LinkView]{
 			Items: make([]application.LinkView, maxPageSize),
 			First: 10,
@@ -180,7 +180,7 @@ func TestHandlerListLinksRangeSortMapsRequest(t *testing.T) {
 		PageLinks(mock.Anything, linksQuery(
 			5,
 			9,
-			&application.Sort{Field: application.SortFieldShortName, Asc: true},
+			application.Sort{Field: "short_name", Asc: true},
 		)).
 		Return(application.RangePage[application.LinkView]{Items: make([]application.LinkView, 5), First: 5, Total: 10}, nil).
 		Once()
@@ -204,7 +204,7 @@ func TestHandlerListLinksSortWithoutRangeSortsFirstPage(t *testing.T) {
 		PageLinks(mock.Anything, linksQuery(
 			0,
 			firstPageLast,
-			&application.Sort{Field: application.SortFieldShortName, Asc: true},
+			application.Sort{Field: "short_name", Asc: true},
 		)).
 		Return(application.RangePage[application.LinkView]{Items: make([]application.LinkView, 3), Total: 3}, nil).
 		Once()
@@ -258,7 +258,7 @@ func TestHandlerListLinksSortBadFormat(t *testing.T) {
 func TestHandlerListVisitsRangeMapsRequest(t *testing.T) {
 	visitService := NewMockVisitUseCase(t)
 	visitService.EXPECT().
-		PageLinkVisits(mock.Anything, visitsQuery(5, 9, nil)).
+		PageLinkVisits(mock.Anything, visitsQuery(5, 9, application.Sort{})).
 		Return(
 			application.RangePage[application.VisitView]{
 				Items: make([]application.VisitView, 5),
@@ -281,7 +281,7 @@ func TestHandlerListVisitsRangeMapsRequest(t *testing.T) {
 func TestHandlerListLinksEmptyCollection(t *testing.T) {
 	linkService := NewMockLinkUseCase(t)
 	linkService.EXPECT().
-		PageLinks(mock.Anything, linksQuery(0, firstPageLast, nil)).
+		PageLinks(mock.Anything, linksQuery(0, firstPageLast, application.Sort{})).
 		Return(application.RangePage[application.LinkView]{}, nil).
 		Once()
 	handler := newTestHandler(linkService, NewMockVisitUseCase(t))
@@ -301,7 +301,7 @@ func TestHandlerListVisitsRangeSortMapsRequest(t *testing.T) {
 		PageLinkVisits(mock.Anything, visitsQuery(
 			0,
 			4,
-			&application.Sort{Field: application.SortFieldCreatedAt, Asc: false},
+			application.Sort{Field: "created_at", Asc: false},
 		)).
 		Return(
 			application.RangePage[application.VisitView]{
@@ -339,7 +339,7 @@ func TestHandlerListVisitsRangeEmptyCollection(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			visitService := NewMockVisitUseCase(t)
 			visitService.EXPECT().
-				PageLinkVisits(mock.Anything, visitsQuery(0, 4, nil)).
+				PageLinkVisits(mock.Anything, visitsQuery(0, 4, application.Sort{})).
 				Return(
 					application.RangePage[application.VisitView]{
 						Items: tt.items,
@@ -369,7 +369,7 @@ func TestHandlerListVisitsRangeEmptyCollection(t *testing.T) {
 func TestHandlerListVisitsEmptyCollection(t *testing.T) {
 	visitService := NewMockVisitUseCase(t)
 	visitService.EXPECT().
-		PageLinkVisits(mock.Anything, visitsQuery(0, firstPageLast, nil)).
+		PageLinkVisits(mock.Anything, visitsQuery(0, firstPageLast, application.Sort{})).
 		Return(application.RangePage[application.VisitView]{}, nil).
 		Once()
 	handler := newTestHandler(NewMockLinkUseCase(t), visitService)
@@ -391,7 +391,7 @@ func TestHandlerListLinksMapsResponseContract(t *testing.T) {
 	}
 	linkService := NewMockLinkUseCase(t)
 	linkService.EXPECT().
-		PageLinks(mock.Anything, linksQuery(0, firstPageLast, nil)).
+		PageLinks(mock.Anything, linksQuery(0, firstPageLast, application.Sort{})).
 		Return(application.RangePage[application.LinkView]{Items: []application.LinkView{link}, Total: 1}, nil).
 		Once()
 	handler := newTestHandler(linkService, NewMockVisitUseCase(t))
@@ -426,7 +426,7 @@ func TestHandlerListVisitsMapsResponseContract(t *testing.T) {
 	}
 	visitService := NewMockVisitUseCase(t)
 	visitService.EXPECT().
-		PageLinkVisits(mock.Anything, visitsQuery(0, firstPageLast, nil)).
+		PageLinkVisits(mock.Anything, visitsQuery(0, firstPageLast, application.Sort{})).
 		Return(application.RangePage[application.VisitView]{Items: []application.VisitView{visit}, Total: 1}, nil).
 		Once()
 	handler := newTestHandler(NewMockLinkUseCase(t), visitService)
@@ -480,7 +480,7 @@ func TestHandlerListLinksRangeHeaderAnswersPartialContent(t *testing.T) {
 func TestHandlerListVisitsIgnoresForeignRangeUnit(t *testing.T) {
 	visitService := NewMockVisitUseCase(t)
 	visitService.EXPECT().
-		PageLinkVisits(mock.Anything, visitsQuery(0, firstPageLast, nil)).
+		PageLinkVisits(mock.Anything, visitsQuery(0, firstPageLast, application.Sort{})).
 		Return(application.RangePage[application.VisitView]{
 			Items: make([]application.VisitView, 3),
 			Total: 3,

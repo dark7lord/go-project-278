@@ -26,11 +26,11 @@ func newHandlerRouter(handler *Handler) *gin.Engine {
 	return router
 }
 
-func linksQuery(first, last int64, sort *application.Sort) application.ListLinksQuery {
+func linksQuery(first, last int64, sort application.Sort) application.ListLinksQuery {
 	return application.ListLinksQuery{Range: application.Range{First: first, Last: last}, Sort: sort}
 }
 
-func visitsQuery(first, last int64, sort *application.Sort) application.ListLinkVisitsQuery {
+func visitsQuery(first, last int64, sort application.Sort) application.ListLinkVisitsQuery {
 	return application.ListLinkVisitsQuery{Range: application.Range{First: first, Last: last}, Sort: sort}
 }
 

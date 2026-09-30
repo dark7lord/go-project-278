@@ -251,7 +251,7 @@ func TestHandlerCreateLinkHidesInternalError(t *testing.T) {
 func TestHandlerContextDeadlineMapsTo503(t *testing.T) {
 	linkService := NewMockLinkUseCase(t)
 	linkService.EXPECT().
-		PageLinks(mock.Anything, linksQuery(0, firstPageLast, nil)).
+		PageLinks(mock.Anything, linksQuery(0, firstPageLast, application.Sort{})).
 		Return(application.RangePage[application.LinkView]{}, context.DeadlineExceeded).
 		Once()
 	handler := newTestHandler(linkService, NewMockVisitUseCase(t))

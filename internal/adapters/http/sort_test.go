@@ -1,7 +1,7 @@
 package httpadapter
 
 import (
-	"maps"
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -10,51 +10,46 @@ import (
 	"code/internal/application"
 )
 
-// testSortFields joins both collections' names, so one table covers every alias.
-var testSortFields = func() map[string]application.SortField {
-	fields := maps.Clone(linksSortFields)
-	maps.Copy(fields, visitsSortFields)
-
-	return fields
-}()
+// testSortFields joins both collections' fields, so one table covers every alias.
+var testSortFields = slices.Concat(linksSortFields, visitsSortFields)
 
 func TestParseSortParam(t *testing.T) {
 	tests := []struct {
 		name    string
 		input   string
-		want    *application.Sort
+		want    application.Sort
 		wantErr error
 	}{
 		{name: "empty", input: ""},
 		{
 			name:  "ascending",
 			input: `["short_name","ASC"]`,
-			want:  &application.Sort{Field: application.SortFieldShortName, Asc: true},
+			want:  application.Sort{Field: "short_name", Asc: true},
 		},
 		{
 			name:  "descending",
 			input: `["created_at","DESC"]`,
-			want:  &application.Sort{Field: application.SortFieldCreatedAt, Asc: false},
+			want:  application.Sort{Field: "created_at", Asc: false},
 		},
 		{
 			name:  "with surrounding whitespace",
 			input: ` ["short_name","ASC"] `,
-			want:  &application.Sort{Field: application.SortFieldShortName, Asc: true},
+			want:  application.Sort{Field: "short_name", Asc: true},
 		},
 		{
 			name:  "underscore field",
 			input: `["user_agent","ASC"]`,
-			want:  &application.Sort{Field: application.SortFieldUserAgent, Asc: true},
+			want:  application.Sort{Field: "user_agent", Asc: true},
 		},
 		{
 			name:  "short_url sorts as short_name",
 			input: `["short_url","DESC"]`,
-			want:  &application.Sort{Field: application.SortFieldShortName, Asc: false},
+			want:  application.Sort{Field: "short_name", Asc: false},
 		},
 		{
 			name:  "the dashboard's reffer sorts as referer",
 			input: `["reffer","ASC"]`,
-			want:  &application.Sort{Field: application.SortFieldReferer, Asc: true},
+			want:  application.Sort{Field: "referer", Asc: true},
 		},
 		{name: "unknown field", input: `["bogus","ASC"]`, wantErr: ErrSortField},
 		{name: "missing quotes", input: `[short_name,ASC]`, wantErr: ErrSortFormat},
@@ -71,7 +66,7 @@ func TestParseSortParam(t *testing.T) {
 			if tt.wantErr != nil {
 				require.Error(t, err)
 				assert.ErrorIs(t, err, tt.wantErr)
-				assert.Nil(t, got)
+				assert.Zero(t, got)
 
 				return
 			}

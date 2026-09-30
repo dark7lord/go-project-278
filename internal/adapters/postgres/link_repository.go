@@ -76,10 +76,9 @@ func (r *LinkRepository) PageLinks(
 		return application.RangePage[application.LinkView]{Total: total}, nil
 	}
 
-	field, asc := sortParams(q.Sort)
 	links, err := r.queries.GetLinksPage(ctx, db.GetLinksPageParams{
-		SortField: field,
-		SortAsc:   asc,
+		SortField: q.Sort.Field,
+		SortAsc:   q.Sort.Asc,
 		Offset:    first,
 		Limit:     last - first + 1,
 	})

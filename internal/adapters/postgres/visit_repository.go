@@ -80,10 +80,9 @@ func (r *VisitRepository) PageLinkVisits(
 		return application.RangePage[application.VisitView]{Total: total}, nil
 	}
 
-	field, asc := sortParams(q.Sort)
 	visits, err := r.queries.GetLinkVisitsPage(ctx, db.GetLinkVisitsPageParams{
-		SortField: field,
-		SortAsc:   asc,
+		SortField: q.Sort.Field,
+		SortAsc:   q.Sort.Asc,
 		Offset:    first,
 		Limit:     last - first + 1,
 	})
