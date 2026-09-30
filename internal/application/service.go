@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	domainlinks "code/internal/domain/links"
+	"code/internal/domain/links"
 )
 
 // Service implements link application use cases.
@@ -104,11 +104,11 @@ func (s *Service) saveLinkFields(
 	in LinkInput,
 	persist func(ctx context.Context, normalizedURL, name string) (Link, error),
 ) (Link, error) {
-	normalized, err := domainlinks.NormalizeURL(in.OriginalURL)
+	normalized, err := links.NormalizeURL(in.OriginalURL)
 	if err != nil {
 		return Link{}, &FieldError{
 			Field: fieldOriginalURL,
-			Err:   fmt.Errorf("%w: %s", domainlinks.ErrInvalidURL, in.OriginalURL),
+			Err:   fmt.Errorf("%w: %s", links.ErrInvalidURL, in.OriginalURL),
 		}
 	}
 
@@ -118,11 +118,11 @@ func (s *Service) saveLinkFields(
 		})
 	}
 
-	code, err := domainlinks.NormalizeShortCode(in.ShortName)
+	code, err := links.NormalizeShortCode(in.ShortName)
 	if err != nil {
 		return Link{}, &FieldError{
 			Field: fieldShortName,
-			Err:   fmt.Errorf("%w: %s", domainlinks.ErrInvalidShortCode, in.ShortName),
+			Err:   fmt.Errorf("%w: %s", links.ErrInvalidShortCode, in.ShortName),
 		}
 	}
 
