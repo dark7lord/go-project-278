@@ -32,10 +32,10 @@ var sortAliases = map[string]string{
 }
 
 var (
-	// ErrSortFormat indicates the sort value is not a JSON array ["field","ASC|DESC"].
-	ErrSortFormat = errors.New(`invalid sort, expected [field,ASC|DESC]`)
-	// ErrSortField indicates an unsupported sort field.
-	ErrSortField = errors.New("unsupported sort field")
+	// errSortFormat indicates the sort value is not a JSON array ["field","ASC|DESC"].
+	errSortFormat = errors.New(`invalid sort, expected [field,ASC|DESC]`)
+	// errSortField indicates an unsupported sort field.
+	errSortField = errors.New("unsupported sort field")
 )
 
 // parseSortParam parses a "sort" query parameter value into a sort request on
@@ -47,10 +47,10 @@ func parseSortParam(sortParam string, fields []string) (application.Sort, error)
 
 	var pair []string
 	if err := json.Unmarshal([]byte(sortParam), &pair); err != nil || len(pair) != 2 {
-		return application.Sort{}, ErrSortFormat
+		return application.Sort{}, errSortFormat
 	}
 	if pair[1] != "ASC" && pair[1] != "DESC" {
-		return application.Sort{}, ErrSortFormat
+		return application.Sort{}, errSortFormat
 	}
 
 	field := pair[0]
@@ -58,7 +58,7 @@ func parseSortParam(sortParam string, fields []string) (application.Sort, error)
 		field = alias
 	}
 	if !slices.Contains(fields, field) {
-		return application.Sort{}, ErrSortField
+		return application.Sort{}, errSortField
 	}
 
 	return application.Sort{Field: field, Asc: pair[1] == "ASC"}, nil

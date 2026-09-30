@@ -40,7 +40,7 @@ func TestRequestLogInfoLine(t *testing.T) {
 	assert.Contains(t, line, "level=INFO")
 	assert.Contains(t, line, "path=/ok")
 	assert.Contains(t, line, "status=200")
-	assert.Contains(t, line, "request_id="+w.Header().Get(RequestIDHeader))
+	assert.Contains(t, line, "request_id="+w.Header().Get(requestIDHeader))
 }
 
 func TestRequestLogErrorLineCarriesHiddenError(t *testing.T) {
@@ -50,5 +50,5 @@ func TestRequestLogErrorLineCarriesHiddenError(t *testing.T) {
 	assert.Contains(t, line, "level=ERROR")
 	assert.Contains(t, line, "status=500")
 	assert.Contains(t, line, `error="db is down"`)
-	assert.Contains(t, line, "request_id="+w.Header().Get(RequestIDHeader))
+	assert.Contains(t, line, "request_id="+w.Header().Get(requestIDHeader))
 }

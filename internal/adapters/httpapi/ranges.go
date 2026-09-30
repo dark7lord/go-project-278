@@ -1,9 +1,14 @@
 package httpapi
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"net/http"
+	"regexp"
+	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -84,4 +89,68 @@ func writeRangePage[T any](
 	lastPos := page.First + int64(len(page.Items)) - 1
 	c.Header("Content-Range", fmt.Sprintf("%s %d-%d/%d", unit, page.First, lastPos, page.Total))
 	c.JSON(status, page.Items)
+}
+
+var (
+	// errRangeFormat indicates the range value is not a JSON array [start,end].
+	errRangeFormat = errors.New("invalid range, expected [start,end]")
+	// errRangeInverted indicates end is lower than start.
+	errRangeInverted = errors.New("invalid range, end must not be less than start")
+)
+
+// parseRangeParam parses a "range" query parameter value, a JSON array [start,end].
+func parseRangeParam(rangeParam string) (application.Range, error) {
+	var bounds []int64
+	if err := json.Unmarshal([]byte(rangeParam), &bounds); err != nil || len(bounds) != 2 || bounds[0] < 0 {
+		return application.Range{}, errRangeFormat
+	}
+
+	if bounds[0] > bounds[1] {
+		return application.Range{}, errRangeInverted
+	}
+
+	return application.Range{First: bounds[0], Last: bounds[1]}, nil
+}
+
+// rangeSpecRe matches a single RFC 9110 range-spec: first-last, first- or -suffix.
+var rangeSpecRe = regexp.MustCompile(`^(\d*)-(\d*)$`)
+
+// parseRangeHeader parses an RFC 9110 Range header: unit=first-last,
+// unit=first- or unit=-suffix. It reports false, so the header is ignored,
+// for another unit, a malformed value or several ranges.
+func parseRangeHeader(header, unit string) (application.Range, bool) {
+	gotUnit, spec, found := strings.Cut(header, "=")
+	if !found || !strings.EqualFold(gotUnit, unit) {
+		return application.Range{}, false
+	}
+
+	// Several ranges carry a comma, which never matches a single range-spec.
+	matches := rangeSpecRe.FindStringSubmatch(spec)
+	if matches == nil || matches[1] == "" && matches[2] == "" {
+		return application.Range{}, false
+	}
+
+	if matches[1] == "" {
+		length, err := strconv.ParseInt(matches[2], 10, 64)
+		if err != nil {
+			return application.Range{}, false
+		}
+
+		return application.Range{Suffix: true, Length: length}, true
+	}
+
+	first, err := strconv.ParseInt(matches[1], 10, 64)
+	if err != nil {
+		return application.Range{}, false
+	}
+	if matches[2] == "" {
+		return application.Range{First: first, Last: math.MaxInt64}, true
+	}
+
+	last, err := strconv.ParseInt(matches[2], 10, 64)
+	if err != nil || last < first {
+		return application.Range{}, false
+	}
+
+	return application.Range{First: first, Last: last}, true
 }

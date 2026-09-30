@@ -1,7 +1,9 @@
 package httpapi
 
 import (
+	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 
@@ -140,4 +142,52 @@ func (h *Handler) Redirect(c *gin.Context) {
 	}
 
 	c.Redirect(redirectStatus, link.OriginalURL)
+}
+
+const errInvalidID = "invalid id"
+
+// parsePositiveID parses an id path parameter into a positive int64.
+func parsePositiveID(paramID string) (int64, error) {
+	id, err := strconv.ParseInt(paramID, 10, 64)
+	if err != nil || id <= 0 {
+		return 0, errors.New(errInvalidID)
+	}
+
+	return id, nil
+}
+
+// linkRequest represents the request body shared by link creation and update.
+type linkRequest struct {
+	OriginalURL string `json:"original_url" binding:"required"`
+	ShortName   string `json:"short_name" binding:"omitempty,min=3,max=32"`
+}
+
+// bindLinkRequest decodes the link body shared by create and update, writing
+// the error response itself when the body is invalid.
+func bindLinkRequest(c *gin.Context) (linkRequest, bool) {
+	var req linkRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		writeBindErrors(c, err)
+
+		return req, false
+	}
+
+	return req, true
+}
+
+// linkResponse is the HTTP representation of a shortened link.
+type linkResponse struct {
+	ID          int64  `json:"id"`
+	OriginalURL string `json:"original_url"`
+	ShortName   string `json:"short_name"`
+	ShortURL    string `json:"short_url"`
+}
+
+func (h *Handler) linkResponse(link application.LinkView) linkResponse {
+	return linkResponse{
+		ID:          link.ID,
+		OriginalURL: link.OriginalURL,
+		ShortName:   link.ShortName,
+		ShortURL:    h.baseURL + "/r/" + link.ShortName,
+	}
 }

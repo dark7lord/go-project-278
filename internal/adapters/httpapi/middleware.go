@@ -54,15 +54,15 @@ func NewCORS() gin.HandlerFunc {
 	})
 }
 
-// RequestIDHeader carries the id that ties a response to its Sentry event.
-const RequestIDHeader = "X-Request-ID"
+// requestIDHeader carries the id that ties a response to its Sentry event.
+const requestIDHeader = "X-Request-ID"
 
 // RequestID tags each request with a fresh id in the response and its Sentry
 // scope. It must run after the sentrygin middleware.
 func RequestID() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := rand.Text()
-		c.Header(RequestIDHeader, id)
+		c.Header(requestIDHeader, id)
 		if hub := sentrygin.GetHubFromContext(c); hub != nil {
 			hub.Scope().SetTag("request_id", id)
 		}
@@ -84,7 +84,7 @@ func RequestLog(logger *slog.Logger) gin.HandlerFunc {
 			"status", status,
 			"latency", time.Since(start),
 			"ip", c.ClientIP(),
-			"request_id", c.Writer.Header().Get(RequestIDHeader),
+			"request_id", c.Writer.Header().Get(requestIDHeader),
 		}
 
 		if status < http.StatusInternalServerError {

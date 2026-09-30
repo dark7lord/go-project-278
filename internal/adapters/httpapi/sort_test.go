@@ -51,13 +51,13 @@ func TestParseSortParam(t *testing.T) {
 			input: `["reffer","ASC"]`,
 			want:  application.Sort{Field: "referer", Asc: true},
 		},
-		{name: "unknown field", input: `["bogus","ASC"]`, wantErr: ErrSortField},
-		{name: "missing quotes", input: `[short_name,ASC]`, wantErr: ErrSortFormat},
-		{name: "lowercase direction", input: `["short_name","asc"]`, wantErr: ErrSortFormat},
-		{name: "uppercase field", input: `["SHORT_NAME","ASC"]`, wantErr: ErrSortField},
-		{name: "single element", input: `["short_name"]`, wantErr: ErrSortFormat},
-		{name: "empty brackets", input: `[]`, wantErr: ErrSortFormat},
-		{name: "no brackets", input: `short_name,ASC`, wantErr: ErrSortFormat},
+		{name: "unknown field", input: `["bogus","ASC"]`, wantErr: errSortField},
+		{name: "missing quotes", input: `[short_name,ASC]`, wantErr: errSortFormat},
+		{name: "lowercase direction", input: `["short_name","asc"]`, wantErr: errSortFormat},
+		{name: "uppercase field", input: `["SHORT_NAME","ASC"]`, wantErr: errSortField},
+		{name: "single element", input: `["short_name"]`, wantErr: errSortFormat},
+		{name: "empty brackets", input: `[]`, wantErr: errSortFormat},
+		{name: "no brackets", input: `short_name,ASC`, wantErr: errSortFormat},
 	}
 
 	for _, tt := range tests {

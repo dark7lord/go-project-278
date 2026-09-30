@@ -33,7 +33,7 @@ func TestRequestIDInResponse(t *testing.T) {
 	w := httptest.NewRecorder()
 	newRequestIDUnitEngine().ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/ping", nil))
 
-	assert.NotEmpty(t, w.Header().Get(RequestIDHeader))
+	assert.NotEmpty(t, w.Header().Get(requestIDHeader))
 }
 
 func TestRequestIDTagsSentryEvent(t *testing.T) {
@@ -52,5 +52,5 @@ func TestRequestIDTagsSentryEvent(t *testing.T) {
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 	require.Len(t, events, 1)
-	assert.Equal(t, w.Header().Get(RequestIDHeader), events[0].Tags["request_id"])
+	assert.Equal(t, w.Header().Get(requestIDHeader), events[0].Tags["request_id"])
 }
