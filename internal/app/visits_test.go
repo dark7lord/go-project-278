@@ -122,13 +122,12 @@ func TestVisitsPagination(t *testing.T) {
 			var seeds []application.VisitView
 			for i := range tt.seedCount {
 				ref := fmt.Sprintf("https://ref-%d.com", i)
-				visit, err := tx.visitRepo.CreateLinkVisit(
-					ctx, created.ID,
-					fmt.Sprintf("10.0.0.%d", i),
-					fmt.Sprintf("agent-%d", i),
-					&ref,
-					int32(http.StatusFound),
-				)
+				visit, err := tx.visitRepo.CreateLinkVisit(ctx, created.ID, application.Visit{
+					IP:        fmt.Sprintf("10.0.0.%d", i),
+					UserAgent: fmt.Sprintf("agent-%d", i),
+					Referer:   &ref,
+					Status:    int32(http.StatusFound),
+				})
 				require.NoError(t, err)
 				seeds = append(seeds, visit)
 			}
@@ -185,7 +184,7 @@ func TestRedirectRecordsVisit(t *testing.T) {
 
 	assert.Equal(t, http.StatusFound, w.Code)
 
-	page, err := tx.svc.PageLinkVisits(ctx, application.ListLinkVisitsQuery{
+	page, err := tx.svc.PageLinkVisits(ctx, application.PageQuery{
 		Range: application.Range{First: 0, Last: 9},
 	})
 	require.NoError(t, err)
@@ -243,7 +242,7 @@ func TestVisitCreatedAtIgnoresSessionTimeZone(t *testing.T) {
 	link := linkFactory(0)
 	created, err := tx.linkRepo.CreateLink(ctx, link.OriginalURL, link.ShortName)
 	require.NoError(t, err)
-	_, err = tx.visitRepo.CreateLinkVisit(ctx, created.ID, "1.1.1.1", "agent", nil, int32(http.StatusFound))
+	_, err = tx.visitRepo.CreateLinkVisit(ctx, created.ID, foundVisit("1.1.1.1"))
 	require.NoError(t, err)
 
 	w := performRequest(t, tx.router, "GET", "/api/link_visits", "")

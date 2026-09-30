@@ -19,7 +19,7 @@ func (f *fakeLinkReader) GetLinkByShortName(_ context.Context, _ string) (LinkVi
 	return f.gotLink, f.getLinkError
 }
 
-func (f *fakeLinkReader) PageLinks(_ context.Context, _ ListLinksQuery) (RangePage[LinkView], error) {
+func (f *fakeLinkReader) PageLinks(_ context.Context, _ PageQuery) (RangePage[LinkView], error) {
 	return f.linkPage, f.linkPageError
 }
 
@@ -30,7 +30,7 @@ type fakeVisitReader struct {
 
 func (f *fakeVisitReader) PageLinkVisits(
 	_ context.Context,
-	_ ListLinkVisitsQuery,
+	_ PageQuery,
 ) (RangePage[VisitView], error) {
 	return f.visitPage, f.visitPageError
 }

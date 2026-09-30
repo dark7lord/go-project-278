@@ -47,28 +47,26 @@ func toVisitViews(visits []db.LinkVisit) []application.VisitView {
 func (r *VisitRepository) CreateLinkVisit(
 	ctx context.Context,
 	linkID int64,
-	ip, userAgent string,
-	referer *string,
-	status int32,
+	visit application.Visit,
 ) (application.VisitView, error) {
-	visit, err := r.queries.CreateLinkVisit(ctx, db.CreateLinkVisitParams{
+	created, err := r.queries.CreateLinkVisit(ctx, db.CreateLinkVisitParams{
 		LinkID:    linkID,
-		IP:        ip,
-		UserAgent: userAgent,
-		Referer:   referer,
-		Status:    status,
+		IP:        visit.IP,
+		UserAgent: visit.UserAgent,
+		Referer:   visit.Referer,
+		Status:    visit.Status,
 	})
 	if err != nil {
 		return application.VisitView{}, mapStorageError(err)
 	}
 
-	return toVisitView(visit), nil
+	return toVisitView(created), nil
 }
 
 // PageLinkVisits retrieves a paginated page of link visits together with the total count.
 func (r *VisitRepository) PageLinkVisits(
 	ctx context.Context,
-	q application.ListLinkVisitsQuery,
+	q application.PageQuery,
 ) (application.RangePage[application.VisitView], error) {
 	total, err := r.queries.CountLinkVisits(ctx)
 	if err != nil {

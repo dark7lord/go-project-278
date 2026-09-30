@@ -33,7 +33,7 @@ func TestServiceCreateLinkUsesInjectedGenerator(t *testing.T) {
 			ShortName:   testGeneratedCode,
 		}, nil).
 		Once()
-	link, err := svc.CreateLink(t.Context(), CreateLinkCommand{
+	link, err := svc.CreateLink(t.Context(), LinkInput{
 		OriginalURL: testExampleURL,
 		ShortName:   "",
 	})

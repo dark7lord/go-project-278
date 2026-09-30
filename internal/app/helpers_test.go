@@ -145,6 +145,11 @@ func setupTestTx(t *testing.T, td *testDB) *testDB {
 	return txDB
 }
 
+// foundVisit is a visit from ip answered with a redirect.
+func foundVisit(ip string) application.Visit {
+	return application.Visit{IP: ip, UserAgent: "agent", Status: int32(http.StatusFound)}
+}
+
 func linkFactory(i int) db.Link {
 	originalURL := fmt.Sprintf("https://link-%d.com", i)
 	shortName := fmt.Sprintf("%d-%d-%d", i, i, i)

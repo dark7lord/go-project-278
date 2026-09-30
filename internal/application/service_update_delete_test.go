@@ -25,7 +25,7 @@ func TestServiceUpdateLink(t *testing.T) {
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
-	updated, err := svc.UpdateLink(t.Context(), 7, UpdateLinkCommand{
+	updated, err := svc.UpdateLink(t.Context(), 7, LinkInput{
 		OriginalURL: "https://updated.com",
 		ShortName:   "updated-link",
 	})
@@ -50,7 +50,7 @@ func TestServiceUpdateLinkTrimsShortName(t *testing.T) {
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
-	updated, err := svc.UpdateLink(t.Context(), 7, UpdateLinkCommand{
+	updated, err := svc.UpdateLink(t.Context(), 7, LinkInput{
 		OriginalURL: "https://updated.com",
 		ShortName:   " updated-link ",
 	})
@@ -66,7 +66,7 @@ func TestServiceUpdateLinkRejectsInvalidURL(t *testing.T) {
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
-	_, err := svc.UpdateLink(t.Context(), 7, UpdateLinkCommand{
+	_, err := svc.UpdateLink(t.Context(), 7, LinkInput{
 		OriginalURL: "ftp://bad",
 		ShortName:   "ok",
 	})
@@ -94,7 +94,7 @@ func TestServiceUpdateLinkGeneratesShortName(t *testing.T) {
 		generator,
 	)
 
-	updated, err := svc.UpdateLink(t.Context(), 7, UpdateLinkCommand{
+	updated, err := svc.UpdateLink(t.Context(), 7, LinkInput{
 		OriginalURL: testOKURL,
 		ShortName:   "",
 	})
@@ -115,7 +115,7 @@ func TestServiceUpdateLinkExhaustsGeneratedCodes(t *testing.T) {
 		UpdateLink(mock.Anything, int64(7), testOKURL, testGeneratedCode).
 		Return(LinkView{}, &FieldError{Field: fieldShortName, Err: ErrShortNameAlreadyUse})
 
-	_, err := svc.UpdateLink(t.Context(), 7, UpdateLinkCommand{
+	_, err := svc.UpdateLink(t.Context(), 7, LinkInput{
 		OriginalURL: testOKURL,
 		ShortName:   "",
 	})

@@ -10,6 +10,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"code/internal/application"
 )
 
 func visitIP(i int) string {
@@ -70,7 +72,7 @@ func TestVisitsRangeSortByIP(t *testing.T) {
 
 	seedIPs := []string{visitIP(1), visitIP(0), visitIP(2)}
 	for _, ip := range seedIPs {
-		_, err := tx.visitRepo.CreateLinkVisit(ctx, created.ID, ip, "agent", nil, int32(http.StatusFound))
+		_, err := tx.visitRepo.CreateLinkVisit(ctx, created.ID, foundVisit(ip))
 		require.NoError(t, err)
 	}
 
@@ -124,7 +126,9 @@ func TestVisitsRangeSortRefererNullsLast(t *testing.T) {
 		{ip: visitIP(1), referer: nil},
 		{ip: visitIP(2), referer: &refB},
 	} {
-		_, err := tx.visitRepo.CreateLinkVisit(ctx, created.ID, seed.ip, "agent", seed.referer, int32(http.StatusFound))
+		visit := foundVisit(seed.ip)
+		visit.Referer = seed.referer
+		_, err := tx.visitRepo.CreateLinkVisit(ctx, created.ID, visit)
 		require.NoError(t, err)
 	}
 
@@ -170,7 +174,7 @@ func TestVisitsRangeSortCreatedAt(t *testing.T) {
 	// CURRENT_TIMESTAMP is constant within a transaction, so created_at is
 	// backdated per visit to make the ordering deterministic.
 	for i := range 3 {
-		visit, err := tx.visitRepo.CreateLinkVisit(ctx, created.ID, visitIP(i), "agent", nil, int32(http.StatusFound))
+		visit, err := tx.visitRepo.CreateLinkVisit(ctx, created.ID, foundVisit(visitIP(i)))
 		require.NoError(t, err)
 
 		_, err = tx.tx.Exec(
@@ -292,7 +296,11 @@ func TestVisitsSortEveryField(t *testing.T) {
 		{link: 0, agent: "c-agent", status: 301},
 		{link: 1, agent: "a-agent", status: 307},
 	} {
-		_, err := tx.visitRepo.CreateLinkVisit(t.Context(), linkIDs[seed.link], visitIP(0), seed.agent, nil, seed.status)
+		_, err := tx.visitRepo.CreateLinkVisit(t.Context(), linkIDs[seed.link], application.Visit{
+			IP:        visitIP(0),
+			UserAgent: seed.agent,
+			Status:    seed.status,
+		})
 		require.NoError(t, err)
 	}
 

@@ -33,7 +33,3 @@ const (
 	fieldShortName   = "short_name"
 	fieldOriginalURL = "original_url"
 )
-
-func (s *Service) generateShortCode() string {
-	return s.shortCodeGenerator.Generate()
-}

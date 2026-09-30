@@ -19,8 +19,8 @@ func (h *Handler) CreateLink(c *gin.Context) {
 		return
 	}
 
-	cmd := application.CreateLinkCommand{OriginalURL: req.OriginalURL, ShortName: req.ShortName}
-	link, err := h.linkService.CreateLink(c.Request.Context(), cmd)
+	in := application.LinkInput{OriginalURL: req.OriginalURL, ShortName: req.ShortName}
+	link, err := h.linkService.CreateLink(c.Request.Context(), in)
 	if err != nil {
 		writeServiceError(c, err)
 
@@ -64,7 +64,7 @@ func (h *Handler) ListLinks(c *gin.Context) {
 
 	page, err := h.linkService.PageLinks(
 		c.Request.Context(),
-		application.ListLinksQuery{Range: pageRange, Sort: sort},
+		application.PageQuery{Range: pageRange, Sort: sort},
 	)
 	if err != nil {
 		writeServiceError(c, err)
@@ -91,8 +91,8 @@ func (h *Handler) UpdateLink(c *gin.Context) {
 		return
 	}
 
-	cmd := application.UpdateLinkCommand{OriginalURL: req.OriginalURL, ShortName: req.ShortName}
-	updated, err := h.linkService.UpdateLink(c.Request.Context(), id, cmd)
+	in := application.LinkInput{OriginalURL: req.OriginalURL, ShortName: req.ShortName}
+	updated, err := h.linkService.UpdateLink(c.Request.Context(), id, in)
 	if err != nil {
 		writeServiceError(c, err)
 
@@ -122,24 +122,17 @@ func (h *Handler) DeleteLink(c *gin.Context) {
 
 // Redirect handles redirecting a short name to its original URL.
 func (h *Handler) Redirect(c *gin.Context) {
-	code := c.Param("code")
-
-	ctx := c.Request.Context()
 	var referer *string
 	if ref := c.Request.Referer(); ref != "" {
 		referer = &ref
 	}
 
-	link, err := h.linkService.Redirect(ctx, application.RedirectCommand{
-		ShortName: code,
-		VisitMeta: application.VisitMeta{
-			IP:        c.ClientIP(),
-			UserAgent: c.Request.UserAgent(),
-			Referer:   referer,
-		},
-		Status: int32(redirectStatus),
+	link, err := h.linkService.Redirect(c.Request.Context(), c.Param("code"), application.Visit{
+		IP:        c.ClientIP(),
+		UserAgent: c.Request.UserAgent(),
+		Referer:   referer,
+		Status:    int32(redirectStatus),
 	})
-
 	if err != nil {
 		writeServiceError(c, err)
 

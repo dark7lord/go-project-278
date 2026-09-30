@@ -456,7 +456,7 @@ func TestHandlerListVisitsMapsResponseContract(t *testing.T) {
 func TestHandlerListLinksRangeHeaderAnswersPartialContent(t *testing.T) {
 	linkService := NewMockLinkUseCase(t)
 	linkService.EXPECT().
-		PageLinks(mock.Anything, application.ListLinksQuery{
+		PageLinks(mock.Anything, application.PageQuery{
 			Range: application.Range{Suffix: true, Length: 2},
 		}).
 		Return(application.RangePage[application.LinkView]{

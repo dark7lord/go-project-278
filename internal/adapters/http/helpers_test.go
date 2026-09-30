@@ -26,12 +26,12 @@ func newHandlerRouter(handler *Handler) *gin.Engine {
 	return router
 }
 
-func linksQuery(first, last int64, sort application.Sort) application.ListLinksQuery {
-	return application.ListLinksQuery{Range: application.Range{First: first, Last: last}, Sort: sort}
+func linksQuery(first, last int64, sort application.Sort) application.PageQuery {
+	return application.PageQuery{Range: application.Range{First: first, Last: last}, Sort: sort}
 }
 
-func visitsQuery(first, last int64, sort application.Sort) application.ListLinkVisitsQuery {
-	return application.ListLinkVisitsQuery{Range: application.Range{First: first, Last: last}, Sort: sort}
+func visitsQuery(first, last int64, sort application.Sort) application.PageQuery {
+	return application.PageQuery{Range: application.Range{First: first, Last: last}, Sort: sort}
 }
 
 // firstPageLast ends the page a request without a range reads: "0-" cut to maxPageSize.

@@ -48,8 +48,8 @@ func (_m *MockLinkUseCase) EXPECT() *MockLinkUseCase_Expecter {
 }
 
 // CreateLink provides a mock function for the type MockLinkUseCase
-func (_mock *MockLinkUseCase) CreateLink(ctx context.Context, cmd application.CreateLinkCommand) (application.LinkView, error) {
-	ret := _mock.Called(ctx, cmd)
+func (_mock *MockLinkUseCase) CreateLink(ctx context.Context, in application.LinkInput) (application.LinkView, error) {
+	ret := _mock.Called(ctx, in)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateLink")
@@ -57,16 +57,16 @@ func (_mock *MockLinkUseCase) CreateLink(ctx context.Context, cmd application.Cr
 
 	var r0 application.LinkView
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, application.CreateLinkCommand) (application.LinkView, error)); ok {
-		return returnFunc(ctx, cmd)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, application.LinkInput) (application.LinkView, error)); ok {
+		return returnFunc(ctx, in)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, application.CreateLinkCommand) application.LinkView); ok {
-		r0 = returnFunc(ctx, cmd)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, application.LinkInput) application.LinkView); ok {
+		r0 = returnFunc(ctx, in)
 	} else {
 		r0 = ret.Get(0).(application.LinkView)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, application.CreateLinkCommand) error); ok {
-		r1 = returnFunc(ctx, cmd)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, application.LinkInput) error); ok {
+		r1 = returnFunc(ctx, in)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -80,20 +80,20 @@ type MockLinkUseCase_CreateLink_Call struct {
 
 // CreateLink is a helper method to define mock.On call
 //   - ctx context.Context
-//   - cmd application.CreateLinkCommand
-func (_e *MockLinkUseCase_Expecter) CreateLink(ctx any, cmd any) *MockLinkUseCase_CreateLink_Call {
-	return &MockLinkUseCase_CreateLink_Call{Call: _e.mock.On("CreateLink", ctx, cmd)}
+//   - in application.LinkInput
+func (_e *MockLinkUseCase_Expecter) CreateLink(ctx any, in any) *MockLinkUseCase_CreateLink_Call {
+	return &MockLinkUseCase_CreateLink_Call{Call: _e.mock.On("CreateLink", ctx, in)}
 }
 
-func (_c *MockLinkUseCase_CreateLink_Call) Run(run func(ctx context.Context, cmd application.CreateLinkCommand)) *MockLinkUseCase_CreateLink_Call {
+func (_c *MockLinkUseCase_CreateLink_Call) Run(run func(ctx context.Context, in application.LinkInput)) *MockLinkUseCase_CreateLink_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 application.CreateLinkCommand
+		var arg1 application.LinkInput
 		if args[1] != nil {
-			arg1 = args[1].(application.CreateLinkCommand)
+			arg1 = args[1].(application.LinkInput)
 		}
 		run(
 			arg0,
@@ -108,7 +108,7 @@ func (_c *MockLinkUseCase_CreateLink_Call) Return(linkView application.LinkView,
 	return _c
 }
 
-func (_c *MockLinkUseCase_CreateLink_Call) RunAndReturn(run func(ctx context.Context, cmd application.CreateLinkCommand) (application.LinkView, error)) *MockLinkUseCase_CreateLink_Call {
+func (_c *MockLinkUseCase_CreateLink_Call) RunAndReturn(run func(ctx context.Context, in application.LinkInput) (application.LinkView, error)) *MockLinkUseCase_CreateLink_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -312,7 +312,7 @@ func (_c *MockLinkUseCase_GetLinkByShortName_Call) RunAndReturn(run func(ctx con
 }
 
 // PageLinks provides a mock function for the type MockLinkUseCase
-func (_mock *MockLinkUseCase) PageLinks(ctx context.Context, q application.ListLinksQuery) (application.RangePage[application.LinkView], error) {
+func (_mock *MockLinkUseCase) PageLinks(ctx context.Context, q application.PageQuery) (application.RangePage[application.LinkView], error) {
 	ret := _mock.Called(ctx, q)
 
 	if len(ret) == 0 {
@@ -321,15 +321,15 @@ func (_mock *MockLinkUseCase) PageLinks(ctx context.Context, q application.ListL
 
 	var r0 application.RangePage[application.LinkView]
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, application.ListLinksQuery) (application.RangePage[application.LinkView], error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, application.PageQuery) (application.RangePage[application.LinkView], error)); ok {
 		return returnFunc(ctx, q)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, application.ListLinksQuery) application.RangePage[application.LinkView]); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, application.PageQuery) application.RangePage[application.LinkView]); ok {
 		r0 = returnFunc(ctx, q)
 	} else {
 		r0 = ret.Get(0).(application.RangePage[application.LinkView])
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, application.ListLinksQuery) error); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, application.PageQuery) error); ok {
 		r1 = returnFunc(ctx, q)
 	} else {
 		r1 = ret.Error(1)
@@ -344,20 +344,20 @@ type MockLinkUseCase_PageLinks_Call struct {
 
 // PageLinks is a helper method to define mock.On call
 //   - ctx context.Context
-//   - q application.ListLinksQuery
+//   - q application.PageQuery
 func (_e *MockLinkUseCase_Expecter) PageLinks(ctx any, q any) *MockLinkUseCase_PageLinks_Call {
 	return &MockLinkUseCase_PageLinks_Call{Call: _e.mock.On("PageLinks", ctx, q)}
 }
 
-func (_c *MockLinkUseCase_PageLinks_Call) Run(run func(ctx context.Context, q application.ListLinksQuery)) *MockLinkUseCase_PageLinks_Call {
+func (_c *MockLinkUseCase_PageLinks_Call) Run(run func(ctx context.Context, q application.PageQuery)) *MockLinkUseCase_PageLinks_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 application.ListLinksQuery
+		var arg1 application.PageQuery
 		if args[1] != nil {
-			arg1 = args[1].(application.ListLinksQuery)
+			arg1 = args[1].(application.PageQuery)
 		}
 		run(
 			arg0,
@@ -372,14 +372,14 @@ func (_c *MockLinkUseCase_PageLinks_Call) Return(rangePage application.RangePage
 	return _c
 }
 
-func (_c *MockLinkUseCase_PageLinks_Call) RunAndReturn(run func(ctx context.Context, q application.ListLinksQuery) (application.RangePage[application.LinkView], error)) *MockLinkUseCase_PageLinks_Call {
+func (_c *MockLinkUseCase_PageLinks_Call) RunAndReturn(run func(ctx context.Context, q application.PageQuery) (application.RangePage[application.LinkView], error)) *MockLinkUseCase_PageLinks_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Redirect provides a mock function for the type MockLinkUseCase
-func (_mock *MockLinkUseCase) Redirect(ctx context.Context, cmd application.RedirectCommand) (application.LinkView, error) {
-	ret := _mock.Called(ctx, cmd)
+func (_mock *MockLinkUseCase) Redirect(ctx context.Context, shortName string, visit application.Visit) (application.LinkView, error) {
+	ret := _mock.Called(ctx, shortName, visit)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Redirect")
@@ -387,16 +387,16 @@ func (_mock *MockLinkUseCase) Redirect(ctx context.Context, cmd application.Redi
 
 	var r0 application.LinkView
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, application.RedirectCommand) (application.LinkView, error)); ok {
-		return returnFunc(ctx, cmd)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, application.Visit) (application.LinkView, error)); ok {
+		return returnFunc(ctx, shortName, visit)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, application.RedirectCommand) application.LinkView); ok {
-		r0 = returnFunc(ctx, cmd)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, application.Visit) application.LinkView); ok {
+		r0 = returnFunc(ctx, shortName, visit)
 	} else {
 		r0 = ret.Get(0).(application.LinkView)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, application.RedirectCommand) error); ok {
-		r1 = returnFunc(ctx, cmd)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string, application.Visit) error); ok {
+		r1 = returnFunc(ctx, shortName, visit)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -410,24 +410,30 @@ type MockLinkUseCase_Redirect_Call struct {
 
 // Redirect is a helper method to define mock.On call
 //   - ctx context.Context
-//   - cmd application.RedirectCommand
-func (_e *MockLinkUseCase_Expecter) Redirect(ctx any, cmd any) *MockLinkUseCase_Redirect_Call {
-	return &MockLinkUseCase_Redirect_Call{Call: _e.mock.On("Redirect", ctx, cmd)}
+//   - shortName string
+//   - visit application.Visit
+func (_e *MockLinkUseCase_Expecter) Redirect(ctx any, shortName any, visit any) *MockLinkUseCase_Redirect_Call {
+	return &MockLinkUseCase_Redirect_Call{Call: _e.mock.On("Redirect", ctx, shortName, visit)}
 }
 
-func (_c *MockLinkUseCase_Redirect_Call) Run(run func(ctx context.Context, cmd application.RedirectCommand)) *MockLinkUseCase_Redirect_Call {
+func (_c *MockLinkUseCase_Redirect_Call) Run(run func(ctx context.Context, shortName string, visit application.Visit)) *MockLinkUseCase_Redirect_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 application.RedirectCommand
+		var arg1 string
 		if args[1] != nil {
-			arg1 = args[1].(application.RedirectCommand)
+			arg1 = args[1].(string)
+		}
+		var arg2 application.Visit
+		if args[2] != nil {
+			arg2 = args[2].(application.Visit)
 		}
 		run(
 			arg0,
 			arg1,
+			arg2,
 		)
 	})
 	return _c
@@ -438,14 +444,14 @@ func (_c *MockLinkUseCase_Redirect_Call) Return(linkView application.LinkView, e
 	return _c
 }
 
-func (_c *MockLinkUseCase_Redirect_Call) RunAndReturn(run func(ctx context.Context, cmd application.RedirectCommand) (application.LinkView, error)) *MockLinkUseCase_Redirect_Call {
+func (_c *MockLinkUseCase_Redirect_Call) RunAndReturn(run func(ctx context.Context, shortName string, visit application.Visit) (application.LinkView, error)) *MockLinkUseCase_Redirect_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // UpdateLink provides a mock function for the type MockLinkUseCase
-func (_mock *MockLinkUseCase) UpdateLink(ctx context.Context, id int64, cmd application.UpdateLinkCommand) (application.LinkView, error) {
-	ret := _mock.Called(ctx, id, cmd)
+func (_mock *MockLinkUseCase) UpdateLink(ctx context.Context, id int64, in application.LinkInput) (application.LinkView, error) {
+	ret := _mock.Called(ctx, id, in)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateLink")
@@ -453,16 +459,16 @@ func (_mock *MockLinkUseCase) UpdateLink(ctx context.Context, id int64, cmd appl
 
 	var r0 application.LinkView
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, application.UpdateLinkCommand) (application.LinkView, error)); ok {
-		return returnFunc(ctx, id, cmd)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, application.LinkInput) (application.LinkView, error)); ok {
+		return returnFunc(ctx, id, in)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, application.UpdateLinkCommand) application.LinkView); ok {
-		r0 = returnFunc(ctx, id, cmd)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, application.LinkInput) application.LinkView); ok {
+		r0 = returnFunc(ctx, id, in)
 	} else {
 		r0 = ret.Get(0).(application.LinkView)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, application.UpdateLinkCommand) error); ok {
-		r1 = returnFunc(ctx, id, cmd)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, application.LinkInput) error); ok {
+		r1 = returnFunc(ctx, id, in)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -477,12 +483,12 @@ type MockLinkUseCase_UpdateLink_Call struct {
 // UpdateLink is a helper method to define mock.On call
 //   - ctx context.Context
 //   - id int64
-//   - cmd application.UpdateLinkCommand
-func (_e *MockLinkUseCase_Expecter) UpdateLink(ctx any, id any, cmd any) *MockLinkUseCase_UpdateLink_Call {
-	return &MockLinkUseCase_UpdateLink_Call{Call: _e.mock.On("UpdateLink", ctx, id, cmd)}
+//   - in application.LinkInput
+func (_e *MockLinkUseCase_Expecter) UpdateLink(ctx any, id any, in any) *MockLinkUseCase_UpdateLink_Call {
+	return &MockLinkUseCase_UpdateLink_Call{Call: _e.mock.On("UpdateLink", ctx, id, in)}
 }
 
-func (_c *MockLinkUseCase_UpdateLink_Call) Run(run func(ctx context.Context, id int64, cmd application.UpdateLinkCommand)) *MockLinkUseCase_UpdateLink_Call {
+func (_c *MockLinkUseCase_UpdateLink_Call) Run(run func(ctx context.Context, id int64, in application.LinkInput)) *MockLinkUseCase_UpdateLink_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -492,9 +498,9 @@ func (_c *MockLinkUseCase_UpdateLink_Call) Run(run func(ctx context.Context, id 
 		if args[1] != nil {
 			arg1 = args[1].(int64)
 		}
-		var arg2 application.UpdateLinkCommand
+		var arg2 application.LinkInput
 		if args[2] != nil {
-			arg2 = args[2].(application.UpdateLinkCommand)
+			arg2 = args[2].(application.LinkInput)
 		}
 		run(
 			arg0,
@@ -510,7 +516,7 @@ func (_c *MockLinkUseCase_UpdateLink_Call) Return(linkView application.LinkView,
 	return _c
 }
 
-func (_c *MockLinkUseCase_UpdateLink_Call) RunAndReturn(run func(ctx context.Context, id int64, cmd application.UpdateLinkCommand) (application.LinkView, error)) *MockLinkUseCase_UpdateLink_Call {
+func (_c *MockLinkUseCase_UpdateLink_Call) RunAndReturn(run func(ctx context.Context, id int64, in application.LinkInput) (application.LinkView, error)) *MockLinkUseCase_UpdateLink_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -552,7 +558,7 @@ func (_m *MockVisitUseCase) EXPECT() *MockVisitUseCase_Expecter {
 }
 
 // PageLinkVisits provides a mock function for the type MockVisitUseCase
-func (_mock *MockVisitUseCase) PageLinkVisits(ctx context.Context, q application.ListLinkVisitsQuery) (application.RangePage[application.VisitView], error) {
+func (_mock *MockVisitUseCase) PageLinkVisits(ctx context.Context, q application.PageQuery) (application.RangePage[application.VisitView], error) {
 	ret := _mock.Called(ctx, q)
 
 	if len(ret) == 0 {
@@ -561,15 +567,15 @@ func (_mock *MockVisitUseCase) PageLinkVisits(ctx context.Context, q application
 
 	var r0 application.RangePage[application.VisitView]
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, application.ListLinkVisitsQuery) (application.RangePage[application.VisitView], error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, application.PageQuery) (application.RangePage[application.VisitView], error)); ok {
 		return returnFunc(ctx, q)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, application.ListLinkVisitsQuery) application.RangePage[application.VisitView]); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, application.PageQuery) application.RangePage[application.VisitView]); ok {
 		r0 = returnFunc(ctx, q)
 	} else {
 		r0 = ret.Get(0).(application.RangePage[application.VisitView])
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, application.ListLinkVisitsQuery) error); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, application.PageQuery) error); ok {
 		r1 = returnFunc(ctx, q)
 	} else {
 		r1 = ret.Error(1)
@@ -584,20 +590,20 @@ type MockVisitUseCase_PageLinkVisits_Call struct {
 
 // PageLinkVisits is a helper method to define mock.On call
 //   - ctx context.Context
-//   - q application.ListLinkVisitsQuery
+//   - q application.PageQuery
 func (_e *MockVisitUseCase_Expecter) PageLinkVisits(ctx any, q any) *MockVisitUseCase_PageLinkVisits_Call {
 	return &MockVisitUseCase_PageLinkVisits_Call{Call: _e.mock.On("PageLinkVisits", ctx, q)}
 }
 
-func (_c *MockVisitUseCase_PageLinkVisits_Call) Run(run func(ctx context.Context, q application.ListLinkVisitsQuery)) *MockVisitUseCase_PageLinkVisits_Call {
+func (_c *MockVisitUseCase_PageLinkVisits_Call) Run(run func(ctx context.Context, q application.PageQuery)) *MockVisitUseCase_PageLinkVisits_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 application.ListLinkVisitsQuery
+		var arg1 application.PageQuery
 		if args[1] != nil {
-			arg1 = args[1].(application.ListLinkVisitsQuery)
+			arg1 = args[1].(application.PageQuery)
 		}
 		run(
 			arg0,
@@ -612,7 +618,7 @@ func (_c *MockVisitUseCase_PageLinkVisits_Call) Return(rangePage application.Ran
 	return _c
 }
 
-func (_c *MockVisitUseCase_PageLinkVisits_Call) RunAndReturn(run func(ctx context.Context, q application.ListLinkVisitsQuery) (application.RangePage[application.VisitView], error)) *MockVisitUseCase_PageLinkVisits_Call {
+func (_c *MockVisitUseCase_PageLinkVisits_Call) RunAndReturn(run func(ctx context.Context, q application.PageQuery) (application.RangePage[application.VisitView], error)) *MockVisitUseCase_PageLinkVisits_Call {
 	_c.Call.Return(run)
 	return _c
 }

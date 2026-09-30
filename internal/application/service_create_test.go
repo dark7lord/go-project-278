@@ -24,7 +24,7 @@ const testRedirectStatus = int32(307)
 func TestServiceCreateLink(t *testing.T) {
 	tests := []struct {
 		name               string
-		command            CreateLinkCommand
+		command            LinkInput
 		generator          string
 		repoErrors         []error
 		wantURL            string
@@ -36,21 +36,21 @@ func TestServiceCreateLink(t *testing.T) {
 	}{
 		{
 			name:          "normalizes explicit link",
-			command:       CreateLinkCommand{OriginalURL: "example.com", ShortName: testShortName},
+			command:       LinkInput{OriginalURL: "example.com", ShortName: testShortName},
 			wantURL:       testExampleURL,
 			wantCode:      testShortName,
 			wantRepoCalls: 1,
 		},
 		{
 			name:          "trims explicit short name",
-			command:       CreateLinkCommand{OriginalURL: testExampleURL, ShortName: " my-link "},
+			command:       LinkInput{OriginalURL: testExampleURL, ShortName: " my-link "},
 			wantURL:       testExampleURL,
 			wantCode:      testShortName,
 			wantRepoCalls: 1,
 		},
 		{
 			name:               "generates missing short name",
-			command:            CreateLinkCommand{OriginalURL: "https://example.com"},
+			command:            LinkInput{OriginalURL: "https://example.com"},
 			generator:          testGeneratedCode,
 			wantURL:            testExampleURL,
 			wantCode:           testGeneratedCode,
@@ -59,7 +59,7 @@ func TestServiceCreateLink(t *testing.T) {
 		},
 		{
 			name:      "retries generated code after collision",
-			command:   CreateLinkCommand{OriginalURL: testExampleURL},
+			command:   LinkInput{OriginalURL: testExampleURL},
 			generator: testGeneratedCode,
 			repoErrors: []error{
 				&FieldError{Field: fieldShortName, Err: ErrShortNameAlreadyUse},
@@ -108,17 +108,17 @@ func TestServiceCreateLink(t *testing.T) {
 func TestServiceCreateLinkRejectsInvalidInput(t *testing.T) {
 	tests := []struct {
 		name      string
-		command   CreateLinkCommand
+		command   LinkInput
 		wantField string
 	}{
 		{
 			name:      "invalid URL",
-			command:   CreateLinkCommand{OriginalURL: "ftp://example.com", ShortName: "my-link"},
+			command:   LinkInput{OriginalURL: "ftp://example.com", ShortName: "my-link"},
 			wantField: fieldOriginalURL,
 		},
 		{
 			name:      "invalid short name",
-			command:   CreateLinkCommand{OriginalURL: testExampleURL, ShortName: "bad name"},
+			command:   LinkInput{OriginalURL: testExampleURL, ShortName: "bad name"},
 			wantField: fieldShortName,
 		},
 	}
@@ -153,7 +153,7 @@ func TestServiceCreateLinkReturnsRepositoryError(t *testing.T) {
 		Return(LinkView{}, repoErr).
 		Once()
 
-	_, err := svc.CreateLink(t.Context(), CreateLinkCommand{
+	_, err := svc.CreateLink(t.Context(), LinkInput{
 		OriginalURL: testExampleURL,
 		ShortName:   testShortName,
 	})
@@ -175,7 +175,7 @@ func TestServiceCreateLinkExhaustsGeneratedCodes(t *testing.T) {
 			Err:   ErrShortNameAlreadyUse,
 		})
 
-	_, err := svc.CreateLink(t.Context(), CreateLinkCommand{
+	_, err := svc.CreateLink(t.Context(), LinkInput{
 		OriginalURL: testExampleURL,
 	})
 
@@ -200,7 +200,7 @@ func TestServiceCreateLinkDoesNotRetryNonCollisionFieldError(t *testing.T) {
 		Return(LinkView{}, fieldErr).
 		Once()
 
-	_, err := svc.CreateLink(t.Context(), CreateLinkCommand{
+	_, err := svc.CreateLink(t.Context(), LinkInput{
 		OriginalURL: testExampleURL,
 	})
 

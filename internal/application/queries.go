@@ -7,14 +7,8 @@ type Sort struct {
 	Asc   bool
 }
 
-// ListLinksQuery requests a page of links.
-type ListLinksQuery struct {
-	Range Range
-	Sort  Sort
-}
-
-// ListLinkVisitsQuery requests a page of link visits.
-type ListLinkVisitsQuery struct {
+// PageQuery requests a page of a collection in some order.
+type PageQuery struct {
 	Range Range
 	Sort  Sort
 }

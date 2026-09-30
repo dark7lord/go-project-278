@@ -9,25 +9,18 @@ import (
 )
 
 // CreateLink creates a new link with the given URL and optional short name.
-func (s *Service) CreateLink(ctx context.Context, cmd CreateLinkCommand) (LinkView, error) {
-	return s.saveLinkFields(ctx, cmd.OriginalURL, cmd.ShortName, s.linkWriter.CreateLink)
+func (s *Service) CreateLink(ctx context.Context, in LinkInput) (LinkView, error) {
+	return s.saveLinkFields(ctx, in, s.linkWriter.CreateLink)
 }
 
 // Redirect resolves a short name and records the visit.
-func (s *Service) Redirect(ctx context.Context, cmd RedirectCommand) (LinkView, error) {
-	link, err := s.GetLinkByShortName(ctx, cmd.ShortName)
+func (s *Service) Redirect(ctx context.Context, shortName string, visit Visit) (LinkView, error) {
+	link, err := s.GetLinkByShortName(ctx, shortName)
 	if err != nil {
 		return LinkView{}, err
 	}
 
-	if _, err := s.createLinkVisit(
-		ctx,
-		link.ID,
-		cmd.VisitMeta.IP,
-		cmd.VisitMeta.UserAgent,
-		cmd.VisitMeta.Referer,
-		cmd.Status,
-	); err != nil {
+	if _, err := s.visitRecorder.CreateLinkVisit(ctx, link.ID, visit); err != nil {
 		return LinkView{}, fmt.Errorf("record link visit: %w", err)
 	}
 
@@ -55,22 +48,22 @@ func (s *Service) GetLinkByShortName(ctx context.Context, shortName string) (Lin
 }
 
 // PageLinks retrieves a paginated page of links.
-func (s *Service) PageLinks(ctx context.Context, q ListLinksQuery) (RangePage[LinkView], error) {
-	page, err := s.linkReader.PageLinks(ctx, q)
-	if err != nil {
-		return RangePage[LinkView]{}, err
-	}
+func (s *Service) PageLinks(ctx context.Context, q PageQuery) (RangePage[LinkView], error) {
+	return s.linkReader.PageLinks(ctx, q)
+}
 
-	return page, nil
+// PageLinkVisits retrieves a paginated page of link visits.
+func (s *Service) PageLinkVisits(ctx context.Context, q PageQuery) (RangePage[VisitView], error) {
+	return s.visitReader.PageLinkVisits(ctx, q)
 }
 
 // UpdateLink updates an existing link.
-func (s *Service) UpdateLink(ctx context.Context, id int64, cmd UpdateLinkCommand) (LinkView, error) {
+func (s *Service) UpdateLink(ctx context.Context, id int64, in LinkInput) (LinkView, error) {
 	persist := func(ctx context.Context, normalizedURL, name string) (LinkView, error) {
 		return s.linkWriter.UpdateLink(ctx, id, normalizedURL, name)
 	}
 
-	return s.saveLinkFields(ctx, cmd.OriginalURL, cmd.ShortName, persist)
+	return s.saveLinkFields(ctx, in, persist)
 }
 
 // DeleteLink deletes a link by its ID.
@@ -87,29 +80,28 @@ func (s *Service) DeleteLink(ctx context.Context, id int64) (LinkView, error) {
 // them through persist, which differs only in the writer call per operation.
 func (s *Service) saveLinkFields(
 	ctx context.Context,
-	originalURL string,
-	shortName string,
+	in LinkInput,
 	persist func(ctx context.Context, normalizedURL, name string) (LinkView, error),
 ) (LinkView, error) {
-	normalized, err := domainlinks.NormalizeURL(originalURL)
+	normalized, err := domainlinks.NormalizeURL(in.OriginalURL)
 	if err != nil {
 		return LinkView{}, &FieldError{
 			Field: fieldOriginalURL,
-			Err:   fmt.Errorf("%w: %s", domainlinks.ErrInvalidURL, originalURL),
+			Err:   fmt.Errorf("%w: %s", domainlinks.ErrInvalidURL, in.OriginalURL),
 		}
 	}
 
-	if shortName == "" {
+	if in.ShortName == "" {
 		return s.withGeneratedShortName(ctx, func(ctx context.Context, name string) (LinkView, error) {
 			return persist(ctx, normalized, name)
 		})
 	}
 
-	code, err := domainlinks.NormalizeShortCode(shortName)
+	code, err := domainlinks.NormalizeShortCode(in.ShortName)
 	if err != nil {
 		return LinkView{}, &FieldError{
 			Field: fieldShortName,
-			Err:   fmt.Errorf("%w: %s", domainlinks.ErrInvalidShortCode, shortName),
+			Err:   fmt.Errorf("%w: %s", domainlinks.ErrInvalidShortCode, in.ShortName),
 		}
 	}
 
@@ -132,7 +124,7 @@ func (s *Service) withGeneratedShortName(
 	try func(ctx context.Context, shortName string) (LinkView, error),
 ) (LinkView, error) {
 	for attempt := 0; attempt < maxShortCodeAttempts; attempt++ {
-		link, err := try(ctx, s.generateShortCode())
+		link, err := try(ctx, s.shortCodeGenerator.Generate())
 		if err == nil {
 			return link, nil
 		}

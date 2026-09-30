@@ -25,7 +25,7 @@ func TestServicePageLinks(t *testing.T) {
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
-	page, err := svc.PageLinks(t.Context(), ListLinksQuery{Range: Range{First: 5, Last: 9}})
+	page, err := svc.PageLinks(t.Context(), PageQuery{Range: Range{First: 5, Last: 9}})
 
 	require.NoError(t, err)
 	assert.Equal(t, expected, page.Items)
@@ -40,7 +40,7 @@ func TestServicePageLinksPropagatesReaderError(t *testing.T) {
 		&fakeShortCodeGenerator{value: testShortCode},
 	)
 
-	_, err := svc.PageLinks(t.Context(), ListLinksQuery{Range: Range{First: 0, Last: 4}})
+	_, err := svc.PageLinks(t.Context(), PageQuery{Range: Range{First: 0, Last: 4}})
 
 	assert.ErrorIs(t, err, repoErr)
 }

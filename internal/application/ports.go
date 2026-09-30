@@ -9,7 +9,7 @@ import (
 type LinkReader interface {
 	GetLinkByID(ctx context.Context, id int64) (LinkView, error)
 	GetLinkByShortName(ctx context.Context, shortName string) (LinkView, error)
-	PageLinks(ctx context.Context, q ListLinksQuery) (RangePage[LinkView], error)
+	PageLinks(ctx context.Context, q PageQuery) (RangePage[LinkView], error)
 }
 
 // LinkWriter defines persistence operations for changing links.
@@ -21,18 +21,12 @@ type LinkWriter interface {
 
 // VisitReader defines persistence operations for reading visits.
 type VisitReader interface {
-	PageLinkVisits(ctx context.Context, q ListLinkVisitsQuery) (RangePage[VisitView], error)
+	PageLinkVisits(ctx context.Context, q PageQuery) (RangePage[VisitView], error)
 }
 
 // VisitRecorder defines persistence operations for recording visits.
 type VisitRecorder interface {
-	CreateLinkVisit(
-		ctx context.Context,
-		linkID int64,
-		ip, userAgent string,
-		referer *string,
-		status int32,
-	) (VisitView, error)
+	CreateLinkVisit(ctx context.Context, linkID int64, visit Visit) (VisitView, error)
 }
 
 // ServiceDeps contains the output ports used by the application service.
@@ -45,18 +39,18 @@ type ServiceDeps struct {
 
 // LinkUseCase defines the link operations required by the HTTP transport.
 type LinkUseCase interface {
-	CreateLink(ctx context.Context, cmd CreateLinkCommand) (LinkView, error)
-	Redirect(ctx context.Context, cmd RedirectCommand) (LinkView, error)
+	CreateLink(ctx context.Context, in LinkInput) (LinkView, error)
+	Redirect(ctx context.Context, shortName string, visit Visit) (LinkView, error)
 	GetLinkByID(ctx context.Context, id int64) (LinkView, error)
 	GetLinkByShortName(ctx context.Context, shortName string) (LinkView, error)
-	PageLinks(ctx context.Context, q ListLinksQuery) (RangePage[LinkView], error)
-	UpdateLink(ctx context.Context, id int64, cmd UpdateLinkCommand) (LinkView, error)
+	PageLinks(ctx context.Context, q PageQuery) (RangePage[LinkView], error)
+	UpdateLink(ctx context.Context, id int64, in LinkInput) (LinkView, error)
 	DeleteLink(ctx context.Context, id int64) (LinkView, error)
 }
 
 // VisitUseCase defines the visit operations required by the HTTP transport.
 type VisitUseCase interface {
-	PageLinkVisits(ctx context.Context, q ListLinkVisitsQuery) (RangePage[VisitView], error)
+	PageLinkVisits(ctx context.Context, q PageQuery) (RangePage[VisitView], error)
 }
 
 // UseCase combines the application use cases for a single HTTP adapter.

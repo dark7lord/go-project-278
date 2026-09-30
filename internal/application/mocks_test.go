@@ -299,8 +299,8 @@ func (_m *MockVisitRecorder) EXPECT() *MockVisitRecorder_Expecter {
 }
 
 // CreateLinkVisit provides a mock function for the type MockVisitRecorder
-func (_mock *MockVisitRecorder) CreateLinkVisit(ctx context.Context, linkID int64, ip string, userAgent string, referer *string, status int32) (VisitView, error) {
-	ret := _mock.Called(ctx, linkID, ip, userAgent, referer, status)
+func (_mock *MockVisitRecorder) CreateLinkVisit(ctx context.Context, linkID int64, visit Visit) (VisitView, error) {
+	ret := _mock.Called(ctx, linkID, visit)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateLinkVisit")
@@ -308,16 +308,16 @@ func (_mock *MockVisitRecorder) CreateLinkVisit(ctx context.Context, linkID int6
 
 	var r0 VisitView
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, string, string, *string, int32) (VisitView, error)); ok {
-		return returnFunc(ctx, linkID, ip, userAgent, referer, status)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, Visit) (VisitView, error)); ok {
+		return returnFunc(ctx, linkID, visit)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, string, string, *string, int32) VisitView); ok {
-		r0 = returnFunc(ctx, linkID, ip, userAgent, referer, status)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, Visit) VisitView); ok {
+		r0 = returnFunc(ctx, linkID, visit)
 	} else {
 		r0 = ret.Get(0).(VisitView)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, string, string, *string, int32) error); ok {
-		r1 = returnFunc(ctx, linkID, ip, userAgent, referer, status)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, Visit) error); ok {
+		r1 = returnFunc(ctx, linkID, visit)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -332,15 +332,12 @@ type MockVisitRecorder_CreateLinkVisit_Call struct {
 // CreateLinkVisit is a helper method to define mock.On call
 //   - ctx context.Context
 //   - linkID int64
-//   - ip string
-//   - userAgent string
-//   - referer *string
-//   - status int32
-func (_e *MockVisitRecorder_Expecter) CreateLinkVisit(ctx any, linkID any, ip any, userAgent any, referer any, status any) *MockVisitRecorder_CreateLinkVisit_Call {
-	return &MockVisitRecorder_CreateLinkVisit_Call{Call: _e.mock.On("CreateLinkVisit", ctx, linkID, ip, userAgent, referer, status)}
+//   - visit Visit
+func (_e *MockVisitRecorder_Expecter) CreateLinkVisit(ctx any, linkID any, visit any) *MockVisitRecorder_CreateLinkVisit_Call {
+	return &MockVisitRecorder_CreateLinkVisit_Call{Call: _e.mock.On("CreateLinkVisit", ctx, linkID, visit)}
 }
 
-func (_c *MockVisitRecorder_CreateLinkVisit_Call) Run(run func(ctx context.Context, linkID int64, ip string, userAgent string, referer *string, status int32)) *MockVisitRecorder_CreateLinkVisit_Call {
+func (_c *MockVisitRecorder_CreateLinkVisit_Call) Run(run func(ctx context.Context, linkID int64, visit Visit)) *MockVisitRecorder_CreateLinkVisit_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -350,29 +347,14 @@ func (_c *MockVisitRecorder_CreateLinkVisit_Call) Run(run func(ctx context.Conte
 		if args[1] != nil {
 			arg1 = args[1].(int64)
 		}
-		var arg2 string
+		var arg2 Visit
 		if args[2] != nil {
-			arg2 = args[2].(string)
-		}
-		var arg3 string
-		if args[3] != nil {
-			arg3 = args[3].(string)
-		}
-		var arg4 *string
-		if args[4] != nil {
-			arg4 = args[4].(*string)
-		}
-		var arg5 int32
-		if args[5] != nil {
-			arg5 = args[5].(int32)
+			arg2 = args[2].(Visit)
 		}
 		run(
 			arg0,
 			arg1,
 			arg2,
-			arg3,
-			arg4,
-			arg5,
 		)
 	})
 	return _c
@@ -383,7 +365,7 @@ func (_c *MockVisitRecorder_CreateLinkVisit_Call) Return(visitView VisitView, er
 	return _c
 }
 
-func (_c *MockVisitRecorder_CreateLinkVisit_Call) RunAndReturn(run func(ctx context.Context, linkID int64, ip string, userAgent string, referer *string, status int32) (VisitView, error)) *MockVisitRecorder_CreateLinkVisit_Call {
+func (_c *MockVisitRecorder_CreateLinkVisit_Call) RunAndReturn(run func(ctx context.Context, linkID int64, visit Visit) (VisitView, error)) *MockVisitRecorder_CreateLinkVisit_Call {
 	_c.Call.Return(run)
 	return _c
 }

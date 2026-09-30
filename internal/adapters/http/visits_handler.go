@@ -24,7 +24,7 @@ func (h *Handler) ListVisits(c *gin.Context) {
 
 	page, err := h.visitService.PageLinkVisits(
 		c.Request.Context(),
-		application.ListLinkVisitsQuery{Range: pageRange, Sort: sort},
+		application.PageQuery{Range: pageRange, Sort: sort},
 	)
 	if err != nil {
 		writeServiceError(c, err)

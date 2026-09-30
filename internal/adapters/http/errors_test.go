@@ -158,7 +158,7 @@ func TestHandlerLinkBindErrorsMapToUnprocessable(t *testing.T) {
 func TestHandlerCreateLinkFieldErrorMapsToUnprocessable(t *testing.T) {
 	linkService := NewMockLinkUseCase(t)
 	linkService.EXPECT().
-		CreateLink(mock.Anything, application.CreateLinkCommand{
+		CreateLink(mock.Anything, application.LinkInput{
 			OriginalURL: "ftp://example.com",
 			ShortName:   "ok-link",
 		}).
@@ -185,7 +185,7 @@ func TestHandlerCreateLinkFieldErrorMapsToUnprocessable(t *testing.T) {
 func TestHandlerUpdateLinkFieldErrorMapsToUnprocessable(t *testing.T) {
 	linkService := NewMockLinkUseCase(t)
 	linkService.EXPECT().
-		UpdateLink(mock.Anything, int64(1), application.UpdateLinkCommand{
+		UpdateLink(mock.Anything, int64(1), application.LinkInput{
 			OriginalURL: "https://example.com",
 			ShortName:   "bad/name",
 		}).
@@ -226,7 +226,7 @@ func TestHandlerCreateLinkHidesInternalError(t *testing.T) {
 	rawErr := errors.New("postgres: dial tcp 127.0.0.1:5432: connection refused")
 	linkService := NewMockLinkUseCase(t)
 	linkService.EXPECT().
-		CreateLink(mock.Anything, application.CreateLinkCommand{
+		CreateLink(mock.Anything, application.LinkInput{
 			OriginalURL: "https://boom.example",
 			ShortName:   "boomlink",
 		}).
@@ -268,7 +268,7 @@ func TestHandlerUpdateLinkHidesInternalError(t *testing.T) {
 	rawErr := errors.New("postgres: dial tcp 127.0.0.1:5432: connection refused")
 	linkService := NewMockLinkUseCase(t)
 	linkService.EXPECT().
-		UpdateLink(mock.Anything, int64(1), application.UpdateLinkCommand{
+		UpdateLink(mock.Anything, int64(1), application.LinkInput{
 			OriginalURL: "https://boom.example",
 			ShortName:   "boomlink",
 		}).

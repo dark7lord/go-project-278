@@ -64,7 +64,7 @@ func (r *LinkRepository) GetLinkByShortName(ctx context.Context, shortName strin
 // PageLinks retrieves a paginated page of links together with the total count.
 func (r *LinkRepository) PageLinks(
 	ctx context.Context,
-	q application.ListLinksQuery,
+	q application.PageQuery,
 ) (application.RangePage[application.LinkView], error) {
 	total, err := r.queries.CountLinks(ctx)
 	if err != nil {

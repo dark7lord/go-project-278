@@ -1,28 +1,16 @@
 package application
 
-// CreateLinkCommand represents the intent to create a new shortened link.
-type CreateLinkCommand struct {
+// LinkInput carries the fields a client sets on a link, on create and update.
+type LinkInput struct {
 	OriginalURL string
 	ShortName   string
 }
 
-// UpdateLinkCommand represents the intent to update an existing shortened link.
-type UpdateLinkCommand struct {
-	OriginalURL string
-	ShortName   string
-}
-
-// RedirectCommand describes a redirect request, its visit metadata and the
-// response status the visit is recorded with.
-type RedirectCommand struct {
-	ShortName string
-	VisitMeta VisitMeta
-	Status    int32
-}
-
-// VisitMeta contains metadata captured at the redirect boundary.
-type VisitMeta struct {
+// Visit describes one followed link: who came, from where, and the status the
+// redirect answered with.
+type Visit struct {
 	IP        string
 	UserAgent string
 	Referer   *string
+	Status    int32
 }
