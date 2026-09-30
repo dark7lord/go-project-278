@@ -76,13 +76,13 @@ func TestServiceCreateLink(t *testing.T) {
 			writer := NewMockLinkStore(t)
 			generator := &fakeGenerator{value: tt.generator}
 			svc := NewService(writer, nil, generator.Generate)
-			expected := LinkView{
+			expected := Link{
 				OriginalURL: tt.wantURL,
 				ShortName:   tt.wantCode,
 			}
 			call := writer.EXPECT().CreateLink(mock.Anything, tt.wantURL, tt.wantCode)
 			if len(tt.repoErrors) > 0 {
-				call.Return(LinkView{}, tt.repoErrors[0]).Once()
+				call.Return(Link{}, tt.repoErrors[0]).Once()
 				writer.EXPECT().
 					CreateLink(mock.Anything, tt.wantURL, tt.wantCode).
 					Return(expected, nil).
@@ -141,7 +141,7 @@ func TestServiceCreateLinkReturnsRepositoryError(t *testing.T) {
 	svc := NewService(writer, nil, fixedCode)
 	writer.EXPECT().
 		CreateLink(mock.Anything, testExampleURL, testShortName).
-		Return(LinkView{}, repoErr).
+		Return(Link{}, repoErr).
 		Once()
 
 	_, err := svc.CreateLink(t.Context(), LinkInput{
@@ -158,7 +158,7 @@ func TestServiceCreateLinkExhaustsGeneratedCodes(t *testing.T) {
 	svc := NewService(writer, nil, generator.Generate)
 	writer.EXPECT().
 		CreateLink(mock.Anything, testExampleURL, testGeneratedCode).
-		Return(LinkView{}, &FieldError{
+		Return(Link{}, &FieldError{
 			Field: fieldShortName,
 			Err:   ErrShortNameAlreadyUse,
 		})
@@ -182,7 +182,7 @@ func TestServiceCreateLinkDoesNotRetryNonCollisionFieldError(t *testing.T) {
 	}
 	writer.EXPECT().
 		CreateLink(mock.Anything, testExampleURL, testGeneratedCode).
-		Return(LinkView{}, fieldErr).
+		Return(Link{}, fieldErr).
 		Once()
 
 	_, err := svc.CreateLink(t.Context(), LinkInput{

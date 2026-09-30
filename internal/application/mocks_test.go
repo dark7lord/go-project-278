@@ -47,22 +47,22 @@ func (_m *MockLinkStore) EXPECT() *MockLinkStore_Expecter {
 }
 
 // CreateLink provides a mock function for the type MockLinkStore
-func (_mock *MockLinkStore) CreateLink(ctx context.Context, originalURL string, shortName string) (LinkView, error) {
+func (_mock *MockLinkStore) CreateLink(ctx context.Context, originalURL string, shortName string) (Link, error) {
 	ret := _mock.Called(ctx, originalURL, shortName)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateLink")
 	}
 
-	var r0 LinkView
+	var r0 Link
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string) (LinkView, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string) (Link, error)); ok {
 		return returnFunc(ctx, originalURL, shortName)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string) LinkView); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string) Link); ok {
 		r0 = returnFunc(ctx, originalURL, shortName)
 	} else {
-		r0 = ret.Get(0).(LinkView)
+		r0 = ret.Get(0).(Link)
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = returnFunc(ctx, originalURL, shortName)
@@ -108,33 +108,33 @@ func (_c *MockLinkStore_CreateLink_Call) Run(run func(ctx context.Context, origi
 	return _c
 }
 
-func (_c *MockLinkStore_CreateLink_Call) Return(linkView LinkView, err error) *MockLinkStore_CreateLink_Call {
-	_c.Call.Return(linkView, err)
+func (_c *MockLinkStore_CreateLink_Call) Return(link Link, err error) *MockLinkStore_CreateLink_Call {
+	_c.Call.Return(link, err)
 	return _c
 }
 
-func (_c *MockLinkStore_CreateLink_Call) RunAndReturn(run func(ctx context.Context, originalURL string, shortName string) (LinkView, error)) *MockLinkStore_CreateLink_Call {
+func (_c *MockLinkStore_CreateLink_Call) RunAndReturn(run func(ctx context.Context, originalURL string, shortName string) (Link, error)) *MockLinkStore_CreateLink_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // DeleteLink provides a mock function for the type MockLinkStore
-func (_mock *MockLinkStore) DeleteLink(ctx context.Context, id int64) (LinkView, error) {
+func (_mock *MockLinkStore) DeleteLink(ctx context.Context, id int64) (Link, error) {
 	ret := _mock.Called(ctx, id)
 
 	if len(ret) == 0 {
 		panic("no return value specified for DeleteLink")
 	}
 
-	var r0 LinkView
+	var r0 Link
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) (LinkView, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) (Link, error)); ok {
 		return returnFunc(ctx, id)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) LinkView); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) Link); ok {
 		r0 = returnFunc(ctx, id)
 	} else {
-		r0 = ret.Get(0).(LinkView)
+		r0 = ret.Get(0).(Link)
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, int64) error); ok {
 		r1 = returnFunc(ctx, id)
@@ -174,33 +174,33 @@ func (_c *MockLinkStore_DeleteLink_Call) Run(run func(ctx context.Context, id in
 	return _c
 }
 
-func (_c *MockLinkStore_DeleteLink_Call) Return(linkView LinkView, err error) *MockLinkStore_DeleteLink_Call {
-	_c.Call.Return(linkView, err)
+func (_c *MockLinkStore_DeleteLink_Call) Return(link Link, err error) *MockLinkStore_DeleteLink_Call {
+	_c.Call.Return(link, err)
 	return _c
 }
 
-func (_c *MockLinkStore_DeleteLink_Call) RunAndReturn(run func(ctx context.Context, id int64) (LinkView, error)) *MockLinkStore_DeleteLink_Call {
+func (_c *MockLinkStore_DeleteLink_Call) RunAndReturn(run func(ctx context.Context, id int64) (Link, error)) *MockLinkStore_DeleteLink_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetLinkByID provides a mock function for the type MockLinkStore
-func (_mock *MockLinkStore) GetLinkByID(ctx context.Context, id int64) (LinkView, error) {
+func (_mock *MockLinkStore) GetLinkByID(ctx context.Context, id int64) (Link, error) {
 	ret := _mock.Called(ctx, id)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetLinkByID")
 	}
 
-	var r0 LinkView
+	var r0 Link
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) (LinkView, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) (Link, error)); ok {
 		return returnFunc(ctx, id)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) LinkView); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) Link); ok {
 		r0 = returnFunc(ctx, id)
 	} else {
-		r0 = ret.Get(0).(LinkView)
+		r0 = ret.Get(0).(Link)
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, int64) error); ok {
 		r1 = returnFunc(ctx, id)
@@ -240,33 +240,33 @@ func (_c *MockLinkStore_GetLinkByID_Call) Run(run func(ctx context.Context, id i
 	return _c
 }
 
-func (_c *MockLinkStore_GetLinkByID_Call) Return(linkView LinkView, err error) *MockLinkStore_GetLinkByID_Call {
-	_c.Call.Return(linkView, err)
+func (_c *MockLinkStore_GetLinkByID_Call) Return(link Link, err error) *MockLinkStore_GetLinkByID_Call {
+	_c.Call.Return(link, err)
 	return _c
 }
 
-func (_c *MockLinkStore_GetLinkByID_Call) RunAndReturn(run func(ctx context.Context, id int64) (LinkView, error)) *MockLinkStore_GetLinkByID_Call {
+func (_c *MockLinkStore_GetLinkByID_Call) RunAndReturn(run func(ctx context.Context, id int64) (Link, error)) *MockLinkStore_GetLinkByID_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetLinkByShortName provides a mock function for the type MockLinkStore
-func (_mock *MockLinkStore) GetLinkByShortName(ctx context.Context, shortName string) (LinkView, error) {
+func (_mock *MockLinkStore) GetLinkByShortName(ctx context.Context, shortName string) (Link, error) {
 	ret := _mock.Called(ctx, shortName)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetLinkByShortName")
 	}
 
-	var r0 LinkView
+	var r0 Link
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (LinkView, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (Link, error)); ok {
 		return returnFunc(ctx, shortName)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) LinkView); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) Link); ok {
 		r0 = returnFunc(ctx, shortName)
 	} else {
-		r0 = ret.Get(0).(LinkView)
+		r0 = ret.Get(0).(Link)
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = returnFunc(ctx, shortName)
@@ -306,33 +306,33 @@ func (_c *MockLinkStore_GetLinkByShortName_Call) Run(run func(ctx context.Contex
 	return _c
 }
 
-func (_c *MockLinkStore_GetLinkByShortName_Call) Return(linkView LinkView, err error) *MockLinkStore_GetLinkByShortName_Call {
-	_c.Call.Return(linkView, err)
+func (_c *MockLinkStore_GetLinkByShortName_Call) Return(link Link, err error) *MockLinkStore_GetLinkByShortName_Call {
+	_c.Call.Return(link, err)
 	return _c
 }
 
-func (_c *MockLinkStore_GetLinkByShortName_Call) RunAndReturn(run func(ctx context.Context, shortName string) (LinkView, error)) *MockLinkStore_GetLinkByShortName_Call {
+func (_c *MockLinkStore_GetLinkByShortName_Call) RunAndReturn(run func(ctx context.Context, shortName string) (Link, error)) *MockLinkStore_GetLinkByShortName_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // PageLinks provides a mock function for the type MockLinkStore
-func (_mock *MockLinkStore) PageLinks(ctx context.Context, q PageQuery) (RangePage[LinkView], error) {
+func (_mock *MockLinkStore) PageLinks(ctx context.Context, q PageQuery) (RangePage[Link], error) {
 	ret := _mock.Called(ctx, q)
 
 	if len(ret) == 0 {
 		panic("no return value specified for PageLinks")
 	}
 
-	var r0 RangePage[LinkView]
+	var r0 RangePage[Link]
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, PageQuery) (RangePage[LinkView], error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, PageQuery) (RangePage[Link], error)); ok {
 		return returnFunc(ctx, q)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, PageQuery) RangePage[LinkView]); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, PageQuery) RangePage[Link]); ok {
 		r0 = returnFunc(ctx, q)
 	} else {
-		r0 = ret.Get(0).(RangePage[LinkView])
+		r0 = ret.Get(0).(RangePage[Link])
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, PageQuery) error); ok {
 		r1 = returnFunc(ctx, q)
@@ -372,33 +372,33 @@ func (_c *MockLinkStore_PageLinks_Call) Run(run func(ctx context.Context, q Page
 	return _c
 }
 
-func (_c *MockLinkStore_PageLinks_Call) Return(rangePage RangePage[LinkView], err error) *MockLinkStore_PageLinks_Call {
+func (_c *MockLinkStore_PageLinks_Call) Return(rangePage RangePage[Link], err error) *MockLinkStore_PageLinks_Call {
 	_c.Call.Return(rangePage, err)
 	return _c
 }
 
-func (_c *MockLinkStore_PageLinks_Call) RunAndReturn(run func(ctx context.Context, q PageQuery) (RangePage[LinkView], error)) *MockLinkStore_PageLinks_Call {
+func (_c *MockLinkStore_PageLinks_Call) RunAndReturn(run func(ctx context.Context, q PageQuery) (RangePage[Link], error)) *MockLinkStore_PageLinks_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // UpdateLink provides a mock function for the type MockLinkStore
-func (_mock *MockLinkStore) UpdateLink(ctx context.Context, id int64, originalURL string, shortName string) (LinkView, error) {
+func (_mock *MockLinkStore) UpdateLink(ctx context.Context, id int64, originalURL string, shortName string) (Link, error) {
 	ret := _mock.Called(ctx, id, originalURL, shortName)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateLink")
 	}
 
-	var r0 LinkView
+	var r0 Link
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, string, string) (LinkView, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, string, string) (Link, error)); ok {
 		return returnFunc(ctx, id, originalURL, shortName)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, string, string) LinkView); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, string, string) Link); ok {
 		r0 = returnFunc(ctx, id, originalURL, shortName)
 	} else {
-		r0 = ret.Get(0).(LinkView)
+		r0 = ret.Get(0).(Link)
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, string, string) error); ok {
 		r1 = returnFunc(ctx, id, originalURL, shortName)
@@ -450,12 +450,12 @@ func (_c *MockLinkStore_UpdateLink_Call) Run(run func(ctx context.Context, id in
 	return _c
 }
 
-func (_c *MockLinkStore_UpdateLink_Call) Return(linkView LinkView, err error) *MockLinkStore_UpdateLink_Call {
-	_c.Call.Return(linkView, err)
+func (_c *MockLinkStore_UpdateLink_Call) Return(link Link, err error) *MockLinkStore_UpdateLink_Call {
+	_c.Call.Return(link, err)
 	return _c
 }
 
-func (_c *MockLinkStore_UpdateLink_Call) RunAndReturn(run func(ctx context.Context, id int64, originalURL string, shortName string) (LinkView, error)) *MockLinkStore_UpdateLink_Call {
+func (_c *MockLinkStore_UpdateLink_Call) RunAndReturn(run func(ctx context.Context, id int64, originalURL string, shortName string) (Link, error)) *MockLinkStore_UpdateLink_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -497,24 +497,24 @@ func (_m *MockVisitStore) EXPECT() *MockVisitStore_Expecter {
 }
 
 // CreateLinkVisit provides a mock function for the type MockVisitStore
-func (_mock *MockVisitStore) CreateLinkVisit(ctx context.Context, linkID int64, visit Visit) (VisitView, error) {
+func (_mock *MockVisitStore) CreateLinkVisit(ctx context.Context, linkID int64, visit VisitInput) (Visit, error) {
 	ret := _mock.Called(ctx, linkID, visit)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateLinkVisit")
 	}
 
-	var r0 VisitView
+	var r0 Visit
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, Visit) (VisitView, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, VisitInput) (Visit, error)); ok {
 		return returnFunc(ctx, linkID, visit)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, Visit) VisitView); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, VisitInput) Visit); ok {
 		r0 = returnFunc(ctx, linkID, visit)
 	} else {
-		r0 = ret.Get(0).(VisitView)
+		r0 = ret.Get(0).(Visit)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, Visit) error); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, VisitInput) error); ok {
 		r1 = returnFunc(ctx, linkID, visit)
 	} else {
 		r1 = ret.Error(1)
@@ -530,12 +530,12 @@ type MockVisitStore_CreateLinkVisit_Call struct {
 // CreateLinkVisit is a helper method to define mock.On call
 //   - ctx context.Context
 //   - linkID int64
-//   - visit Visit
+//   - visit VisitInput
 func (_e *MockVisitStore_Expecter) CreateLinkVisit(ctx any, linkID any, visit any) *MockVisitStore_CreateLinkVisit_Call {
 	return &MockVisitStore_CreateLinkVisit_Call{Call: _e.mock.On("CreateLinkVisit", ctx, linkID, visit)}
 }
 
-func (_c *MockVisitStore_CreateLinkVisit_Call) Run(run func(ctx context.Context, linkID int64, visit Visit)) *MockVisitStore_CreateLinkVisit_Call {
+func (_c *MockVisitStore_CreateLinkVisit_Call) Run(run func(ctx context.Context, linkID int64, visit VisitInput)) *MockVisitStore_CreateLinkVisit_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -545,9 +545,9 @@ func (_c *MockVisitStore_CreateLinkVisit_Call) Run(run func(ctx context.Context,
 		if args[1] != nil {
 			arg1 = args[1].(int64)
 		}
-		var arg2 Visit
+		var arg2 VisitInput
 		if args[2] != nil {
-			arg2 = args[2].(Visit)
+			arg2 = args[2].(VisitInput)
 		}
 		run(
 			arg0,
@@ -558,33 +558,33 @@ func (_c *MockVisitStore_CreateLinkVisit_Call) Run(run func(ctx context.Context,
 	return _c
 }
 
-func (_c *MockVisitStore_CreateLinkVisit_Call) Return(visitView VisitView, err error) *MockVisitStore_CreateLinkVisit_Call {
-	_c.Call.Return(visitView, err)
+func (_c *MockVisitStore_CreateLinkVisit_Call) Return(visit1 Visit, err error) *MockVisitStore_CreateLinkVisit_Call {
+	_c.Call.Return(visit1, err)
 	return _c
 }
 
-func (_c *MockVisitStore_CreateLinkVisit_Call) RunAndReturn(run func(ctx context.Context, linkID int64, visit Visit) (VisitView, error)) *MockVisitStore_CreateLinkVisit_Call {
+func (_c *MockVisitStore_CreateLinkVisit_Call) RunAndReturn(run func(ctx context.Context, linkID int64, visit VisitInput) (Visit, error)) *MockVisitStore_CreateLinkVisit_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // PageLinkVisits provides a mock function for the type MockVisitStore
-func (_mock *MockVisitStore) PageLinkVisits(ctx context.Context, q PageQuery) (RangePage[VisitView], error) {
+func (_mock *MockVisitStore) PageLinkVisits(ctx context.Context, q PageQuery) (RangePage[Visit], error) {
 	ret := _mock.Called(ctx, q)
 
 	if len(ret) == 0 {
 		panic("no return value specified for PageLinkVisits")
 	}
 
-	var r0 RangePage[VisitView]
+	var r0 RangePage[Visit]
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, PageQuery) (RangePage[VisitView], error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, PageQuery) (RangePage[Visit], error)); ok {
 		return returnFunc(ctx, q)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, PageQuery) RangePage[VisitView]); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, PageQuery) RangePage[Visit]); ok {
 		r0 = returnFunc(ctx, q)
 	} else {
-		r0 = ret.Get(0).(RangePage[VisitView])
+		r0 = ret.Get(0).(RangePage[Visit])
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, PageQuery) error); ok {
 		r1 = returnFunc(ctx, q)
@@ -624,12 +624,12 @@ func (_c *MockVisitStore_PageLinkVisits_Call) Run(run func(ctx context.Context, 
 	return _c
 }
 
-func (_c *MockVisitStore_PageLinkVisits_Call) Return(rangePage RangePage[VisitView], err error) *MockVisitStore_PageLinkVisits_Call {
+func (_c *MockVisitStore_PageLinkVisits_Call) Return(rangePage RangePage[Visit], err error) *MockVisitStore_PageLinkVisits_Call {
 	_c.Call.Return(rangePage, err)
 	return _c
 }
 
-func (_c *MockVisitStore_PageLinkVisits_Call) RunAndReturn(run func(ctx context.Context, q PageQuery) (RangePage[VisitView], error)) *MockVisitStore_PageLinkVisits_Call {
+func (_c *MockVisitStore_PageLinkVisits_Call) RunAndReturn(run func(ctx context.Context, q PageQuery) (RangePage[Visit], error)) *MockVisitStore_PageLinkVisits_Call {
 	_c.Call.Return(run)
 	return _c
 }

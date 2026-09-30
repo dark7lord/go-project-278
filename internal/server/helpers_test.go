@@ -140,8 +140,8 @@ func setupTestTx(t *testing.T, td *testDB) *testDB {
 }
 
 // foundVisit is a visit from ip answered with a redirect.
-func foundVisit(ip string) application.Visit {
-	return application.Visit{IP: ip, UserAgent: "agent", Status: int32(http.StatusFound)}
+func foundVisit(ip string) application.VisitInput {
+	return application.VisitInput{IP: ip, UserAgent: "agent", Status: int32(http.StatusFound)}
 }
 
 func linkFactory(i int) db.Link {
@@ -196,8 +196,8 @@ type linkResponse struct {
 	ShortURL    string `json:"short_url"`
 }
 
-func (r linkResponse) linkView() application.LinkView {
-	return application.LinkView{
+func (r linkResponse) appLink() application.Link {
+	return application.Link{
 		ID:          r.ID,
 		OriginalURL: r.OriginalURL,
 		ShortName:   r.ShortName,

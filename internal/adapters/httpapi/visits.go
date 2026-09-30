@@ -51,7 +51,7 @@ type visitResponse struct {
 	Status int32   `json:"status"`
 }
 
-func toVisitResponse(visit application.VisitView) visitResponse {
+func toVisitResponse(visit application.Visit) visitResponse {
 	return visitResponse{
 		ID:        visit.ID,
 		LinkID:    visit.LinkID,

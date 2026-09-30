@@ -21,8 +21,8 @@ func TestHandlerListLinksRangeMapsRequest(t *testing.T) {
 	linkService := NewMockUseCase(t)
 	linkService.EXPECT().
 		PageLinks(mock.Anything, linksQuery(5, 9, application.Sort{})).
-		Return(application.RangePage[application.LinkView]{
-			Items: make([]application.LinkView, 5),
+		Return(application.RangePage[application.Link]{
+			Items: make([]application.Link, 5),
 			First: 5,
 			Total: 10,
 		}, nil).
@@ -45,8 +45,8 @@ func TestHandlerListLinksRangeUnsatisfiable(t *testing.T) {
 	linkService := NewMockUseCase(t)
 	linkService.EXPECT().
 		PageLinks(mock.Anything, linksQuery(100, 200, application.Sort{})).
-		Return(application.RangePage[application.LinkView]{
-			Items: []application.LinkView{},
+		Return(application.RangePage[application.Link]{
+			Items: []application.Link{},
 			First: 100,
 			Total: 5,
 		}, nil).
@@ -68,10 +68,10 @@ func TestHandlerListLinksRangeUnsatisfiable(t *testing.T) {
 func TestHandlerListLinksRangeEmptyCollection(t *testing.T) {
 	tests := []struct {
 		name  string
-		items []application.LinkView
+		items []application.Link
 	}{
 		{name: "nil items", items: nil},
-		{name: "empty items", items: []application.LinkView{}},
+		{name: "empty items", items: []application.Link{}},
 	}
 
 	for _, tt := range tests {
@@ -80,7 +80,7 @@ func TestHandlerListLinksRangeEmptyCollection(t *testing.T) {
 			linkService.EXPECT().
 				PageLinks(mock.Anything, linksQuery(0, 4, application.Sort{})).
 				Return(
-					application.RangePage[application.LinkView]{
+					application.RangePage[application.Link]{
 						Items: tt.items,
 						First: 0,
 						Total: 0,
@@ -109,7 +109,7 @@ func TestHandlerListLinksRangeEmptyItems(t *testing.T) {
 	linkService := NewMockUseCase(t)
 	linkService.EXPECT().
 		PageLinks(mock.Anything, linksQuery(5, 9, application.Sort{})).
-		Return(application.RangePage[application.LinkView]{Items: []application.LinkView{}, First: 5, Total: 10}, nil).
+		Return(application.RangePage[application.Link]{Items: []application.Link{}, First: 5, Total: 10}, nil).
 		Once()
 	handler := newTestHandler(linkService)
 
@@ -125,8 +125,8 @@ func TestHandlerListLinksCutsRangeToMaximumPageSize(t *testing.T) {
 	linkService := NewMockUseCase(t)
 	linkService.EXPECT().
 		PageLinks(mock.Anything, linksQuery(10, 10+firstPageLast, application.Sort{})).
-		Return(application.RangePage[application.LinkView]{
-			Items: make([]application.LinkView, maxPageSize),
+		Return(application.RangePage[application.Link]{
+			Items: make([]application.Link, maxPageSize),
 			First: 10,
 			Total: 5000,
 		}, nil).
@@ -182,7 +182,7 @@ func TestHandlerListLinksRangeSortMapsRequest(t *testing.T) {
 			9,
 			application.Sort{Field: "short_name", Asc: true},
 		)).
-		Return(application.RangePage[application.LinkView]{Items: make([]application.LinkView, 5), First: 5, Total: 10}, nil).
+		Return(application.RangePage[application.Link]{Items: make([]application.Link, 5), First: 5, Total: 10}, nil).
 		Once()
 	handler := newTestHandler(linkService)
 
@@ -206,7 +206,7 @@ func TestHandlerListLinksSortWithoutRangeSortsFirstPage(t *testing.T) {
 			firstPageLast,
 			application.Sort{Field: "short_name", Asc: true},
 		)).
-		Return(application.RangePage[application.LinkView]{Items: make([]application.LinkView, 3), Total: 3}, nil).
+		Return(application.RangePage[application.Link]{Items: make([]application.Link, 3), Total: 3}, nil).
 		Once()
 	handler := newTestHandler(linkService)
 
@@ -260,8 +260,8 @@ func TestHandlerListVisitsRangeMapsRequest(t *testing.T) {
 	visitService.EXPECT().
 		PageLinkVisits(mock.Anything, visitsQuery(5, 9, application.Sort{})).
 		Return(
-			application.RangePage[application.VisitView]{
-				Items: make([]application.VisitView, 5),
+			application.RangePage[application.Visit]{
+				Items: make([]application.Visit, 5),
 				First: 5,
 				Total: 10,
 			},
@@ -282,7 +282,7 @@ func TestHandlerListLinksEmptyCollection(t *testing.T) {
 	linkService := NewMockUseCase(t)
 	linkService.EXPECT().
 		PageLinks(mock.Anything, linksQuery(0, firstPageLast, application.Sort{})).
-		Return(application.RangePage[application.LinkView]{}, nil).
+		Return(application.RangePage[application.Link]{}, nil).
 		Once()
 	handler := newTestHandler(linkService)
 
@@ -304,8 +304,8 @@ func TestHandlerListVisitsRangeSortMapsRequest(t *testing.T) {
 			application.Sort{Field: "created_at", Asc: false},
 		)).
 		Return(
-			application.RangePage[application.VisitView]{
-				Items: make([]application.VisitView, 5),
+			application.RangePage[application.Visit]{
+				Items: make([]application.Visit, 5),
 				First: 0,
 				Total: 5,
 			},
@@ -329,10 +329,10 @@ func TestHandlerListVisitsRangeSortMapsRequest(t *testing.T) {
 func TestHandlerListVisitsRangeEmptyCollection(t *testing.T) {
 	tests := []struct {
 		name  string
-		items []application.VisitView
+		items []application.Visit
 	}{
 		{name: "nil items", items: nil},
-		{name: "empty items", items: []application.VisitView{}},
+		{name: "empty items", items: []application.Visit{}},
 	}
 
 	for _, tt := range tests {
@@ -341,7 +341,7 @@ func TestHandlerListVisitsRangeEmptyCollection(t *testing.T) {
 			visitService.EXPECT().
 				PageLinkVisits(mock.Anything, visitsQuery(0, 4, application.Sort{})).
 				Return(
-					application.RangePage[application.VisitView]{
+					application.RangePage[application.Visit]{
 						Items: tt.items,
 						First: 0,
 						Total: 0,
@@ -370,7 +370,7 @@ func TestHandlerListVisitsEmptyCollection(t *testing.T) {
 	visitService := NewMockUseCase(t)
 	visitService.EXPECT().
 		PageLinkVisits(mock.Anything, visitsQuery(0, firstPageLast, application.Sort{})).
-		Return(application.RangePage[application.VisitView]{}, nil).
+		Return(application.RangePage[application.Visit]{}, nil).
 		Once()
 	handler := newTestHandler(visitService)
 
@@ -384,7 +384,7 @@ func TestHandlerListVisitsEmptyCollection(t *testing.T) {
 }
 
 func TestHandlerListLinksMapsResponseContract(t *testing.T) {
-	link := application.LinkView{
+	link := application.Link{
 		ID:          7,
 		OriginalURL: testExampleURL,
 		ShortName:   "target",
@@ -392,7 +392,7 @@ func TestHandlerListLinksMapsResponseContract(t *testing.T) {
 	linkService := NewMockUseCase(t)
 	linkService.EXPECT().
 		PageLinks(mock.Anything, linksQuery(0, firstPageLast, application.Sort{})).
-		Return(application.RangePage[application.LinkView]{Items: []application.LinkView{link}, Total: 1}, nil).
+		Return(application.RangePage[application.Link]{Items: []application.Link{link}, Total: 1}, nil).
 		Once()
 	handler := newTestHandler(linkService)
 
@@ -416,7 +416,7 @@ func TestHandlerListLinksMapsResponseContract(t *testing.T) {
 }
 
 func TestHandlerListVisitsMapsResponseContract(t *testing.T) {
-	visit := application.VisitView{
+	visit := application.Visit{
 		ID:        7,
 		LinkID:    42,
 		CreatedAt: time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC),
@@ -427,7 +427,7 @@ func TestHandlerListVisitsMapsResponseContract(t *testing.T) {
 	visitService := NewMockUseCase(t)
 	visitService.EXPECT().
 		PageLinkVisits(mock.Anything, visitsQuery(0, firstPageLast, application.Sort{})).
-		Return(application.RangePage[application.VisitView]{Items: []application.VisitView{visit}, Total: 1}, nil).
+		Return(application.RangePage[application.Visit]{Items: []application.Visit{visit}, Total: 1}, nil).
 		Once()
 	handler := newTestHandler(visitService)
 
@@ -459,8 +459,8 @@ func TestHandlerListLinksRangeHeaderAnswersPartialContent(t *testing.T) {
 		PageLinks(mock.Anything, application.PageQuery{
 			Range: application.Range{Suffix: true, Length: 2},
 		}).
-		Return(application.RangePage[application.LinkView]{
-			Items: make([]application.LinkView, 2),
+		Return(application.RangePage[application.Link]{
+			Items: make([]application.Link, 2),
 			First: 8,
 			Total: 10,
 		}, nil).
@@ -481,8 +481,8 @@ func TestHandlerListVisitsIgnoresForeignRangeUnit(t *testing.T) {
 	visitService := NewMockUseCase(t)
 	visitService.EXPECT().
 		PageLinkVisits(mock.Anything, visitsQuery(0, firstPageLast, application.Sort{})).
-		Return(application.RangePage[application.VisitView]{
-			Items: make([]application.VisitView, 3),
+		Return(application.RangePage[application.Visit]{
+			Items: make([]application.Visit, 3),
 			Total: 3,
 		}, nil).
 		Once()

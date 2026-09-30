@@ -15,12 +15,12 @@ import (
 func TestHandlerRedirectMapsVisitMetadata(t *testing.T) {
 	linkService := NewMockUseCase(t)
 	linkService.EXPECT().
-		Redirect(mock.Anything, "target", application.Visit{
+		Redirect(mock.Anything, "target", application.VisitInput{
 			IP:        "192.0.2.1",
 			UserAgent: "test-agent",
 			Status:    int32(http.StatusFound),
 		}).
-		Return(application.LinkView{OriginalURL: testExampleURL}, nil).
+		Return(application.Link{OriginalURL: testExampleURL}, nil).
 		Once()
 	handler := newTestHandler(linkService)
 
@@ -40,7 +40,7 @@ func TestHandlerCreateLinkBuildsShortURL(t *testing.T) {
 			OriginalURL: testExampleURL,
 			ShortName:   "example",
 		}).
-		Return(application.LinkView{
+		Return(application.Link{
 			ID:          7,
 			OriginalURL: testExampleURL,
 			ShortName:   "example",

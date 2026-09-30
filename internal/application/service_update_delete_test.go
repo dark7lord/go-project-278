@@ -11,7 +11,7 @@ import (
 
 func TestServiceUpdateLink(t *testing.T) {
 	writer := NewMockLinkStore(t)
-	expected := LinkView{
+	expected := Link{
 		ID:          7,
 		OriginalURL: "https://updated.com",
 		ShortName:   "updated-link",
@@ -33,7 +33,7 @@ func TestServiceUpdateLink(t *testing.T) {
 
 func TestServiceUpdateLinkTrimsShortName(t *testing.T) {
 	writer := NewMockLinkStore(t)
-	expected := LinkView{
+	expected := Link{
 		ID:          7,
 		OriginalURL: "https://updated.com",
 		ShortName:   "updated-link",
@@ -71,7 +71,7 @@ func TestServiceUpdateLinkRejectsInvalidURL(t *testing.T) {
 func TestServiceUpdateLinkGeneratesShortName(t *testing.T) {
 	writer := NewMockLinkStore(t)
 	generator := &fakeGenerator{value: "test-code"}
-	expected := LinkView{
+	expected := Link{
 		ID:          7,
 		OriginalURL: testOKURL,
 		ShortName:   "test-code",
@@ -98,7 +98,7 @@ func TestServiceUpdateLinkExhaustsGeneratedCodes(t *testing.T) {
 	svc := NewService(writer, nil, generator.Generate)
 	writer.EXPECT().
 		UpdateLink(mock.Anything, int64(7), testOKURL, testGeneratedCode).
-		Return(LinkView{}, &FieldError{Field: fieldShortName, Err: ErrShortNameAlreadyUse})
+		Return(Link{}, &FieldError{Field: fieldShortName, Err: ErrShortNameAlreadyUse})
 
 	_, err := svc.UpdateLink(t.Context(), 7, LinkInput{
 		OriginalURL: testOKURL,
@@ -112,7 +112,7 @@ func TestServiceUpdateLinkExhaustsGeneratedCodes(t *testing.T) {
 
 func TestServiceDeleteLink(t *testing.T) {
 	writer := NewMockLinkStore(t)
-	expected := LinkView{
+	expected := Link{
 		ID:        7,
 		ShortName: testTargetName,
 	}
@@ -133,7 +133,7 @@ func TestServiceDeleteLinkWrapsRepositoryError(t *testing.T) {
 	writer := NewMockLinkStore(t)
 	writer.EXPECT().
 		DeleteLink(mock.Anything, int64(1)).
-		Return(LinkView{}, repoErr).
+		Return(Link{}, repoErr).
 		Once()
 	svc := NewService(writer, nil, fixedCode)
 

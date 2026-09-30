@@ -129,7 +129,7 @@ func (h *Handler) Redirect(c *gin.Context) {
 		referer = &ref
 	}
 
-	link, err := h.service.Redirect(c.Request.Context(), c.Param("code"), application.Visit{
+	link, err := h.service.Redirect(c.Request.Context(), c.Param("code"), application.VisitInput{
 		IP:        c.ClientIP(),
 		UserAgent: c.Request.UserAgent(),
 		Referer:   referer,
@@ -183,7 +183,7 @@ type linkResponse struct {
 	ShortURL    string `json:"short_url"`
 }
 
-func (h *Handler) linkResponse(link application.LinkView) linkResponse {
+func (h *Handler) linkResponse(link application.Link) linkResponse {
 	return linkResponse{
 		ID:          link.ID,
 		OriginalURL: link.OriginalURL,

@@ -17,7 +17,7 @@ func TestServiceCreateLinkUsesInjectedGenerator(t *testing.T) {
 	svc := NewService(writer, nil, generator.Generate)
 	writer.EXPECT().
 		CreateLink(mock.Anything, testExampleURL, testGeneratedCode).
-		Return(LinkView{
+		Return(Link{
 			OriginalURL: testExampleURL,
 			ShortName:   testGeneratedCode,
 		}, nil).

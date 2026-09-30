@@ -296,7 +296,7 @@ func TestVisitsSortEveryField(t *testing.T) {
 		{link: 0, agent: "c-agent", status: 301},
 		{link: 1, agent: "a-agent", status: 307},
 	} {
-		_, err := tx.visitRepo.CreateLinkVisit(t.Context(), linkIDs[seed.link], application.Visit{
+		_, err := tx.visitRepo.CreateLinkVisit(t.Context(), linkIDs[seed.link], application.VisitInput{
 			IP:        visitIP(0),
 			UserAgent: seed.agent,
 			Status:    seed.status,

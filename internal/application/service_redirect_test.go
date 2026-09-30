@@ -11,13 +11,13 @@ import (
 
 func TestServiceRedirectRecordsVisit(t *testing.T) {
 	referer := testExampleURL
-	visit := Visit{
+	visit := VisitInput{
 		IP:        "192.0.2.1",
 		UserAgent: "test-agent",
 		Referer:   &referer,
 		Status:    testRedirectStatus,
 	}
-	link := LinkView{
+	link := Link{
 		ID:          42,
 		OriginalURL: testExampleURL,
 		ShortName:   testTargetName,
@@ -28,7 +28,7 @@ func TestServiceRedirectRecordsVisit(t *testing.T) {
 	svc := NewService(links, recorder, fixedCode)
 	recorder.EXPECT().
 		CreateLinkVisit(mock.Anything, int64(42), visit).
-		Return(VisitView{}, nil).
+		Return(Visit{}, nil).
 		Once()
 
 	result, err := svc.Redirect(t.Context(), testTargetName, visit)
@@ -42,16 +42,16 @@ func TestServiceRedirectReturnsVisitError(t *testing.T) {
 	links := NewMockLinkStore(t)
 	links.EXPECT().
 		GetLinkByShortName(mock.Anything, testTargetName).
-		Return(LinkView{ID: 1, OriginalURL: testExampleURL}, nil).
+		Return(Link{ID: 1, OriginalURL: testExampleURL}, nil).
 		Once()
 	recorder := NewMockVisitStore(t)
 	svc := NewService(links, recorder, fixedCode)
 	recorder.EXPECT().
-		CreateLinkVisit(mock.Anything, int64(1), Visit{Status: testRedirectStatus}).
-		Return(VisitView{}, visitErr).
+		CreateLinkVisit(mock.Anything, int64(1), VisitInput{Status: testRedirectStatus}).
+		Return(Visit{}, visitErr).
 		Once()
 
-	_, err := svc.Redirect(t.Context(), testTargetName, Visit{Status: testRedirectStatus})
+	_, err := svc.Redirect(t.Context(), testTargetName, VisitInput{Status: testRedirectStatus})
 
 	assert.ErrorIs(t, err, visitErr)
 }

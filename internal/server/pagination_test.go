@@ -146,7 +146,7 @@ func TestLinksPagination(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tx := setupTestTx(t, td)
 
-			var seeds []application.LinkView
+			var seeds []application.Link
 			for i := range tt.seedCount {
 				l := linkFactory(i)
 				created, err := tx.linkRepo.CreateLink(ctx, l.OriginalURL, l.ShortName)
@@ -175,9 +175,9 @@ func TestLinksPagination(t *testing.T) {
 			if w.Code == http.StatusOK || w.Code == http.StatusPartialContent {
 				var responses []linkResponse
 				decode(t, w, &responses)
-				links := make([]application.LinkView, len(responses))
+				links := make([]application.Link, len(responses))
 				for index, response := range responses {
-					links[index] = response.linkView()
+					links[index] = response.appLink()
 				}
 				assert.Len(t, links, tt.wantLen)
 

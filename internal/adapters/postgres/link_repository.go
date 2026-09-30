@@ -22,9 +22,9 @@ func NewLinkRepository(queries *db.Queries) *LinkRepository {
 	return &LinkRepository{queries: queries}
 }
 
-// toLinkView maps a storage link to its application link view.
-func toLinkView(link db.Link) application.LinkView {
-	return application.LinkView{
+// toLink maps a storage link to its application link.
+func toLink(link db.Link) application.Link {
+	return application.Link{
 		ID:          link.ID,
 		ShortName:   link.ShortName,
 		OriginalURL: link.OriginalURL,
@@ -42,38 +42,38 @@ func mapSlice[T, U any](items []T, convert func(T) U) []U {
 }
 
 // GetLinkByID retrieves a link by its ID.
-func (r *LinkRepository) GetLinkByID(ctx context.Context, id int64) (application.LinkView, error) {
+func (r *LinkRepository) GetLinkByID(ctx context.Context, id int64) (application.Link, error) {
 	link, err := r.queries.GetLinkByID(ctx, id)
 	if err != nil {
-		return application.LinkView{}, mapStorageError(err)
+		return application.Link{}, mapStorageError(err)
 	}
 
-	return toLinkView(link), nil
+	return toLink(link), nil
 }
 
 // GetLinkByShortName retrieves a link by its short name.
-func (r *LinkRepository) GetLinkByShortName(ctx context.Context, shortName string) (application.LinkView, error) {
+func (r *LinkRepository) GetLinkByShortName(ctx context.Context, shortName string) (application.Link, error) {
 	link, err := r.queries.GetLinkByShortName(ctx, shortName)
 	if err != nil {
-		return application.LinkView{}, mapStorageError(err)
+		return application.Link{}, mapStorageError(err)
 	}
 
-	return toLinkView(link), nil
+	return toLink(link), nil
 }
 
 // PageLinks retrieves a paginated page of links together with the total count.
 func (r *LinkRepository) PageLinks(
 	ctx context.Context,
 	q application.PageQuery,
-) (application.RangePage[application.LinkView], error) {
+) (application.RangePage[application.Link], error) {
 	total, err := r.queries.CountLinks(ctx)
 	if err != nil {
-		return application.RangePage[application.LinkView]{}, fmt.Errorf("count links: %w", err)
+		return application.RangePage[application.Link]{}, fmt.Errorf("count links: %w", err)
 	}
 
 	first, last, ok := q.Range.Resolve(total)
 	if !ok {
-		return application.RangePage[application.LinkView]{Total: total}, nil
+		return application.RangePage[application.Link]{Total: total}, nil
 	}
 
 	links, err := r.queries.GetLinksPage(ctx, db.GetLinksPageParams{
@@ -83,30 +83,30 @@ func (r *LinkRepository) PageLinks(
 		Limit:     last - first + 1,
 	})
 	if err != nil {
-		return application.RangePage[application.LinkView]{}, fmt.Errorf(
+		return application.RangePage[application.Link]{}, fmt.Errorf(
 			"list links range: %w",
 			mapStorageError(err),
 		)
 	}
 
-	return application.RangePage[application.LinkView]{
-		Items: mapSlice(links, toLinkView),
+	return application.RangePage[application.Link]{
+		Items: mapSlice(links, toLink),
 		First: first,
 		Total: total,
 	}, nil
 }
 
 // CreateLink inserts a new link.
-func (r *LinkRepository) CreateLink(ctx context.Context, originalURL, shortName string) (application.LinkView, error) {
+func (r *LinkRepository) CreateLink(ctx context.Context, originalURL, shortName string) (application.Link, error) {
 	link, err := r.queries.CreateLink(ctx, db.CreateLinkParams{
 		OriginalURL: originalURL,
 		ShortName:   shortName,
 	})
 	if err != nil {
-		return application.LinkView{}, mapStorageError(err)
+		return application.Link{}, mapStorageError(err)
 	}
 
-	return toLinkView(link), nil
+	return toLink(link), nil
 }
 
 // UpdateLink updates an existing link.
@@ -114,25 +114,25 @@ func (r *LinkRepository) UpdateLink(
 	ctx context.Context,
 	id int64,
 	originalURL, shortName string,
-) (application.LinkView, error) {
+) (application.Link, error) {
 	link, err := r.queries.UpdateLink(ctx, db.UpdateLinkParams{
 		ID:          id,
 		OriginalURL: originalURL,
 		ShortName:   shortName,
 	})
 	if err != nil {
-		return application.LinkView{}, mapStorageError(err)
+		return application.Link{}, mapStorageError(err)
 	}
 
-	return toLinkView(link), nil
+	return toLink(link), nil
 }
 
 // DeleteLink deletes a link by its ID.
-func (r *LinkRepository) DeleteLink(ctx context.Context, id int64) (application.LinkView, error) {
+func (r *LinkRepository) DeleteLink(ctx context.Context, id int64) (application.Link, error) {
 	link, err := r.queries.DeleteLink(ctx, id)
 	if err != nil {
-		return application.LinkView{}, mapStorageError(err)
+		return application.Link{}, mapStorageError(err)
 	}
 
-	return toLinkView(link), nil
+	return toLink(link), nil
 }

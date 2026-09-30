@@ -21,8 +21,8 @@ func NewVisitRepository(queries *db.Queries) *VisitRepository {
 	return &VisitRepository{queries: queries}
 }
 
-func toVisitView(visit db.LinkVisit) application.VisitView {
-	return application.VisitView{
+func toVisit(visit db.LinkVisit) application.Visit {
+	return application.Visit{
 		ID:        visit.ID,
 		LinkID:    visit.LinkID,
 		CreatedAt: visit.CreatedAt.Time,
@@ -37,8 +37,8 @@ func toVisitView(visit db.LinkVisit) application.VisitView {
 func (r *VisitRepository) CreateLinkVisit(
 	ctx context.Context,
 	linkID int64,
-	visit application.Visit,
-) (application.VisitView, error) {
+	visit application.VisitInput,
+) (application.Visit, error) {
 	created, err := r.queries.CreateLinkVisit(ctx, db.CreateLinkVisitParams{
 		LinkID:    linkID,
 		IP:        visit.IP,
@@ -47,25 +47,25 @@ func (r *VisitRepository) CreateLinkVisit(
 		Status:    visit.Status,
 	})
 	if err != nil {
-		return application.VisitView{}, mapStorageError(err)
+		return application.Visit{}, mapStorageError(err)
 	}
 
-	return toVisitView(created), nil
+	return toVisit(created), nil
 }
 
 // PageLinkVisits retrieves a paginated page of link visits together with the total count.
 func (r *VisitRepository) PageLinkVisits(
 	ctx context.Context,
 	q application.PageQuery,
-) (application.RangePage[application.VisitView], error) {
+) (application.RangePage[application.Visit], error) {
 	total, err := r.queries.CountLinkVisits(ctx)
 	if err != nil {
-		return application.RangePage[application.VisitView]{}, fmt.Errorf("count link visits: %w", err)
+		return application.RangePage[application.Visit]{}, fmt.Errorf("count link visits: %w", err)
 	}
 
 	first, last, ok := q.Range.Resolve(total)
 	if !ok {
-		return application.RangePage[application.VisitView]{Total: total}, nil
+		return application.RangePage[application.Visit]{Total: total}, nil
 	}
 
 	visits, err := r.queries.GetLinkVisitsPage(ctx, db.GetLinkVisitsPageParams{
@@ -75,14 +75,14 @@ func (r *VisitRepository) PageLinkVisits(
 		Limit:     last - first + 1,
 	})
 	if err != nil {
-		return application.RangePage[application.VisitView]{}, fmt.Errorf(
+		return application.RangePage[application.Visit]{}, fmt.Errorf(
 			"list link visits range: %w",
 			mapStorageError(err),
 		)
 	}
 
-	return application.RangePage[application.VisitView]{
-		Items: mapSlice(visits, toVisitView),
+	return application.RangePage[application.Visit]{
+		Items: mapSlice(visits, toVisit),
 		First: first,
 		Total: total,
 	}, nil

@@ -11,8 +11,8 @@ import (
 
 func TestServicePageLinkVisits(t *testing.T) {
 	query := PageQuery{Range: Range{First: 5, Last: 9}}
-	expected := RangePage[VisitView]{
-		Items: []VisitView{{ID: 3, LinkID: 1}},
+	expected := RangePage[Visit]{
+		Items: []Visit{{ID: 3, LinkID: 1}},
 		First: 5,
 		Total: 10,
 	}
@@ -29,7 +29,7 @@ func TestServicePageLinkVisits(t *testing.T) {
 func TestServicePageLinkVisitsPropagatesStoreError(t *testing.T) {
 	repoErr := errors.New("page visits failed")
 	visits := NewMockVisitStore(t)
-	visits.EXPECT().PageLinkVisits(mock.Anything, mock.Anything).Return(RangePage[VisitView]{}, repoErr).Once()
+	visits.EXPECT().PageLinkVisits(mock.Anything, mock.Anything).Return(RangePage[Visit]{}, repoErr).Once()
 	svc := NewService(nil, visits, fixedCode)
 
 	_, err := svc.PageLinkVisits(t.Context(), PageQuery{Range: Range{First: 0, Last: 4}})

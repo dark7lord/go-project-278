@@ -11,8 +11,8 @@ import (
 
 func TestServicePageLinks(t *testing.T) {
 	query := PageQuery{Range: Range{First: 5, Last: 9}}
-	expected := RangePage[LinkView]{
-		Items: []LinkView{{ID: 2, ShortName: "second"}},
+	expected := RangePage[Link]{
+		Items: []Link{{ID: 2, ShortName: "second"}},
 		First: 5,
 		Total: 10,
 	}
@@ -29,7 +29,7 @@ func TestServicePageLinks(t *testing.T) {
 func TestServicePageLinksPropagatesStoreError(t *testing.T) {
 	repoErr := errors.New("page failed")
 	links := NewMockLinkStore(t)
-	links.EXPECT().PageLinks(mock.Anything, mock.Anything).Return(RangePage[LinkView]{}, repoErr).Once()
+	links.EXPECT().PageLinks(mock.Anything, mock.Anything).Return(RangePage[Link]{}, repoErr).Once()
 	svc := NewService(links, nil, fixedCode)
 
 	_, err := svc.PageLinks(t.Context(), PageQuery{Range: Range{First: 0, Last: 4}})
@@ -38,7 +38,7 @@ func TestServicePageLinksPropagatesStoreError(t *testing.T) {
 }
 
 func TestServiceGetLink(t *testing.T) {
-	expected := LinkView{ID: 7, ShortName: testTargetName}
+	expected := Link{ID: 7, ShortName: testTargetName}
 	links := NewMockLinkStore(t)
 	links.EXPECT().GetLinkByID(mock.Anything, expected.ID).Return(expected, nil).Once()
 	svc := NewService(links, nil, fixedCode)
@@ -52,7 +52,7 @@ func TestServiceGetLink(t *testing.T) {
 func TestServiceGetLinkWrapsStoreError(t *testing.T) {
 	repoErr := errors.New("read failed")
 	links := NewMockLinkStore(t)
-	links.EXPECT().GetLinkByShortName(mock.Anything, testTargetName).Return(LinkView{}, repoErr).Once()
+	links.EXPECT().GetLinkByShortName(mock.Anything, testTargetName).Return(Link{}, repoErr).Once()
 	svc := NewService(links, nil, fixedCode)
 
 	_, err := svc.GetLinkByShortName(t.Context(), testTargetName)

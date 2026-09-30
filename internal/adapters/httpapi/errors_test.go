@@ -162,7 +162,7 @@ func TestHandlerCreateLinkFieldErrorMapsToUnprocessable(t *testing.T) {
 			OriginalURL: "ftp://example.com",
 			ShortName:   "ok-link",
 		}).
-		Return(application.LinkView{}, &application.FieldError{
+		Return(application.Link{}, &application.FieldError{
 			Field: "original_url",
 			Err:   errors.New("unsupported scheme"),
 		}).
@@ -189,7 +189,7 @@ func TestHandlerUpdateLinkFieldErrorMapsToUnprocessable(t *testing.T) {
 			OriginalURL: "https://example.com",
 			ShortName:   "bad/name",
 		}).
-		Return(application.LinkView{}, &application.FieldError{
+		Return(application.Link{}, &application.FieldError{
 			Field: "short_name",
 			Err:   errors.New("invalid short code"),
 		}).
@@ -230,7 +230,7 @@ func TestHandlerCreateLinkHidesInternalError(t *testing.T) {
 			OriginalURL: "https://boom.example",
 			ShortName:   "boomlink",
 		}).
-		Return(application.LinkView{}, rawErr).
+		Return(application.Link{}, rawErr).
 		Once()
 	handler := newTestHandler(linkService)
 
@@ -252,7 +252,7 @@ func TestHandlerContextDeadlineMapsTo503(t *testing.T) {
 	linkService := NewMockUseCase(t)
 	linkService.EXPECT().
 		PageLinks(mock.Anything, linksQuery(0, firstPageLast, application.Sort{})).
-		Return(application.RangePage[application.LinkView]{}, context.DeadlineExceeded).
+		Return(application.RangePage[application.Link]{}, context.DeadlineExceeded).
 		Once()
 	handler := newTestHandler(linkService)
 
@@ -272,7 +272,7 @@ func TestHandlerUpdateLinkHidesInternalError(t *testing.T) {
 			OriginalURL: "https://boom.example",
 			ShortName:   "boomlink",
 		}).
-		Return(application.LinkView{}, rawErr).
+		Return(application.Link{}, rawErr).
 		Once()
 	handler := newTestHandler(linkService)
 

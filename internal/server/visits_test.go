@@ -119,10 +119,10 @@ func TestVisitsPagination(t *testing.T) {
 			created, err := tx.linkRepo.CreateLink(ctx, link.OriginalURL, link.ShortName)
 			require.NoError(t, err)
 
-			var seeds []application.VisitView
+			var seeds []application.Visit
 			for i := range tt.seedCount {
 				ref := fmt.Sprintf("https://ref-%d.com", i)
-				visit, err := tx.visitRepo.CreateLinkVisit(ctx, created.ID, application.Visit{
+				visit, err := tx.visitRepo.CreateLinkVisit(ctx, created.ID, application.VisitInput{
 					IP:        fmt.Sprintf("10.0.0.%d", i),
 					UserAgent: fmt.Sprintf("agent-%d", i),
 					Referer:   &ref,
