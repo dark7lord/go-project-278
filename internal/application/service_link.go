@@ -10,7 +10,7 @@ import (
 
 // CreateLink creates a new link with the given URL and optional short name.
 func (s *Service) CreateLink(ctx context.Context, in LinkInput) (LinkView, error) {
-	return s.saveLinkFields(ctx, in, s.linkWriter.CreateLink)
+	return s.saveLinkFields(ctx, in, s.links.CreateLink)
 }
 
 // Redirect resolves a short name and records the visit.
@@ -20,7 +20,7 @@ func (s *Service) Redirect(ctx context.Context, shortName string, visit Visit) (
 		return LinkView{}, err
 	}
 
-	if _, err := s.visitRecorder.CreateLinkVisit(ctx, link.ID, visit); err != nil {
+	if _, err := s.visits.CreateLinkVisit(ctx, link.ID, visit); err != nil {
 		return LinkView{}, fmt.Errorf("record link visit: %w", err)
 	}
 
@@ -29,7 +29,7 @@ func (s *Service) Redirect(ctx context.Context, shortName string, visit Visit) (
 
 // GetLinkByID retrieves a link by its ID.
 func (s *Service) GetLinkByID(ctx context.Context, id int64) (LinkView, error) {
-	link, err := s.linkReader.GetLinkByID(ctx, id)
+	link, err := s.links.GetLinkByID(ctx, id)
 	if err != nil {
 		return LinkView{}, fmt.Errorf("get link: %w", err)
 	}
@@ -39,7 +39,7 @@ func (s *Service) GetLinkByID(ctx context.Context, id int64) (LinkView, error) {
 
 // GetLinkByShortName retrieves a link by its short name.
 func (s *Service) GetLinkByShortName(ctx context.Context, shortName string) (LinkView, error) {
-	link, err := s.linkReader.GetLinkByShortName(ctx, shortName)
+	link, err := s.links.GetLinkByShortName(ctx, shortName)
 	if err != nil {
 		return LinkView{}, fmt.Errorf("get link: %w", err)
 	}
@@ -49,18 +49,18 @@ func (s *Service) GetLinkByShortName(ctx context.Context, shortName string) (Lin
 
 // PageLinks retrieves a paginated page of links.
 func (s *Service) PageLinks(ctx context.Context, q PageQuery) (RangePage[LinkView], error) {
-	return s.linkReader.PageLinks(ctx, q)
+	return s.links.PageLinks(ctx, q)
 }
 
 // PageLinkVisits retrieves a paginated page of link visits.
 func (s *Service) PageLinkVisits(ctx context.Context, q PageQuery) (RangePage[VisitView], error) {
-	return s.visitReader.PageLinkVisits(ctx, q)
+	return s.visits.PageLinkVisits(ctx, q)
 }
 
 // UpdateLink updates an existing link.
 func (s *Service) UpdateLink(ctx context.Context, id int64, in LinkInput) (LinkView, error) {
 	persist := func(ctx context.Context, normalizedURL, name string) (LinkView, error) {
-		return s.linkWriter.UpdateLink(ctx, id, normalizedURL, name)
+		return s.links.UpdateLink(ctx, id, normalizedURL, name)
 	}
 
 	return s.saveLinkFields(ctx, in, persist)
@@ -68,7 +68,7 @@ func (s *Service) UpdateLink(ctx context.Context, id int64, in LinkInput) (LinkV
 
 // DeleteLink deletes a link by its ID.
 func (s *Service) DeleteLink(ctx context.Context, id int64) (LinkView, error) {
-	link, err := s.linkWriter.DeleteLink(ctx, id)
+	link, err := s.links.DeleteLink(ctx, id)
 	if err != nil {
 		return LinkView{}, fmt.Errorf("delete link: %w", err)
 	}
@@ -124,7 +124,7 @@ func (s *Service) withGeneratedShortName(
 	try func(ctx context.Context, shortName string) (LinkView, error),
 ) (LinkView, error) {
 	for attempt := 0; attempt < maxShortCodeAttempts; attempt++ {
-		link, err := try(ctx, s.shortCodeGenerator.Generate())
+		link, err := try(ctx, s.generate())
 		if err == nil {
 			return link, nil
 		}

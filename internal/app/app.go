@@ -20,7 +20,7 @@ import (
 	"code/db/migrations"
 	httpadapter "code/internal/adapters/http"
 	"code/internal/adapters/postgres"
-	shortcodeadapter "code/internal/adapters/shortcode"
+	"code/internal/adapters/shortcode"
 	"code/internal/application"
 	"code/internal/config"
 )
@@ -56,37 +56,14 @@ func setupRouter(linkHandler *httpadapter.Handler) *gin.Engine {
 	return router
 }
 
-func newService(
-	linkRepo *postgres.LinkRepository,
-	visitRepo *postgres.VisitRepository,
-) *application.Service {
-	shortCodeGenerator := shortcodeadapter.NewGenerator()
-
-	return application.NewServiceWithGenerator(application.ServiceDeps{
-		LinkReader:    linkRepo,
-		LinkWriter:    linkRepo,
-		VisitReader:   visitRepo,
-		VisitRecorder: visitRepo,
-	}, shortCodeGenerator)
-}
-
-func newLinkHandler(
-	linkService application.LinkUseCase,
-	visitService application.VisitUseCase,
-	baseURL string,
-) *httpadapter.Handler {
-	return httpadapter.NewHandler(linkService, visitService, baseURL)
-}
-
 // buildApp assembles the application dependencies and HTTP router in one explicit composition root.
 func buildApp(cfg *config.Config, dbConn *pgxpool.Pool) *gin.Engine {
 	queries := db.New(dbConn)
 	linkRepo := postgres.NewLinkRepository(queries)
 	visitRepo := postgres.NewVisitRepository(queries)
-	linkService := newService(linkRepo, visitRepo)
-	linkHandler := newLinkHandler(linkService, linkService, cfg.BaseURL)
+	service := application.NewService(linkRepo, visitRepo, shortcode.Generate)
 
-	return setupRouter(linkHandler)
+	return setupRouter(httpadapter.NewHandler(service, cfg.BaseURL))
 }
 
 const timeoutErrorBody = `{"error": "request timeout"}`

@@ -21,7 +21,7 @@ func TestConnectDBUnreachable(t *testing.T) {
 }
 
 func TestPingRoute(t *testing.T) {
-	router := setupRouter(httpadapter.NewHandler(nil, nil, "http://localhost:8080"))
+	router := setupRouter(httpadapter.NewHandler(nil, "http://localhost:8080"))
 
 	w := performRequest(t, router, "GET", "/ping", "")
 

@@ -5,40 +5,32 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
 func TestServicePageLinks(t *testing.T) {
-	expected := []LinkView{{
-		ID:        2,
-		ShortName: "second",
-	}}
-	reader := &fakeLinkReader{
-		linkPage: RangePage[LinkView]{
-			Items: expected,
-			First: 5,
-			Total: 10,
-		},
+	query := PageQuery{Range: Range{First: 5, Last: 9}}
+	expected := RangePage[LinkView]{
+		Items: []LinkView{{ID: 2, ShortName: "second"}},
+		First: 5,
+		Total: 10,
 	}
-	svc := NewServiceWithGenerator(
-		serviceDeps(reader, nil, nil, nil),
-		&fakeShortCodeGenerator{value: testShortCode},
-	)
+	links := NewMockLinkStore(t)
+	links.EXPECT().PageLinks(mock.Anything, query).Return(expected, nil).Once()
+	svc := NewService(links, nil, fixedCode)
 
-	page, err := svc.PageLinks(t.Context(), PageQuery{Range: Range{First: 5, Last: 9}})
+	page, err := svc.PageLinks(t.Context(), query)
 
 	require.NoError(t, err)
-	assert.Equal(t, expected, page.Items)
-	assert.Equal(t, int64(10), page.Total)
-	assert.Equal(t, int64(5), page.First)
+	assert.Equal(t, expected, page)
 }
 
-func TestServicePageLinksPropagatesReaderError(t *testing.T) {
+func TestServicePageLinksPropagatesStoreError(t *testing.T) {
 	repoErr := errors.New("page failed")
-	svc := NewServiceWithGenerator(
-		serviceDeps(&fakeLinkReader{linkPageError: repoErr}, nil, nil, nil),
-		&fakeShortCodeGenerator{value: testShortCode},
-	)
+	links := NewMockLinkStore(t)
+	links.EXPECT().PageLinks(mock.Anything, mock.Anything).Return(RangePage[LinkView]{}, repoErr).Once()
+	svc := NewService(links, nil, fixedCode)
 
 	_, err := svc.PageLinks(t.Context(), PageQuery{Range: Range{First: 0, Last: 4}})
 
@@ -46,14 +38,10 @@ func TestServicePageLinksPropagatesReaderError(t *testing.T) {
 }
 
 func TestServiceGetLink(t *testing.T) {
-	expected := LinkView{
-		ID:        7,
-		ShortName: testTargetName,
-	}
-	svc := NewServiceWithGenerator(
-		serviceDeps(&fakeLinkReader{gotLink: expected}, nil, nil, nil),
-		&fakeShortCodeGenerator{value: testShortCode},
-	)
+	expected := LinkView{ID: 7, ShortName: testTargetName}
+	links := NewMockLinkStore(t)
+	links.EXPECT().GetLinkByID(mock.Anything, expected.ID).Return(expected, nil).Once()
+	svc := NewService(links, nil, fixedCode)
 
 	link, err := svc.GetLinkByID(t.Context(), expected.ID)
 
@@ -61,12 +49,11 @@ func TestServiceGetLink(t *testing.T) {
 	assert.Equal(t, expected, link)
 }
 
-func TestServiceGetLinkWrapsRepositoryError(t *testing.T) {
+func TestServiceGetLinkWrapsStoreError(t *testing.T) {
 	repoErr := errors.New("read failed")
-	svc := NewServiceWithGenerator(
-		serviceDeps(&fakeLinkReader{getLinkError: repoErr}, nil, nil, nil),
-		&fakeShortCodeGenerator{value: testShortCode},
-	)
+	links := NewMockLinkStore(t)
+	links.EXPECT().GetLinkByShortName(mock.Anything, testTargetName).Return(LinkView{}, repoErr).Once()
+	svc := NewService(links, nil, fixedCode)
 
 	_, err := svc.GetLinkByShortName(t.Context(), testTargetName)
 

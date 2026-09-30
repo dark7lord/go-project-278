@@ -20,7 +20,7 @@ func (h *Handler) CreateLink(c *gin.Context) {
 	}
 
 	in := application.LinkInput{OriginalURL: req.OriginalURL, ShortName: req.ShortName}
-	link, err := h.linkService.CreateLink(c.Request.Context(), in)
+	link, err := h.service.CreateLink(c.Request.Context(), in)
 	if err != nil {
 		writeServiceError(c, err)
 
@@ -38,7 +38,7 @@ func (h *Handler) GetLink(c *gin.Context) {
 		return
 	}
 
-	link, err := h.linkService.GetLinkByID(c.Request.Context(), id)
+	link, err := h.service.GetLinkByID(c.Request.Context(), id)
 	if err != nil {
 		writeServiceError(c, err)
 
@@ -62,7 +62,7 @@ func (h *Handler) ListLinks(c *gin.Context) {
 		return
 	}
 
-	page, err := h.linkService.PageLinks(
+	page, err := h.service.PageLinks(
 		c.Request.Context(),
 		application.PageQuery{Range: pageRange, Sort: sort},
 	)
@@ -92,7 +92,7 @@ func (h *Handler) UpdateLink(c *gin.Context) {
 	}
 
 	in := application.LinkInput{OriginalURL: req.OriginalURL, ShortName: req.ShortName}
-	updated, err := h.linkService.UpdateLink(c.Request.Context(), id, in)
+	updated, err := h.service.UpdateLink(c.Request.Context(), id, in)
 	if err != nil {
 		writeServiceError(c, err)
 
@@ -110,7 +110,7 @@ func (h *Handler) DeleteLink(c *gin.Context) {
 		return
 	}
 
-	_, err = h.linkService.DeleteLink(c.Request.Context(), id)
+	_, err = h.service.DeleteLink(c.Request.Context(), id)
 	if err != nil {
 		writeServiceError(c, err)
 
@@ -127,7 +127,7 @@ func (h *Handler) Redirect(c *gin.Context) {
 		referer = &ref
 	}
 
-	link, err := h.linkService.Redirect(c.Request.Context(), c.Param("code"), application.Visit{
+	link, err := h.service.Redirect(c.Request.Context(), c.Param("code"), application.Visit{
 		IP:        c.ClientIP(),
 		UserAgent: c.Request.UserAgent(),
 		Referer:   referer,

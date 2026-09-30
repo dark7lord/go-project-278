@@ -14,9 +14,8 @@ type LinkRepository struct {
 	queries *db.Queries
 }
 
-// Compile-time checks that the adapter implements the application ports.
-var _ application.LinkReader = (*LinkRepository)(nil)
-var _ application.LinkWriter = (*LinkRepository)(nil)
+// Compile-time check that the adapter implements the application port.
+var _ application.LinkStore = (*LinkRepository)(nil)
 
 // NewLinkRepository creates a PostgreSQL link repository.
 func NewLinkRepository(queries *db.Queries) *LinkRepository {
@@ -32,13 +31,14 @@ func toLinkView(link db.Link) application.LinkView {
 	}
 }
 
-func toLinkViews(links []db.Link) []application.LinkView {
-	views := make([]application.LinkView, len(links))
-	for index, link := range links {
-		views[index] = toLinkView(link)
+// mapSlice converts every item of a slice with convert.
+func mapSlice[T, U any](items []T, convert func(T) U) []U {
+	result := make([]U, len(items))
+	for i, item := range items {
+		result[i] = convert(item)
 	}
 
-	return views
+	return result
 }
 
 // GetLinkByID retrieves a link by its ID.
@@ -90,7 +90,7 @@ func (r *LinkRepository) PageLinks(
 	}
 
 	return application.RangePage[application.LinkView]{
-		Items: toLinkViews(links),
+		Items: mapSlice(links, toLinkView),
 		First: first,
 		Total: total,
 	}, nil

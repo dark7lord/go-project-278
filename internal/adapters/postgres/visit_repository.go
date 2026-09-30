@@ -13,9 +13,8 @@ type VisitRepository struct {
 	queries *db.Queries
 }
 
-// Compile-time checks that the adapter implements the application ports.
-var _ application.VisitReader = (*VisitRepository)(nil)
-var _ application.VisitRecorder = (*VisitRepository)(nil)
+// Compile-time check that the adapter implements the application port.
+var _ application.VisitStore = (*VisitRepository)(nil)
 
 // NewVisitRepository creates a PostgreSQL visit repository.
 func NewVisitRepository(queries *db.Queries) *VisitRepository {
@@ -32,15 +31,6 @@ func toVisitView(visit db.LinkVisit) application.VisitView {
 		Referer:   visit.Referer,
 		Status:    visit.Status,
 	}
-}
-
-func toVisitViews(visits []db.LinkVisit) []application.VisitView {
-	views := make([]application.VisitView, len(visits))
-	for index, visit := range visits {
-		views[index] = toVisitView(visit)
-	}
-
-	return views
 }
 
 // CreateLinkVisit records a visit for the given link.
@@ -92,7 +82,7 @@ func (r *VisitRepository) PageLinkVisits(
 	}
 
 	return application.RangePage[application.VisitView]{
-		Items: toVisitViews(visits),
+		Items: mapSlice(visits, toVisitView),
 		First: first,
 		Total: total,
 	}, nil

@@ -30,18 +30,10 @@ var syllables = []string{
 	"za", "ze", "zi", "zo",
 }
 
-// Generator produces Docker-style short code strings (word-tail).
-type Generator struct{}
-
-// NewGenerator creates a short code generator.
-func NewGenerator() *Generator {
-	return &Generator{}
-}
-
 // Generate returns a random short code "<word>-<tail>": word is 2-3
 // pronounceable syllables, tail is six decimal digits. A short code is not a
 // secret, so math/rand/v2 (seeded from the OS) is enough.
-func (g *Generator) Generate() string {
+func Generate() string {
 	var word strings.Builder
 	for range 2 + rand.IntN(2) {
 		word.WriteString(syllables[rand.IntN(len(syllables))])

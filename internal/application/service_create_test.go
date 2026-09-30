@@ -73,12 +73,9 @@ func TestServiceCreateLink(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			writer := NewMockLinkWriter(t)
-			generator := &fakeShortCodeGenerator{value: tt.generator}
-			svc := NewServiceWithGenerator(
-				serviceDeps(nil, writer, nil, nil),
-				generator,
-			)
+			writer := NewMockLinkStore(t)
+			generator := &fakeGenerator{value: tt.generator}
+			svc := NewService(writer, nil, generator.Generate)
 			expected := LinkView{
 				OriginalURL: tt.wantURL,
 				ShortName:   tt.wantCode,
@@ -125,11 +122,8 @@ func TestServiceCreateLinkRejectsInvalidInput(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			writer := NewMockLinkWriter(t)
-			svc := NewServiceWithGenerator(
-				serviceDeps(nil, writer, nil, nil),
-				&fakeShortCodeGenerator{value: testShortCode},
-			)
+			writer := NewMockLinkStore(t)
+			svc := NewService(writer, nil, fixedCode)
 
 			_, err := svc.CreateLink(t.Context(), tt.command)
 
@@ -143,11 +137,8 @@ func TestServiceCreateLinkRejectsInvalidInput(t *testing.T) {
 
 func TestServiceCreateLinkReturnsRepositoryError(t *testing.T) {
 	repoErr := errors.New("database unavailable")
-	writer := NewMockLinkWriter(t)
-	svc := NewServiceWithGenerator(
-		serviceDeps(nil, writer, nil, nil),
-		&fakeShortCodeGenerator{value: testShortCode},
-	)
+	writer := NewMockLinkStore(t)
+	svc := NewService(writer, nil, fixedCode)
 	writer.EXPECT().
 		CreateLink(mock.Anything, testExampleURL, testShortName).
 		Return(LinkView{}, repoErr).
@@ -162,12 +153,9 @@ func TestServiceCreateLinkReturnsRepositoryError(t *testing.T) {
 }
 
 func TestServiceCreateLinkExhaustsGeneratedCodes(t *testing.T) {
-	writer := NewMockLinkWriter(t)
-	generator := &fakeShortCodeGenerator{value: testGeneratedCode}
-	svc := NewServiceWithGenerator(
-		serviceDeps(nil, writer, nil, nil),
-		generator,
-	)
+	writer := NewMockLinkStore(t)
+	generator := &fakeGenerator{value: testGeneratedCode}
+	svc := NewService(writer, nil, generator.Generate)
 	writer.EXPECT().
 		CreateLink(mock.Anything, testExampleURL, testGeneratedCode).
 		Return(LinkView{}, &FieldError{
@@ -185,12 +173,9 @@ func TestServiceCreateLinkExhaustsGeneratedCodes(t *testing.T) {
 }
 
 func TestServiceCreateLinkDoesNotRetryNonCollisionFieldError(t *testing.T) {
-	writer := NewMockLinkWriter(t)
-	generator := &fakeShortCodeGenerator{value: testGeneratedCode}
-	svc := NewServiceWithGenerator(
-		serviceDeps(nil, writer, nil, nil),
-		generator,
-	)
+	writer := NewMockLinkStore(t)
+	generator := &fakeGenerator{value: testGeneratedCode}
+	svc := NewService(writer, nil, generator.Generate)
 	fieldErr := &FieldError{
 		Field: fieldShortName,
 		Err:   errors.New("storage rejected the name"),

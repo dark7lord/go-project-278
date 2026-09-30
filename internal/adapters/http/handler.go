@@ -5,22 +5,13 @@ import (
 	"code/internal/application"
 )
 
-// Handler handles HTTP requests for links.
+// Handler handles HTTP requests for links and their visits.
 type Handler struct {
-	linkService  application.LinkUseCase
-	visitService application.VisitUseCase
-	baseURL      string
+	service application.UseCase
+	baseURL string
 }
 
-// NewHandler creates a Handler from use cases and the public link origin.
-func NewHandler(
-	linkService application.LinkUseCase,
-	visitService application.VisitUseCase,
-	baseURL string,
-) *Handler {
-	return &Handler{
-		linkService:  linkService,
-		visitService: visitService,
-		baseURL:      baseURL,
-	}
+// NewHandler creates a Handler from the use cases and the public link origin.
+func NewHandler(service application.UseCase, baseURL string) *Handler {
+	return &Handler{service: service, baseURL: baseURL}
 }

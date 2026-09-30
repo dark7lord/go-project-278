@@ -22,7 +22,7 @@ func (h *Handler) ListVisits(c *gin.Context) {
 		return
 	}
 
-	page, err := h.visitService.PageLinkVisits(
+	page, err := h.service.PageLinkVisits(
 		c.Request.Context(),
 		application.PageQuery{Range: pageRange, Sort: sort},
 	)

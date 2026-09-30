@@ -8,24 +8,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type fakeShortCodeGenerator struct {
-	value string
-	calls int
-}
-
 const testShortCode = "test-code"
 
-func (g *fakeShortCodeGenerator) Generate() string {
-	g.calls++
-	return g.value
-}
-
 func TestServiceCreateLinkUsesInjectedGenerator(t *testing.T) {
-	writer := NewMockLinkWriter(t)
-	generator := &fakeShortCodeGenerator{value: testGeneratedCode}
+	writer := NewMockLinkStore(t)
+	generator := &fakeGenerator{value: testGeneratedCode}
 
-	svc := NewServiceWithGenerator(serviceDeps(nil, writer, nil, nil),
-		generator)
+	svc := NewService(writer, nil, generator.Generate)
 	writer.EXPECT().
 		CreateLink(mock.Anything, testExampleURL, testGeneratedCode).
 		Return(LinkView{

@@ -8,13 +8,11 @@ formatter: goimports
 packages:
   code/internal/application:
     interfaces:
-      # Use cases the HTTP handlers call
-      LinkUseCase:
-        config: &http
+      # The use cases the HTTP handlers call
+      UseCase:
+        config:
           dir: internal/adapters/http
           pkgname: httpadapter
-      VisitUseCase:
-        config: *http
-      # Write ports the service calls; its read ports have plain fakes
-      LinkWriter: {}
-      VisitRecorder: {}
+      # The storage ports the service calls
+      LinkStore: {}
+      VisitStore: {}

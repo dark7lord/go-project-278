@@ -105,20 +105,14 @@ func startTestDB(ctx context.Context) (*testDB, error) {
 func newTestDB(queries *db.Queries) *testDB {
 	linkRepo := postgresadapter.NewLinkRepository(queries)
 	visitRepo := postgresadapter.NewVisitRepository(queries)
-	svc := application.NewServiceWithGenerator(application.ServiceDeps{
-		LinkReader:    linkRepo,
-		LinkWriter:    linkRepo,
-		VisitReader:   visitRepo,
-		VisitRecorder: visitRepo,
-	},
-		stubGenerator{})
+	svc := application.NewService(linkRepo, visitRepo, func() string { return "test-code" })
 
 	return &testDB{
 		queries:   queries,
 		linkRepo:  linkRepo,
 		visitRepo: visitRepo,
 		svc:       svc,
-		router:    setupRouter(httpadapter.NewHandler(svc, svc, "http://localhost:8080")),
+		router:    setupRouter(httpadapter.NewHandler(svc, "http://localhost:8080")),
 	}
 }
 
@@ -193,12 +187,6 @@ func assertFieldErrors(t *testing.T, w *httptest.ResponseRecorder, field string)
 	var body map[string]map[string]string
 	decode(t, w, &body)
 	assert.NotEmpty(t, body["errors"][field])
-}
-
-type stubGenerator struct{}
-
-func (stubGenerator) Generate() string {
-	return "test-code"
 }
 
 type linkResponse struct {

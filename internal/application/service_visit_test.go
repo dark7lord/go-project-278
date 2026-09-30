@@ -5,37 +5,32 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
 func TestServicePageLinkVisits(t *testing.T) {
-	expected := []VisitView{{ID: 3, LinkID: 1}}
-	reader := &fakeVisitReader{
-		visitPage: RangePage[VisitView]{
-			Items: expected,
-			First: 5,
-			Total: 10,
-		},
+	query := PageQuery{Range: Range{First: 5, Last: 9}}
+	expected := RangePage[VisitView]{
+		Items: []VisitView{{ID: 3, LinkID: 1}},
+		First: 5,
+		Total: 10,
 	}
-	svc := NewServiceWithGenerator(
-		serviceDeps(nil, nil, reader, nil),
-		&fakeShortCodeGenerator{value: testShortCode},
-	)
+	visits := NewMockVisitStore(t)
+	visits.EXPECT().PageLinkVisits(mock.Anything, query).Return(expected, nil).Once()
+	svc := NewService(nil, visits, fixedCode)
 
-	page, err := svc.PageLinkVisits(t.Context(), PageQuery{Range: Range{First: 5, Last: 9}})
+	page, err := svc.PageLinkVisits(t.Context(), query)
 
 	require.NoError(t, err)
-	assert.Equal(t, expected, page.Items)
-	assert.Equal(t, int64(10), page.Total)
-	assert.Equal(t, int64(5), page.First)
+	assert.Equal(t, expected, page)
 }
 
-func TestServicePageLinkVisitsPropagatesReaderError(t *testing.T) {
+func TestServicePageLinkVisitsPropagatesStoreError(t *testing.T) {
 	repoErr := errors.New("page visits failed")
-	svc := NewServiceWithGenerator(
-		serviceDeps(nil, nil, &fakeVisitReader{visitPageError: repoErr}, nil),
-		&fakeShortCodeGenerator{value: testShortCode},
-	)
+	visits := NewMockVisitStore(t)
+	visits.EXPECT().PageLinkVisits(mock.Anything, mock.Anything).Return(RangePage[VisitView]{}, repoErr).Once()
+	svc := NewService(nil, visits, fixedCode)
 
 	_, err := svc.PageLinkVisits(t.Context(), PageQuery{Range: Range{First: 0, Last: 4}})
 

@@ -11,11 +11,8 @@ const (
 	testExampleURL = "https://example.com"
 )
 
-func newTestHandler(
-	linkService application.LinkUseCase,
-	visitService application.VisitUseCase,
-) *Handler {
-	return NewHandler(linkService, visitService, testBaseURL)
+func newTestHandler(service application.UseCase) *Handler {
+	return NewHandler(service, testBaseURL)
 }
 
 func newHandlerRouter(handler *Handler) *gin.Engine {

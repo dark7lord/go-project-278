@@ -22,12 +22,10 @@ func TestServiceRedirectRecordsVisit(t *testing.T) {
 		OriginalURL: testExampleURL,
 		ShortName:   testTargetName,
 	}
-	reader := &fakeLinkReader{gotLink: link}
-	recorder := NewMockVisitRecorder(t)
-	svc := NewServiceWithGenerator(
-		serviceDeps(reader, nil, nil, recorder),
-		&fakeShortCodeGenerator{value: testShortCode},
-	)
+	links := NewMockLinkStore(t)
+	links.EXPECT().GetLinkByShortName(mock.Anything, testTargetName).Return(link, nil).Once()
+	recorder := NewMockVisitStore(t)
+	svc := NewService(links, recorder, fixedCode)
 	recorder.EXPECT().
 		CreateLinkVisit(mock.Anything, int64(42), visit).
 		Return(VisitView{}, nil).
@@ -41,14 +39,13 @@ func TestServiceRedirectRecordsVisit(t *testing.T) {
 
 func TestServiceRedirectReturnsVisitError(t *testing.T) {
 	visitErr := errors.New("record failed")
-	reader := &fakeLinkReader{
-		gotLink: LinkView{ID: 1, OriginalURL: testExampleURL},
-	}
-	recorder := NewMockVisitRecorder(t)
-	svc := NewServiceWithGenerator(
-		serviceDeps(reader, nil, nil, recorder),
-		&fakeShortCodeGenerator{value: testShortCode},
-	)
+	links := NewMockLinkStore(t)
+	links.EXPECT().
+		GetLinkByShortName(mock.Anything, testTargetName).
+		Return(LinkView{ID: 1, OriginalURL: testExampleURL}, nil).
+		Once()
+	recorder := NewMockVisitStore(t)
+	svc := NewService(links, recorder, fixedCode)
 	recorder.EXPECT().
 		CreateLinkVisit(mock.Anything, int64(1), Visit{Status: testRedirectStatus}).
 		Return(VisitView{}, visitErr).

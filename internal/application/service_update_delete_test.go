@@ -10,7 +10,7 @@ import (
 )
 
 func TestServiceUpdateLink(t *testing.T) {
-	writer := NewMockLinkWriter(t)
+	writer := NewMockLinkStore(t)
 	expected := LinkView{
 		ID:          7,
 		OriginalURL: "https://updated.com",
@@ -20,10 +20,7 @@ func TestServiceUpdateLink(t *testing.T) {
 		UpdateLink(mock.Anything, int64(7), "https://updated.com", "updated-link").
 		Return(expected, nil).
 		Once()
-	svc := NewServiceWithGenerator(
-		serviceDeps(nil, writer, nil, nil),
-		&fakeShortCodeGenerator{value: testShortCode},
-	)
+	svc := NewService(writer, nil, fixedCode)
 
 	updated, err := svc.UpdateLink(t.Context(), 7, LinkInput{
 		OriginalURL: "https://updated.com",
@@ -35,7 +32,7 @@ func TestServiceUpdateLink(t *testing.T) {
 }
 
 func TestServiceUpdateLinkTrimsShortName(t *testing.T) {
-	writer := NewMockLinkWriter(t)
+	writer := NewMockLinkStore(t)
 	expected := LinkView{
 		ID:          7,
 		OriginalURL: "https://updated.com",
@@ -45,10 +42,7 @@ func TestServiceUpdateLinkTrimsShortName(t *testing.T) {
 		UpdateLink(mock.Anything, int64(7), "https://updated.com", "updated-link").
 		Return(expected, nil).
 		Once()
-	svc := NewServiceWithGenerator(
-		serviceDeps(nil, writer, nil, nil),
-		&fakeShortCodeGenerator{value: testShortCode},
-	)
+	svc := NewService(writer, nil, fixedCode)
 
 	updated, err := svc.UpdateLink(t.Context(), 7, LinkInput{
 		OriginalURL: "https://updated.com",
@@ -60,11 +54,8 @@ func TestServiceUpdateLinkTrimsShortName(t *testing.T) {
 }
 
 func TestServiceUpdateLinkRejectsInvalidURL(t *testing.T) {
-	writer := NewMockLinkWriter(t)
-	svc := NewServiceWithGenerator(
-		serviceDeps(nil, writer, nil, nil),
-		&fakeShortCodeGenerator{value: testShortCode},
-	)
+	writer := NewMockLinkStore(t)
+	svc := NewService(writer, nil, fixedCode)
 
 	_, err := svc.UpdateLink(t.Context(), 7, LinkInput{
 		OriginalURL: "ftp://bad",
@@ -78,8 +69,8 @@ func TestServiceUpdateLinkRejectsInvalidURL(t *testing.T) {
 }
 
 func TestServiceUpdateLinkGeneratesShortName(t *testing.T) {
-	writer := NewMockLinkWriter(t)
-	generator := &fakeShortCodeGenerator{value: "test-code"}
+	writer := NewMockLinkStore(t)
+	generator := &fakeGenerator{value: "test-code"}
 	expected := LinkView{
 		ID:          7,
 		OriginalURL: testOKURL,
@@ -89,10 +80,7 @@ func TestServiceUpdateLinkGeneratesShortName(t *testing.T) {
 		UpdateLink(mock.Anything, int64(7), testOKURL, "test-code").
 		Return(expected, nil).
 		Once()
-	svc := NewServiceWithGenerator(
-		serviceDeps(nil, writer, nil, nil),
-		generator,
-	)
+	svc := NewService(writer, nil, generator.Generate)
 
 	updated, err := svc.UpdateLink(t.Context(), 7, LinkInput{
 		OriginalURL: testOKURL,
@@ -105,12 +93,9 @@ func TestServiceUpdateLinkGeneratesShortName(t *testing.T) {
 }
 
 func TestServiceUpdateLinkExhaustsGeneratedCodes(t *testing.T) {
-	writer := NewMockLinkWriter(t)
-	generator := &fakeShortCodeGenerator{value: testGeneratedCode}
-	svc := NewServiceWithGenerator(
-		serviceDeps(nil, writer, nil, nil),
-		generator,
-	)
+	writer := NewMockLinkStore(t)
+	generator := &fakeGenerator{value: testGeneratedCode}
+	svc := NewService(writer, nil, generator.Generate)
 	writer.EXPECT().
 		UpdateLink(mock.Anything, int64(7), testOKURL, testGeneratedCode).
 		Return(LinkView{}, &FieldError{Field: fieldShortName, Err: ErrShortNameAlreadyUse})
@@ -126,7 +111,7 @@ func TestServiceUpdateLinkExhaustsGeneratedCodes(t *testing.T) {
 }
 
 func TestServiceDeleteLink(t *testing.T) {
-	writer := NewMockLinkWriter(t)
+	writer := NewMockLinkStore(t)
 	expected := LinkView{
 		ID:        7,
 		ShortName: testTargetName,
@@ -135,10 +120,7 @@ func TestServiceDeleteLink(t *testing.T) {
 		DeleteLink(mock.Anything, int64(7)).
 		Return(expected, nil).
 		Once()
-	svc := NewServiceWithGenerator(
-		serviceDeps(nil, writer, nil, nil),
-		&fakeShortCodeGenerator{value: testShortCode},
-	)
+	svc := NewService(writer, nil, fixedCode)
 
 	deleted, err := svc.DeleteLink(t.Context(), 7)
 
@@ -148,15 +130,12 @@ func TestServiceDeleteLink(t *testing.T) {
 
 func TestServiceDeleteLinkWrapsRepositoryError(t *testing.T) {
 	repoErr := errors.New("delete failed")
-	writer := NewMockLinkWriter(t)
+	writer := NewMockLinkStore(t)
 	writer.EXPECT().
 		DeleteLink(mock.Anything, int64(1)).
 		Return(LinkView{}, repoErr).
 		Once()
-	svc := NewServiceWithGenerator(
-		serviceDeps(nil, writer, nil, nil),
-		&fakeShortCodeGenerator{value: testShortCode},
-	)
+	svc := NewService(writer, nil, fixedCode)
 
 	_, err := svc.DeleteLink(t.Context(), 1)
 
