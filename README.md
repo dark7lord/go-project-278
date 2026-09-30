@@ -309,7 +309,7 @@ Dependencies point inward: `domain ← application ← adapters ← app`.
 |-------------------------------|-------------------------------------------------------------------|
 | `main.go`                     | Entry point: loads `.env` and runs the app                        |
 | `cmd/migrate`                 | Migrations by hand: up, down, redo, status (`db-*`)               |
-| `internal/domain`             | Value types and their validation (URL, short code)                |
+| `internal/domain`             | Link rules: URL and short-code normalization and validation       |
 | `internal/application`        | Use cases and the ports they need                                 |
 | `internal/adapters/http`      | gin handlers, the JSON contract, range/sort parsing, middleware   |
 | `internal/adapters/postgres`  | Repositories over the sqlc-generated code                         |
