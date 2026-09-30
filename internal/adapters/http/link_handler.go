@@ -72,7 +72,7 @@ func (h *Handler) ListLinks(c *gin.Context) {
 	}
 
 	writeRangePage(c, linksUnit, fromHeader, application.RangePage[linkResponse]{
-		Items: h.linkResponses(page.Items),
+		Items: mapSlice(page.Items, h.linkResponse),
 		First: page.First,
 		Total: page.Total,
 	})

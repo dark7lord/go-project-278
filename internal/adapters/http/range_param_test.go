@@ -29,8 +29,10 @@ func TestParseRangeParam(t *testing.T) {
 		{name: "suffix junk", input: "[0,4]junk", wantErr: ErrRangeFormat},
 		{name: "trailing text after space", input: "[0, 4] x", wantErr: ErrRangeFormat},
 		{name: "RFC form is not a query value", input: "0-4", wantErr: ErrRangeFormat},
-		{name: "overflow start", input: "[99999999999999999999,5]", wantErr: ErrRangeStart},
-		{name: "overflow end", input: "[5,99999999999999999999]", wantErr: ErrRangeEnd},
+		{name: "overflow start", input: "[99999999999999999999,5]", wantErr: ErrRangeFormat},
+		{name: "overflow end", input: "[5,99999999999999999999]", wantErr: ErrRangeFormat},
+		{name: "fraction", input: "[0.5,5]", wantErr: ErrRangeFormat},
+		{name: "three bounds", input: "[0,4,9]", wantErr: ErrRangeFormat},
 		{name: "start > end", input: "[10,5]", wantErr: ErrRangeInverted},
 	}
 

@@ -51,9 +51,7 @@ func setupRouter(linkHandler *httpadapter.Handler) *gin.Engine {
 
 	linkHandler.RegisterRootRoutes(router)
 
-	api := router.Group("/api")
-	api.Use(httpadapter.MaxRequestBody(httpadapter.MaxRequestBodyBytes))
-	linkHandler.RegisterAPIRoutes(api)
+	linkHandler.RegisterAPIRoutes(router.Group("/api"))
 
 	return router
 }
@@ -106,6 +104,9 @@ func withRequestTimeout(h http.Handler, timeout time.Duration) http.Handler {
 	})
 }
 
+// maxRequestBodyBytes bounds request bodies (1 MiB headroom for JSON).
+const maxRequestBodyBytes = 1 << 20
+
 // writeTimeoutGrace is the window the timeout handler gets to deliver its
 // response after the request budget is spent. Without it the socket deadline
 // races the middleware's 503 and the client sees a dropped connection instead.
@@ -114,9 +115,11 @@ const writeTimeoutGrace = 1 * time.Second
 // newServer builds the HTTP server. The write deadline is derived from the
 // request budget so it can never preempt the timeout handler's response.
 func newServer(cfg *config.Config, handler http.Handler) *http.Server {
+	limited := http.MaxBytesHandler(handler, maxRequestBodyBytes)
+
 	return &http.Server{
 		Addr:              ":8080",
-		Handler:           withRequestTimeout(handler, cfg.RequestTimeout),
+		Handler:           withRequestTimeout(limited, cfg.RequestTimeout),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
 		WriteTimeout:      cfg.RequestTimeout + writeTimeoutGrace,

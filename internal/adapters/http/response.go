@@ -23,13 +23,14 @@ func (h *Handler) linkResponse(link application.LinkView) linkResponse {
 	}
 }
 
-func (h *Handler) linkResponses(links []application.LinkView) []linkResponse {
-	responses := make([]linkResponse, len(links))
-	for index, link := range links {
-		responses[index] = h.linkResponse(link)
+// mapSlice converts every item of a slice with convert.
+func mapSlice[T, U any](items []T, convert func(T) U) []U {
+	result := make([]U, len(items))
+	for i, item := range items {
+		result[i] = convert(item)
 	}
 
-	return responses
+	return result
 }
 
 // visitResponse is the HTTP representation of a recorded link visit.
@@ -54,13 +55,4 @@ func toVisitResponse(visit application.VisitView) visitResponse {
 		Reffer:    visit.Referer,
 		Status:    visit.Status,
 	}
-}
-
-func toVisitResponses(visits []application.VisitView) []visitResponse {
-	responses := make([]visitResponse, len(visits))
-	for index, visit := range visits {
-		responses[index] = toVisitResponse(visit)
-	}
-
-	return responses
 }

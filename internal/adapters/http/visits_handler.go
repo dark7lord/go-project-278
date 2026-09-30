@@ -32,7 +32,7 @@ func (h *Handler) ListVisits(c *gin.Context) {
 	}
 
 	writeRangePage(c, linkVisitsUnit, fromHeader, application.RangePage[visitResponse]{
-		Items: toVisitResponses(page.Items),
+		Items: mapSlice(page.Items, toVisitResponse),
 		First: page.First,
 		Total: page.Total,
 	})

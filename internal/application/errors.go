@@ -10,8 +10,6 @@ var (
 	// ErrShortCodeGenerationFailed indicates that generated short names kept
 	// colliding until the attempt budget ran out; storage is exhausted.
 	ErrShortCodeGenerationFailed = errors.New("short code generation failed")
-	// ErrSortField indicates an unsupported sort field.
-	ErrSortField = errors.New("unsupported sort field")
 )
 
 // FieldError associates an application error with a request field.

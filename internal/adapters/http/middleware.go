@@ -35,17 +35,6 @@ func jsonFieldName(field reflect.StructField) string {
 	return name
 }
 
-// MaxRequestBodyBytes bounds JSON request bodies from above (1 MiB headroom).
-const MaxRequestBodyBytes = 1 << 20
-
-// MaxRequestBody is the equivalent of the common gin.MaxAllowedBodyBytes
-// helper (gin does not ship one): it caps the body size seen by handlers.
-func MaxRequestBody(limit int64) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, limit)
-	}
-}
-
 // NewCORS returns the CORS middleware used by the API transport.
 func NewCORS() gin.HandlerFunc {
 	return cors.New(cors.Config{

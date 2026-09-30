@@ -1,14 +1,11 @@
 package httpadapter
 
 import (
+	"encoding/json"
 	"errors"
-	"regexp"
 
 	"code/internal/application"
 )
-
-// sortRe matches a sort value like ["short_name","ASC"].
-var sortRe = regexp.MustCompile(`^\s*\[\s*"([a-z][a-z0-9_]*)"\s*,\s*"(ASC|DESC)"\s*\]\s*$`)
 
 // linksSortFields and visitsSortFields map the names a client may sort by to
 // the stored fields; they mirror the sort dispatch in the repository.
@@ -33,8 +30,10 @@ var visitsSortFields = map[string]application.SortField{
 }
 
 var (
-	// ErrSortFormat indicates the sort value does not match [field,ASC|DESC].
+	// ErrSortFormat indicates the sort value is not a JSON array ["field","ASC|DESC"].
 	ErrSortFormat = errors.New(`invalid sort, expected [field,ASC|DESC]`)
+	// ErrSortField indicates an unsupported sort field.
+	ErrSortField = errors.New("unsupported sort field")
 )
 
 // parseSortParam parses a "sort" query parameter value into a sort request on
@@ -44,15 +43,18 @@ func parseSortParam(sortParam string, fields map[string]application.SortField) (
 		return nil, nil
 	}
 
-	matches := sortRe.FindStringSubmatch(sortParam)
-	if len(matches) != 3 {
+	var pair []string
+	if err := json.Unmarshal([]byte(sortParam), &pair); err != nil || len(pair) != 2 {
+		return nil, ErrSortFormat
+	}
+	if pair[1] != "ASC" && pair[1] != "DESC" {
 		return nil, ErrSortFormat
 	}
 
-	field, ok := fields[matches[1]]
+	field, ok := fields[pair[0]]
 	if !ok {
-		return nil, application.ErrSortField
+		return nil, ErrSortField
 	}
 
-	return &application.Sort{Field: field, Asc: matches[2] == "ASC"}, nil
+	return &application.Sort{Field: field, Asc: pair[1] == "ASC"}, nil
 }

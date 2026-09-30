@@ -53,16 +53,6 @@ func capRange(r application.Range) application.Range {
 	return r
 }
 
-// contentRange builds a Content-Range value for a returned item range.
-func contentRange(unit string, start, lastPos, total int64) string {
-	return fmt.Sprintf("%s %d-%d/%d", unit, start, lastPos, total)
-}
-
-// unsatisfiedRange builds a Content-Range value for an unsatisfied range.
-func unsatisfiedRange(unit string, total int64) string {
-	return fmt.Sprintf("%s */%d", unit, total)
-}
-
 // writeRangePage writes a page with its Content-Range: 416 when the range
 // misses a non-empty collection, 206 for an honoured Range header, 200
 // otherwise. An empty collection answers 200 [] whatever the range, so a
@@ -75,15 +65,14 @@ func writeRangePage[T any](
 ) {
 	c.Header("Accept-Ranges", unit)
 
-	if page.Total == 0 {
-		c.Header("Content-Range", unsatisfiedRange(unit, page.Total))
-		c.JSON(http.StatusOK, page.Items)
-		return
-	}
-
 	if len(page.Items) == 0 {
-		c.Header("Content-Range", unsatisfiedRange(unit, page.Total))
+		c.Header("Content-Range", fmt.Sprintf("%s */%d", unit, page.Total))
+		if page.Total == 0 {
+			c.JSON(http.StatusOK, page.Items)
+			return
+		}
 		c.JSON(http.StatusRequestedRangeNotSatisfiable, errJSON("range not satisfiable"))
+
 		return
 	}
 
@@ -93,6 +82,6 @@ func writeRangePage[T any](
 	}
 
 	lastPos := page.First + int64(len(page.Items)) - 1
-	c.Header("Content-Range", contentRange(unit, page.First, lastPos, page.Total))
+	c.Header("Content-Range", fmt.Sprintf("%s %d-%d/%d", unit, page.First, lastPos, page.Total))
 	c.JSON(status, page.Items)
 }

@@ -1,8 +1,10 @@
 package app
 
 import (
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -48,4 +50,24 @@ func TestNewServerWiresRequestTimeout(t *testing.T) {
 
 	assert.Equal(t, http.StatusServiceUnavailable, w.Code)
 	assert.Equal(t, "application/json; charset=utf-8", w.Header().Get("Content-Type"))
+}
+
+func TestNewServerLimitsRequestBody(t *testing.T) {
+	router := gin.New()
+	router.POST("/api/links", func(c *gin.Context) {
+		if _, err := io.Copy(io.Discard, c.Request.Body); err != nil {
+			c.Status(http.StatusBadRequest)
+			return
+		}
+		c.Status(http.StatusNoContent)
+	})
+
+	server := newServer(&config.Config{RequestTimeout: time.Second}, router)
+
+	body := strings.NewReader(strings.Repeat("a", maxRequestBodyBytes+1))
+	req := httptest.NewRequest(http.MethodPost, "/api/links", body)
+	w := httptest.NewRecorder()
+	server.Handler.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
