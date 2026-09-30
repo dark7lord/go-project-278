@@ -9,18 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	testExampleURL    = "https://example.com"
-	testShortName     = "my-link"
-	testGeneratedCode = "generated-code"
-	testTargetName    = "target"
-	testOKURL         = "https://ok.com"
-)
-
-// testRedirectStatus is deliberately not 302, so the redirect assertions prove
-// that the service records the status it was handed instead of a literal 302.
-const testRedirectStatus = int32(307)
-
 func TestServiceCreateLink(t *testing.T) {
 	tests := []struct {
 		name               string
@@ -192,4 +180,26 @@ func TestServiceCreateLinkDoesNotRetryNonCollisionFieldError(t *testing.T) {
 	assert.ErrorIs(t, err, fieldErr)
 	assert.Equal(t, 1, generator.calls)
 	assert.Equal(t, 1, len(writer.Calls))
+}
+
+func TestServiceCreateLinkUsesInjectedGenerator(t *testing.T) {
+	writer := NewMockLinkStore(t)
+	generator := &fakeGenerator{value: testGeneratedCode}
+
+	svc := NewService(writer, nil, generator.Generate)
+	writer.EXPECT().
+		CreateLink(mock.Anything, testExampleURL, testGeneratedCode).
+		Return(Link{
+			OriginalURL: testExampleURL,
+			ShortName:   testGeneratedCode,
+		}, nil).
+		Once()
+	link, err := svc.CreateLink(t.Context(), LinkInput{
+		OriginalURL: testExampleURL,
+		ShortName:   "",
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, testGeneratedCode, link.ShortName)
+	assert.Equal(t, 1, generator.calls)
 }
