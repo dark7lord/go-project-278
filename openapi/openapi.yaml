@@ -20,7 +20,10 @@ info:
     `X-Request-ID`; the request log line and the Sentry event of a failed
     request carry the same id.
 servers:
+  - url: https://go-project-278-ufeg.onrender.com
+    description: Demo on Render; the first request may take a minute to wake it
   - url: http://localhost:8080
+    description: Local, `make dev`
 
 # The API has no authentication yet.
 security: []
@@ -371,15 +374,19 @@ components:
         id:
           type: integer
           format: int64
+          examples: [42]
         original_url:
           type: string
           format: uri
+          examples: [https://go.dev/doc/effective_go]
         short_name:
           type: string
+          examples: [effective-go]
         short_url:
           type: string
           format: uri
           description: '`BASE_URL` + `/r/` + `short_name`.'
+          examples: [https://go-project-278-ufeg.onrender.com/r/effective-go]
     LinkRequest:
       type: object
       required: [original_url]
@@ -388,12 +395,13 @@ components:
         original_url:
           type: string
           description: HTTP or HTTPS URL; a missing scheme defaults to `https://`.
-          examples: [example.com]
+          examples: [go.dev/doc/effective_go]
         short_name:
           type: string
           description: |
             3–32 characters of `[a-zA-Z0-9-]`, surrounding spaces are trimmed.
-            Generated when omitted or empty.
+            Generated when omitted or empty, like `vimba-482103`.
+          examples: [effective-go]
           minLength: 3
           maxLength: 32
     Visit:
@@ -403,18 +411,24 @@ components:
         id:
           type: integer
           format: int64
+          examples: [7]
         link_id:
           type: integer
           format: int64
+          examples: [42]
         created_at:
           type: string
           format: date-time
+          examples: ['2026-09-30T15:44:02.196Z']
         ip:
           type: string
+          examples: [203.0.113.7]
         user_agent:
           type: string
+          examples: ['Mozilla/5.0 (Macintosh; Intel Mac OS X 14.6; rv:131.0) Gecko/20100101 Firefox/131.0']
         reffer:
           type: [string, 'null']
+          examples: ['https://t.me/']
           description: |
             The Referer of the redirect request, null when the browser sent none.
             Spelled `reffer`, as the dashboard reads it.
@@ -422,6 +436,7 @@ components:
           type: integer
           format: int32
           description: HTTP status of the redirect.
+          examples: [302]
     Error:
       type: object
       required: [error]
