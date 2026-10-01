@@ -305,7 +305,7 @@ func TestHandlerListLinksSortBadFormat(t *testing.T) {
 	newHandlerRouter(handler).ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	assert.JSONEq(t, `{"error": "invalid sort, expected [field,ASC|DESC]"}`, w.Body.String())
+	assert.JSONEq(t, `{"error": "invalid sort, expected [\"field\",\"ASC|DESC\"]"}`, w.Body.String())
 	linkService.AssertNotCalled(t, "PageLinks", mock.Anything, mock.Anything)
 }
 

@@ -32,7 +32,7 @@ var sortAliases = map[string]string{
 }
 
 var (
-	errSortFormat = errors.New(`invalid sort, expected [field,ASC|DESC]`)
+	errSortFormat = errors.New(`invalid sort, expected ["field","ASC|DESC"]`)
 	errSortField  = errors.New("unsupported sort field")
 )
 
