@@ -34,7 +34,8 @@ func jsonFieldName(field reflect.StructField) string {
 	return name
 }
 
-// NewCORS lets the Vite dev server on :5173 call the API.
+// NewCORS lets the Vite dev server on :5173 call the API: it proxies /api but
+// forwards its own Origin, which a write request carries and Host no longer matches.
 func NewCORS() gin.HandlerFunc {
 	return cors.New(cors.Config{
 		AllowOrigins: []string{"http://localhost:5173"},
