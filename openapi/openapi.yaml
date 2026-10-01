@@ -94,31 +94,61 @@ paths:
             examples: ['["short_name","ASC"]']
       responses:
         '200':
-          description: A page of links, picked by `range` or the first page.
+          description: |
+            A page of links, picked by `range` or the first page.
+            For example, `GET /api/links?range=[0,1]`.
           headers:
             Content-Range:
-              $ref: '#/components/headers/ContentRange'
+              description: Which items came back, out of how many.
+              schema:
+                type: string
+              example: links 0-1/42
             Accept-Ranges:
-              $ref: '#/components/headers/AcceptRanges'
+              description: The unit the `Range` header takes here.
+              schema:
+                type: string
+              example: links
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Link'
+              example:
+                - id: 1
+                  original_url: https://go.dev/doc/effective_go
+                  short_name: effective-go
+                  short_url: https://go-project-278-ufeg.onrender.com/r/effective-go
+                - id: 2
+                  original_url: https://hexlet.io/courses/go-basics
+                  short_name: go-basics
+                  short_url: https://go-project-278-ufeg.onrender.com/r/go-basics
         '206':
-          description: A page of links, picked by an honoured `Range` header.
+          description: |
+            A page of links, picked by an honoured `Range` header.
+            For example, `Range: links=-1`.
           headers:
             Content-Range:
-              $ref: '#/components/headers/ContentRange'
+              description: Which items came back, out of how many.
+              schema:
+                type: string
+              example: links 41-41/42
             Accept-Ranges:
-              $ref: '#/components/headers/AcceptRanges'
+              description: The unit the `Range` header takes here.
+              schema:
+                type: string
+              example: links
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Link'
+              example:
+                - id: 42
+                  original_url: https://pkg.go.dev/net/http
+                  short_name: vimba-482103
+                  short_url: https://go-project-278-ufeg.onrender.com/r/vimba-482103
         '400':
           $ref: '#/components/responses/BadRequest'
         '416':
@@ -230,31 +260,70 @@ paths:
             examples: ['["created_at","DESC"]']
       responses:
         '200':
-          description: A page of visits, picked by `range` or the first page.
+          description: |
+            A page of visits, picked by `range` or the first page.
+            For example, `GET /api/link_visits?range=[0,1]`.
           headers:
             Content-Range:
-              $ref: '#/components/headers/ContentRange'
+              description: Which items came back, out of how many.
+              schema:
+                type: string
+              example: link_visits 0-1/310
             Accept-Ranges:
-              $ref: '#/components/headers/AcceptRanges'
+              description: The unit the `Range` header takes here.
+              schema:
+                type: string
+              example: link_visits
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Visit'
+              example:
+                - id: 1
+                  link_id: 42
+                  created_at: '2026-09-30T15:44:02.196Z'
+                  ip: 203.0.113.7
+                  user_agent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14.6; rv:131.0) Gecko/20100101 Firefox/131.0'
+                  reffer: 'https://t.me/'
+                  status: 302
+                - id: 2
+                  link_id: 42
+                  created_at: '2026-09-30T15:51:40.512Z'
+                  ip: 198.51.100.23
+                  user_agent: 'curl/8.7.1'
+                  reffer: null
+                  status: 302
         '206':
-          description: A page of visits, picked by an honoured `Range` header.
+          description: |
+            A page of visits, picked by an honoured `Range` header.
+            For example, `Range: link_visits=-1`.
           headers:
             Content-Range:
-              $ref: '#/components/headers/ContentRange'
+              description: Which items came back, out of how many.
+              schema:
+                type: string
+              example: link_visits 309-309/310
             Accept-Ranges:
-              $ref: '#/components/headers/AcceptRanges'
+              description: The unit the `Range` header takes here.
+              schema:
+                type: string
+              example: link_visits
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Visit'
+              example:
+                - id: 310
+                  link_id: 42
+                  created_at: '2026-10-01T09:12:05.003Z'
+                  ip: 192.0.2.10
+                  user_agent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14.6; rv:131.0) Gecko/20100101 Firefox/131.0'
+                  reffer: 'https://news.ycombinator.com/'
+                  status: 302
         '400':
           $ref: '#/components/responses/BadRequest'
         '416':
@@ -300,12 +369,7 @@ components:
         response: react-admin reads the total from it.
       schema:
         type: string
-        examples: ['links 0-9/42']
-    AcceptRanges:
-      description: The unit the `Range` header takes here, the collection name.
-      schema:
-        type: string
-        examples: ['links']
+      example: links */42
 
   requestBodies:
     LinkRequest:
