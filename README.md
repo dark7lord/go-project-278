@@ -119,33 +119,37 @@ visits by `id`, `link_id`, `created_at`, `ip`, `user_agent`, `referer`, `status`
 
 ## Examples
 
-Create a link with a chosen short name:
+`--json` (curl 7.82+) sends the body with `Content-Type: application/json`.
+
+Create a link with a chosen short name; a missing scheme becomes `https://`:
 
 ```bash
-curl -i localhost:8080/api/links \
-  -H 'Content-Type: application/json' \
-  -d '{"original_url": "https://example.com/long/path", "short_name": "example"}'
+curl -i --json '{"original_url": "go.dev/doc/effective_go", "short_name": "effective-go"}' \
+  localhost:8080/api/links
 ```
 
 ```
 HTTP/1.1 201 Created
 
-{"id":1,"original_url":"https://example.com/long/path","short_name":"example","short_url":"http://localhost:8080/r/example"}
+{"id":1,"original_url":"https://go.dev/doc/effective_go","short_name":"effective-go","short_url":"http://localhost:8080/r/effective-go"}
 ```
 
 Without `short_name` the server generates one:
 
 ```bash
-curl localhost:8080/api/links \
-  -H 'Content-Type: application/json' \
-  -d '{"original_url": "https://go.dev"}'
+curl --json '{"original_url": "https://hexlet.io/courses/go-basics"}' localhost:8080/api/links
 ```
 
 ```
-{"id":2,"original_url":"https://go.dev","short_name":"gixi-938028","short_url":"http://localhost:8080/r/gixi-938028"}
+{"id":2,"original_url":"https://hexlet.io/courses/go-basics","short_name":"sufobi-594877","short_url":"http://localhost:8080/r/sufobi-594877"}
 ```
 
 A taken short name:
+
+```bash
+curl -i --json '{"original_url": "https://go.dev/blog", "short_name": "effective-go"}' \
+  localhost:8080/api/links
+```
 
 ```
 HTTP/1.1 422 Unprocessable Entity
@@ -153,18 +157,18 @@ HTTP/1.1 422 Unprocessable Entity
 {"errors":{"short_name":"short name already in use"}}
 ```
 
-Follow the short link:
+Follow the short link, as if from a Telegram post:
 
 ```bash
-curl -i localhost:8080/r/example
+curl -i localhost:8080/r/effective-go -H 'Referer: https://t.me/'
 ```
 
 ```
 HTTP/1.1 302 Found
-Location: https://example.com/long/path
+Location: https://go.dev/doc/effective_go
 ```
 
-A sorted page of links:
+With a third link, `https://pkg.go.dev/net/http`, added the same way — a sorted page of links:
 
 ```bash
 curl -i -G localhost:8080/api/links \
@@ -176,20 +180,20 @@ curl -i -G localhost:8080/api/links \
 HTTP/1.1 200 OK
 Content-Range: links 0-1/3
 
-[{"id":3,"original_url":"https://hexlet.io","short_name":"gacize-235272","short_url":"http://localhost:8080/r/gacize-235272"},{"id":2,"original_url":"https://go.dev","short_name":"gixi-938028","short_url":"http://localhost:8080/r/gixi-938028"}]
+[{"id":3,"original_url":"https://pkg.go.dev/net/http","short_name":"xomuvi-480692","short_url":"http://localhost:8080/r/xomuvi-480692"},{"id":2,"original_url":"https://hexlet.io/courses/go-basics","short_name":"sufobi-594877","short_url":"http://localhost:8080/r/sufobi-594877"}]
 ```
 
-Visits, with an RFC range header:
+The visit, with an RFC range header:
 
 ```bash
-curl -i localhost:8080/api/link_visits -H 'Range: link_visits=0-1'
+curl -i localhost:8080/api/link_visits -H 'Range: link_visits=0-9'
 ```
 
 ```
 HTTP/1.1 206 Partial Content
 Content-Range: link_visits 0-0/1
 
-[{"id":1,"link_id":1,"created_at":"2026-09-28T18:36:35.585766+05:00","ip":"::1","user_agent":"curl/8.7.1","reffer":null,"status":302}]
+[{"id":1,"link_id":1,"created_at":"2026-10-01T05:25:50.601725Z","ip":"::1","user_agent":"curl/8.7.1","reffer":"https://t.me/","status":302}]
 ```
 
 The last link, with a suffix range:
@@ -202,7 +206,7 @@ curl -i localhost:8080/api/links -H 'Range: links=-1'
 HTTP/1.1 206 Partial Content
 Content-Range: links 2-2/3
 
-[{"id":3,"original_url":"https://hexlet.io","short_name":"gacize-235272","short_url":"http://localhost:8080/r/gacize-235272"}]
+[{"id":3,"original_url":"https://pkg.go.dev/net/http","short_name":"xomuvi-480692","short_url":"http://localhost:8080/r/xomuvi-480692"}]
 ```
 
 A range past the end:
