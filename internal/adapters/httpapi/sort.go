@@ -44,10 +44,9 @@ func parseSortParam(sortParam string, fields []string) (application.Sort, error)
 	}
 
 	var pair []string
-	if err := json.Unmarshal([]byte(sortParam), &pair); err != nil || len(pair) != 2 {
-		return application.Sort{}, errSortFormat
-	}
-	if pair[1] != "ASC" && pair[1] != "DESC" {
+	err := json.Unmarshal([]byte(sortParam), &pair)
+	isSort := err == nil && len(pair) == 2 && (pair[1] == "ASC" || pair[1] == "DESC")
+	if !isSort {
 		return application.Sort{}, errSortFormat
 	}
 

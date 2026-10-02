@@ -94,7 +94,9 @@ var (
 // parseRangeParam parses a "range" query parameter value, a JSON array [start,end].
 func parseRangeParam(rangeParam string) (application.Range, error) {
 	var bounds []int64
-	if err := json.Unmarshal([]byte(rangeParam), &bounds); err != nil || len(bounds) != 2 || bounds[0] < 0 {
+	err := json.Unmarshal([]byte(rangeParam), &bounds)
+	isRange := err == nil && len(bounds) == 2 && bounds[0] >= 0
+	if !isRange {
 		return application.Range{}, errRangeFormat
 	}
 
@@ -118,7 +120,8 @@ func parseRangeHeader(header, unit string) (application.Range, bool) {
 	}
 
 	matches := rangeSpecRe.FindStringSubmatch(spec)
-	if matches == nil || matches[1] == "" && matches[2] == "" {
+	isRangeSpec := matches != nil && (matches[1] != "" || matches[2] != "")
+	if !isRangeSpec {
 		return application.Range{}, false
 	}
 
