@@ -9,7 +9,11 @@ import (
 	"code/internal/application"
 )
 
-const shortNameConstraint = "links_short_name_key"
+const (
+	// uniqueViolation is the PostgreSQL error code for a broken UNIQUE constraint.
+	uniqueViolation     = "23505"
+	shortNameConstraint = "links_short_name_key"
+)
 
 // mapStorageError turns a missing row and a taken short name into application
 // errors and passes anything else through.
@@ -19,7 +23,10 @@ func mapStorageError(err error) error {
 	}
 
 	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) && pgErr.Code == "23505" && pgErr.ConstraintName == shortNameConstraint {
+	isShortNameTaken := errors.As(err, &pgErr) &&
+		pgErr.Code == uniqueViolation &&
+		pgErr.ConstraintName == shortNameConstraint
+	if isShortNameTaken {
 		return &application.FieldError{
 			Field: "short_name",
 			Err:   application.ErrShortNameAlreadyUse,
