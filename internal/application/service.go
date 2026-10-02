@@ -143,14 +143,12 @@ func (s *Service) withGeneratedShortName(
 	ctx context.Context,
 	try func(ctx context.Context, shortName string) (Link, error),
 ) (Link, error) {
-	for attempt := 0; attempt < maxShortCodeAttempts; attempt++ {
+	for range maxShortCodeAttempts {
 		link, err := try(ctx, s.generate())
 		if err == nil {
 			return link, nil
 		}
-
-		var fieldErr *FieldError
-		if !errors.As(err, &fieldErr) || !errors.Is(fieldErr.Err, ErrShortNameAlreadyUse) {
+		if !errors.Is(err, ErrShortNameAlreadyUse) {
 			return Link{}, fmt.Errorf("persist link: %w", err)
 		}
 	}
