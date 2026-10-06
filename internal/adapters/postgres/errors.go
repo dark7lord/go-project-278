@@ -22,8 +22,8 @@ func mapStorageError(err error) error {
 		return application.ErrNotFound
 	}
 
-	var pgErr *pgconn.PgError
-	isShortNameTaken := errors.As(err, &pgErr) &&
+	pgErr, isPgErr := errors.AsType[*pgconn.PgError](err)
+	isShortNameTaken := isPgErr &&
 		pgErr.Code == uniqueViolation &&
 		pgErr.ConstraintName == shortNameConstraint
 	if isShortNameTaken {

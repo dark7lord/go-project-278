@@ -35,8 +35,7 @@ func bindMessage(fe validator.FieldError) string {
 
 // writeBindErrors returns 422 for validator errors, otherwise 400 for invalid JSON.
 func writeBindErrors(c *gin.Context, err error) {
-	var validationErrors validator.ValidationErrors
-	if errors.As(err, &validationErrors) {
+	if validationErrors, ok := errors.AsType[validator.ValidationErrors](err); ok {
 		result := make(map[string]string)
 		for _, fieldErr := range validationErrors {
 			result[fieldErr.Field()] = bindMessage(fieldErr)
@@ -51,8 +50,7 @@ func writeBindErrors(c *gin.Context, err error) {
 // writeServiceError answers a known application error with its own text and
 // hides anything else behind a logged 500: wrap chains are for logs only.
 func writeServiceError(c *gin.Context, err error) {
-	var fe *application.FieldError
-	if errors.As(err, &fe) {
+	if fe, ok := errors.AsType[*application.FieldError](err); ok {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{"errors": gin.H{fe.Field: fe.Error()}})
 		return
 	}
