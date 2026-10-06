@@ -1,4 +1,6 @@
-:80
+# Render passes PORT (10000 by default), a port a non-root user may bind;
+# without it, as in compose, Caddy listens on :80
+:{$PORT:80}
 
 # The dashboard is static files; / is its index.html
 root * /app/public

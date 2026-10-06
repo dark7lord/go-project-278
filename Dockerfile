@@ -25,9 +25,9 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # 3) Runtime
 FROM alpine:3.22
 
-# Caddy may bind :80 without root, and everything runs as the app user
-RUN apk add --no-cache ca-certificates tzdata bash caddy libcap-setcap \
-  && setcap cap_net_bind_service=+ep /usr/sbin/caddy \
+# Everything runs as the app user. No file capabilities: a runtime that drops
+# them (Render does) refuses to execute such a binary at all.
+RUN apk add --no-cache ca-certificates tzdata bash caddy \
   && adduser -D app
 
 WORKDIR /app
