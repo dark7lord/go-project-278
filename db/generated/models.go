@@ -9,9 +9,10 @@ import (
 )
 
 type Link struct {
-	ID          int64  `json:"id"`
-	OriginalURL string `json:"original_url"`
-	ShortName   string `json:"short_name"`
+	ID          int64              `json:"id"`
+	OriginalURL string             `json:"original_url"`
+	ShortName   string             `json:"short_name"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
 }
 
 type LinkVisit struct {

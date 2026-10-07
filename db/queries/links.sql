@@ -1,15 +1,15 @@
 -- name: CreateLink :one
 INSERT INTO links (original_url, short_name)
 VALUES (@original_url, @short_name)
-RETURNING id, original_url, short_name;
+RETURNING id, original_url, short_name, created_at;
 
 -- name: GetLinkByID :one
-SELECT id, original_url, short_name
+SELECT id, original_url, short_name, created_at
 FROM links
 WHERE id = @id;
 
 -- name: GetLinkByShortName :one
-SELECT id, original_url, short_name
+SELECT id, original_url, short_name, created_at
 FROM links
 WHERE short_name = @short_name;
 
@@ -22,17 +22,17 @@ SET
     original_url = @original_url,
     short_name = @short_name
 WHERE id = @id
-RETURNING id, original_url, short_name;
+RETURNING id, original_url, short_name, created_at;
 
 -- name: DeleteLink :one
 DELETE FROM links
 WHERE id = @id
-RETURNING id, original_url, short_name;
+RETURNING id, original_url, short_name, created_at;
 
 -- name: GetLinksPage :many
 -- One page in the requested order. Each CASE is live for one field and
 -- direction and NULL otherwise; id comes last, so ties and no sort go by id.
-SELECT id, original_url, short_name
+SELECT id, original_url, short_name, created_at
 FROM links
 ORDER BY
     CASE WHEN sqlc.arg(sort_field)::text = 'short_name'

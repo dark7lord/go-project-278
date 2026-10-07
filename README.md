@@ -278,7 +278,7 @@ Applied versions are recorded in the `goose_db_version` table of the database fr
 To add one, create the next numbered file with both directions:
 
 ```sql
--- db/migrations/002_links_note.sql
+-- db/migrations/003_links_note.sql
 -- +goose Up
 ALTER TABLE links ADD COLUMN note text;
 
@@ -301,7 +301,7 @@ make db-gen            # when the queries in db/queries use the new schema
 
 If a version is marked applied but its changes are not in the database (for example, the file
 was edited after it ran), `db-rollback` fails. On a local database, delete the mark and apply again:
-`psql "$DATABASE_URL" -c 'DELETE FROM goose_db_version WHERE version_id = 2'`, then `make db-migrate`.
+`psql "$DATABASE_URL" -c 'DELETE FROM goose_db_version WHERE version_id = 3'`, then `make db-migrate`.
 Never do this on Render. For the compose database, `make db-reset` is simpler; it does not touch
 a database outside compose, such as a local PostgreSQL on another port in `DATABASE_URL`.
 
