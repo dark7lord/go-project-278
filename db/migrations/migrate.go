@@ -12,7 +12,7 @@ import (
 	"github.com/pressly/goose/v3/lock"
 )
 
-// Up applies every pending migration. The app calls it on start.
+// Up applies every pending migration; run.sh calls it before the API starts.
 func Up(ctx context.Context, pool *pgxpool.Pool) error {
 	provider, err := newProvider(pool)
 	if err != nil {

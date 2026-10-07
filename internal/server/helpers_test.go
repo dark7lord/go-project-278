@@ -63,7 +63,7 @@ type testDB struct {
 }
 
 // startTestDB starts the PostgreSQL version compose.yaml runs and migrates it
-// as the app does on start.
+// with the same embedded migrations run.sh applies.
 func startTestDB(ctx context.Context) (*testDB, error) {
 	pg, err := postgres.Run(ctx,
 		"postgres:17-alpine",

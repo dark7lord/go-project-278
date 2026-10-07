@@ -1,5 +1,5 @@
-// Package main runs the migrations by hand; unlike the app on start, it can
-// also roll back and report.
+// Package main applies the embedded migrations: run.sh calls "up" before the
+// API starts, and the db-* targets also roll back and report.
 package main
 
 import (

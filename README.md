@@ -35,7 +35,7 @@ cp .env.example .env   # only when there is no .env yet
 make tools             # golangci-lint binary; sqlc, air, mockery built from tools/go.mod
 make deps              # Go modules and the frontend package
 make db-up             # PostgreSQL 17 in Docker, data kept in the pgdata volume
-make db-migrate        # apply migrations (the app also applies them on start)
+make db-migrate        # apply migrations (make dev and make run do it too)
 ```
 
 If port 5432 is taken, for example by a local PostgreSQL, set `POSTGRES_PORT=5433` in `.env`
@@ -43,7 +43,8 @@ and use the same port in `DATABASE_URL`; `make setup` says so when it finds the 
 
 ### Docker
 
-The image bundles the API, the built dashboard and Caddy; the API applies migrations on start.
+The image bundles the API, the migrate command, the built dashboard and Caddy;
+`bin/run.sh` applies migrations before it starts the API.
 It is what Render builds; there the database is a separate managed PostgreSQL.
 
 ```bash
@@ -271,8 +272,8 @@ remove its `.sql.go` from `db/generated` before `make db-gen`.
 
 ### Migrations
 
-Migrations live in `db/migrations`, are embedded in the binary and applied by the API on start
-under a PostgreSQL advisory lock; `cmd/migrate` (behind the `db-*` targets) runs the same code by hand.
+Migrations live in `db/migrations` and are embedded in `cmd/migrate`, which applies them under a
+PostgreSQL advisory lock: `bin/run.sh` runs it before the API starts, the `db-*` targets by hand.
 Applied versions are recorded in the `goose_db_version` table of the database from `DATABASE_URL`.
 
 To add one, create the next numbered file with both directions:

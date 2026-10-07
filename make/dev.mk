@@ -15,10 +15,10 @@ setup: preflight ## After a clone: .env, tools, deps, PostgreSQL, migrations
 preflight: ## Check what setup needs: go, npm, a running docker, a free PostgreSQL port
 	@scripts/preflight.sh
 
-dev: db-up ## PostgreSQL, the API restarted by air on save, the dashboard
+dev: db-up db-migrate ## PostgreSQL, the API restarted by air on save, the dashboard
 	npx concurrently --kill-others --names api,front "$(GOTOOL) air" "npm run dev:front"
 
-run: build db-up ## PostgreSQL, the built API and the dashboard, no restarts
+run: build db-up db-migrate ## PostgreSQL, the built API and the dashboard, no restarts
 	npm run dev
 
 run-front: ## The dashboard alone

@@ -20,7 +20,8 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 COPY . .
 
 RUN --mount=type=cache,target=/root/.cache/go-build \
-  CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /build/app .
+  CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /build/app . \
+  && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /build/migrate ./cmd/migrate
 
 # 3) Runtime
 FROM alpine:3.22
@@ -35,6 +36,7 @@ WORKDIR /app
 ENV GIN_MODE=release
 
 COPY --from=backend-builder /build/app /app/bin/app
+COPY --from=backend-builder /build/migrate /app/bin/migrate
 COPY --from=frontend-builder \
   /build/frontend/node_modules/@hexlet/project-url-shortener-frontend/dist \
   /app/public
