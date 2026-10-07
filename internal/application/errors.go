@@ -9,6 +9,8 @@ var (
 	ErrShortNameAlreadyUse = errors.New("short name already in use")
 	// ErrShortCodeGenerationFailed reports that every generated short name collided.
 	ErrShortCodeGenerationFailed = errors.New("short code generation failed")
+	// ErrVisitNotRecorded reports a visit that failed to store; Redirect still returns the link.
+	ErrVisitNotRecorded = errors.New("visit not recorded")
 )
 
 // FieldError associates an application error with a request field.

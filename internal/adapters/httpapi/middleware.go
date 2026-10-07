@@ -69,8 +69,8 @@ func RequestID() gin.HandlerFunc {
 	}
 }
 
-// RequestLog writes one line per request with its id; a 5xx adds the errors
-// the client never sees. It must run first to time the whole chain.
+// RequestLog writes one line per request with its id and hidden errors: error
+// level for a 5xx, warn for other errors. It must run first to time the chain.
 func RequestLog(logger *slog.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
@@ -86,13 +86,17 @@ func RequestLog(logger *slog.Logger) gin.HandlerFunc {
 			"request_id", c.Writer.Header().Get(requestIDHeader),
 		}
 
-		if status < http.StatusInternalServerError {
-			logger.Info("request", attrs...)
-			return
-		}
 		if len(c.Errors) > 0 {
 			attrs = append(attrs, "error", strings.Join(c.Errors.Errors(), "; "))
 		}
-		logger.Error("request", attrs...)
+
+		switch {
+		case status >= http.StatusInternalServerError:
+			logger.Error("request", attrs...)
+		case len(c.Errors) > 0:
+			logger.Warn("request", attrs...)
+		default:
+			logger.Info("request", attrs...)
+		}
 	}
 }

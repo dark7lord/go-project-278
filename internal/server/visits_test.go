@@ -204,6 +204,26 @@ func TestRedirectRecordsVisit(t *testing.T) {
 	assert.Equal(t, "https://example.com", *listed[0].Reffer)
 }
 
+// TestRedirectSurvivesVisitFailure breaks visit inserts in the test's
+// transaction and expects the redirect anyway.
+func TestRedirectSurvivesVisitFailure(t *testing.T) {
+	td := setupTestDB(t)
+	ctx := t.Context()
+
+	tx := setupTestTx(t, td)
+
+	link := linkFactory(0)
+	created, err := tx.linkRepo.CreateLink(ctx, link.OriginalURL, link.ShortName)
+	require.NoError(t, err)
+	_, err = tx.tx.Exec(ctx, "ALTER TABLE link_visits ADD CONSTRAINT no_visits CHECK (false) NOT VALID")
+	require.NoError(t, err)
+
+	w := performRequest(t, tx.router, "GET", "/r/"+created.ShortName, "")
+
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Equal(t, created.OriginalURL, w.Header().Get("Location"))
+}
+
 func TestRedirectErrors(t *testing.T) {
 	td := setupTestDB(t)
 

@@ -122,7 +122,8 @@ func (h *Handler) DeleteLink(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-// Redirect answers GET /r/:code: it records the visit and redirects to the link.
+// Redirect answers GET /r/:code; a visit that fails to store is reported
+// but does not stop the redirect.
 func (h *Handler) Redirect(c *gin.Context) {
 	var referer *string
 	if ref := c.Request.Referer(); ref != "" {
@@ -135,7 +136,9 @@ func (h *Handler) Redirect(c *gin.Context) {
 		Referer:   referer,
 		Status:    int32(redirectStatus),
 	})
-	if err != nil {
+	if errors.Is(err, application.ErrVisitNotRecorded) {
+		reportError(c, err)
+	} else if err != nil {
 		writeServiceError(c, err)
 
 		return

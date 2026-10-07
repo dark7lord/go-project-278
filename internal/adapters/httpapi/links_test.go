@@ -2,6 +2,8 @@ package httpapi
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"maps"
 	"net/http"
 	"net/http/httptest"
@@ -33,6 +35,22 @@ func TestHandlerRedirectMapsVisitMetadata(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/r/target", nil)
 	req.Header.Set("User-Agent", "test-agent")
 	newHandlerRouter(handler).ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Equal(t, testExampleURL, w.Header().Get("Location"))
+}
+
+func TestHandlerRedirectsWhenVisitFails(t *testing.T) {
+	visitErr := fmt.Errorf("%w: %w", application.ErrVisitNotRecorded, errors.New("db is down"))
+	linkService := NewMockUseCase(t)
+	linkService.EXPECT().
+		Redirect(mock.Anything, "target", mock.Anything).
+		Return(application.Link{OriginalURL: testExampleURL}, visitErr).
+		Once()
+	handler := newTestHandler(linkService)
+
+	w := httptest.NewRecorder()
+	newHandlerRouter(handler).ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/r/target", nil))
 
 	assert.Equal(t, http.StatusFound, w.Code)
 	assert.Equal(t, testExampleURL, w.Header().Get("Location"))

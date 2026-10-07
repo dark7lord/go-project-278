@@ -52,7 +52,10 @@ paths:
     get:
       tags: [links]
       summary: Follow a short link
-      description: Records a visit (IP, User-Agent, Referer, status) and redirects to the original URL.
+      description: |
+        Records a visit (IP, User-Agent, Referer, status) and redirects to the
+        original URL. A visit that fails to store does not stop the redirect:
+        the failure is logged and reported, and the user is still sent on.
       operationId: redirect
       parameters:
         - name: code
@@ -71,7 +74,13 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '#/components/responses/InternalError'
+          description: The link could not be looked up; details are not exposed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: internal error
         '503':
           $ref: '#/components/responses/Timeout'
 

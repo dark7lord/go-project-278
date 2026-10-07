@@ -122,6 +122,10 @@ func serveLogged(t *testing.T, path string) (*httptest.ResponseRecorder, string)
 	router.GET("/boom", func(c *gin.Context) {
 		writeServiceError(c, errors.New("db is down"))
 	})
+	router.GET("/quiet", func(c *gin.Context) {
+		reportError(c, errors.New("visit not recorded"))
+		c.Status(http.StatusFound)
+	})
 
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, httptest.NewRequest(http.MethodGet, path, nil))
@@ -146,4 +150,13 @@ func TestRequestLogErrorLineCarriesHiddenError(t *testing.T) {
 	assert.Contains(t, line, "status=500")
 	assert.Contains(t, line, `error="db is down"`)
 	assert.Contains(t, line, "request_id="+w.Header().Get(requestIDHeader))
+}
+
+func TestRequestLogWarnLineCarriesReportedError(t *testing.T) {
+	w, line := serveLogged(t, "/quiet")
+
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Contains(t, line, "level=WARN")
+	assert.Contains(t, line, "status=302")
+	assert.Contains(t, line, `error="visit not recorded"`)
 }

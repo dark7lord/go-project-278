@@ -34,7 +34,8 @@ func (s *Service) CreateLink(ctx context.Context, in LinkInput) (Link, error) {
 	return s.saveLinkFields(ctx, in, s.links.CreateLink)
 }
 
-// Redirect resolves a short name and records the visit.
+// Redirect resolves a short name and records the visit; if only the visit fails,
+// it returns the link along with ErrVisitNotRecorded.
 func (s *Service) Redirect(ctx context.Context, shortName string, visit VisitInput) (Link, error) {
 	link, err := s.GetLinkByShortName(ctx, shortName)
 	if err != nil {
@@ -42,7 +43,7 @@ func (s *Service) Redirect(ctx context.Context, shortName string, visit VisitInp
 	}
 
 	if _, err := s.visits.CreateLinkVisit(ctx, link.ID, visit); err != nil {
-		return Link{}, fmt.Errorf("record link visit: %w", err)
+		return link, fmt.Errorf("%w: %w", ErrVisitNotRecorded, err)
 	}
 
 	return link, nil

@@ -65,9 +65,14 @@ func writeServiceError(c *gin.Context, err error) {
 		return
 	}
 
+	reportError(c, err)
+	c.JSON(http.StatusInternalServerError, errJSON(errInternal))
+}
+
+// reportError logs err and sends it to Sentry without answering the client.
+func reportError(c *gin.Context, err error) {
 	_ = c.Error(err)
 	captureException(c, err)
-	c.JSON(http.StatusInternalServerError, errJSON(errInternal))
 }
 
 // captureException reports err to the request's Sentry hub, so the event

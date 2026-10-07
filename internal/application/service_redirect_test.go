@@ -37,12 +37,13 @@ func TestServiceRedirectRecordsVisit(t *testing.T) {
 	assert.Equal(t, link, result)
 }
 
-func TestServiceRedirectReturnsVisitError(t *testing.T) {
+func TestServiceRedirectReturnsLinkWhenVisitFails(t *testing.T) {
 	visitErr := errors.New("record failed")
+	link := Link{ID: 1, OriginalURL: testExampleURL}
 	links := NewMockLinkStore(t)
 	links.EXPECT().
 		GetLinkByShortName(mock.Anything, testTargetName).
-		Return(Link{ID: 1, OriginalURL: testExampleURL}, nil).
+		Return(link, nil).
 		Once()
 	recorder := NewMockVisitStore(t)
 	svc := NewService(links, recorder, fixedCode)
@@ -51,7 +52,9 @@ func TestServiceRedirectReturnsVisitError(t *testing.T) {
 		Return(Visit{}, visitErr).
 		Once()
 
-	_, err := svc.Redirect(t.Context(), testTargetName, VisitInput{Status: testRedirectStatus})
+	result, err := svc.Redirect(t.Context(), testTargetName, VisitInput{Status: testRedirectStatus})
 
+	assert.Equal(t, link, result)
+	assert.ErrorIs(t, err, ErrVisitNotRecorded)
 	assert.ErrorIs(t, err, visitErr)
 }
