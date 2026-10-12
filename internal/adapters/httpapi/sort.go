@@ -11,7 +11,12 @@ import (
 // linksSortFields and visitsSortFields list the stored fields a client may
 // sort by; they mirror the sort dispatch in the page queries.
 var (
-	linksSortFields  = []string{"id", "original_url", "short_name"}
+	linksSortFields = []string{
+		"id",
+		"original_url",
+		"short_name",
+		"created_at",
+	}
 	visitsSortFields = []string{
 		"id",
 		"link_id",

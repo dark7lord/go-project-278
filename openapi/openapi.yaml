@@ -96,7 +96,7 @@ paths:
           in: query
           description: |
             `["field","ASC|DESC"]`, orders the collection before the page is cut.
-            Sortable fields: `id`, `original_url`, `short_name`, and `short_url`
+            Sortable fields: `id`, `original_url`, `short_name`, `created_at`, and `short_url`
             (sorts as `short_name`).
           schema:
             type: string
@@ -128,10 +128,12 @@ paths:
                   original_url: https://go.dev/doc/effective_go
                   short_name: effective-go
                   short_url: https://go-project-278-ufeg.onrender.com/r/effective-go
+                  created_at: '2026-09-30T15:40:11.204Z'
                 - id: 2
                   original_url: https://hexlet.io/courses/go-basics
                   short_name: go-basics
                   short_url: https://go-project-278-ufeg.onrender.com/r/go-basics
+                  created_at: '2026-09-30T15:42:37.918Z'
         '206':
           description: |
             A page of links, picked by an honoured `Range` header.
@@ -158,6 +160,7 @@ paths:
                   original_url: https://pkg.go.dev/net/http
                   short_name: vimba-482103
                   short_url: https://go-project-278-ufeg.onrender.com/r/vimba-482103
+                  created_at: '2026-10-01T08:57:20.611Z'
         '400':
           $ref: '#/components/responses/BadRequest'
         '416':
@@ -442,7 +445,7 @@ components:
   schemas:
     Link:
       type: object
-      required: [id, original_url, short_name, short_url]
+      required: [id, original_url, short_name, short_url, created_at]
       properties:
         id:
           type: integer
@@ -460,6 +463,11 @@ components:
           format: uri
           description: '`BASE_URL` + `/r/` + `short_name`.'
           examples: [https://go-project-278-ufeg.onrender.com/r/effective-go]
+        created_at:
+          type: string
+          format: date-time
+          description: Set by the database when the link is created; an update keeps it.
+          examples: ['2026-09-30T15:40:11.204Z']
     LinkRequest:
       type: object
       required: [original_url]

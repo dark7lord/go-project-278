@@ -28,6 +28,7 @@ func toLink(link db.Link) application.Link {
 		ID:          link.ID,
 		ShortName:   link.ShortName,
 		OriginalURL: link.OriginalURL,
+		CreatedAt:   link.CreatedAt.Time,
 	}
 }
 

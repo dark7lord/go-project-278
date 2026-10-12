@@ -113,6 +113,12 @@ ORDER BY
     CASE WHEN $1::text = 'original_url'
         AND NOT $2::boolean
         THEN original_url END DESC,
+    CASE WHEN $1::text = 'created_at'
+        AND $2::boolean
+        THEN created_at END ASC,
+    CASE WHEN $1::text = 'created_at'
+        AND NOT $2::boolean
+        THEN created_at END DESC,
     CASE WHEN $1::text = 'id'
         AND NOT $2::boolean
         THEN id END DESC,

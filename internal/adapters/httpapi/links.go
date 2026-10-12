@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -180,10 +181,11 @@ func bindLinkRequest(c *gin.Context) (linkRequest, bool) {
 
 // linkResponse is a link as the API returns it.
 type linkResponse struct {
-	ID          int64  `json:"id"`
-	OriginalURL string `json:"original_url"`
-	ShortName   string `json:"short_name"`
-	ShortURL    string `json:"short_url"`
+	ID          int64     `json:"id"`
+	OriginalURL string    `json:"original_url"`
+	ShortName   string    `json:"short_name"`
+	ShortURL    string    `json:"short_url"`
+	CreatedAt   time.Time `json:"created_at"`
 }
 
 func (h *Handler) linkResponse(link application.Link) linkResponse {
@@ -192,5 +194,6 @@ func (h *Handler) linkResponse(link application.Link) linkResponse {
 		OriginalURL: link.OriginalURL,
 		ShortName:   link.ShortName,
 		ShortURL:    h.baseURL + "/r/" + link.ShortName,
+		CreatedAt:   link.CreatedAt,
 	}
 }

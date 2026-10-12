@@ -103,7 +103,7 @@ Without either the first page is read, as if `links=0-` were sent.
   an empty collection answers `200 []` with `*/0` whatever the range.
 
 `sort=["field","ASC|DESC"]` orders the collection before the page is cut.
-Links sort by `id`, `original_url`, `short_name` (`short_url` sorts as `short_name`);
+Links sort by `id`, `original_url`, `short_name`, `created_at` (`short_url` sorts as `short_name`);
 visits by `id`, `link_id`, `created_at`, `ip`, `user_agent`, `referer`, `status`
 (`reffer`, the dashboard's spelling, sorts as `referer`).
 
@@ -132,7 +132,7 @@ curl -i --json '{"original_url": "go.dev/doc/effective_go", "short_name": "effec
 ```
 HTTP/1.1 201 Created
 
-{"id":1,"original_url":"https://go.dev/doc/effective_go","short_name":"effective-go","short_url":"http://localhost:8080/r/effective-go"}
+{"id":1,"original_url":"https://go.dev/doc/effective_go","short_name":"effective-go","short_url":"http://localhost:8080/r/effective-go","created_at":"2026-10-09T17:32:02.423102Z"}
 ```
 
 Without `short_name` the server generates one:
@@ -142,7 +142,7 @@ curl --json '{"original_url": "https://hexlet.io/courses/go-basics"}' localhost:
 ```
 
 ```
-{"id":2,"original_url":"https://hexlet.io/courses/go-basics","short_name":"sufobi-594877","short_url":"http://localhost:8080/r/sufobi-594877"}
+{"id":2,"original_url":"https://hexlet.io/courses/go-basics","short_name":"biwo-939568","short_url":"http://localhost:8080/r/biwo-939568","created_at":"2026-10-09T17:32:02.435831Z"}
 ```
 
 A taken short name:
@@ -181,7 +181,7 @@ curl -i -G localhost:8080/api/links \
 HTTP/1.1 200 OK
 Content-Range: links 0-1/3
 
-[{"id":3,"original_url":"https://pkg.go.dev/net/http","short_name":"xomuvi-480692","short_url":"http://localhost:8080/r/xomuvi-480692"},{"id":2,"original_url":"https://hexlet.io/courses/go-basics","short_name":"sufobi-594877","short_url":"http://localhost:8080/r/sufobi-594877"}]
+[{"id":3,"original_url":"https://pkg.go.dev/net/http","short_name":"kowo-171768","short_url":"http://localhost:8080/r/kowo-171768","created_at":"2026-10-09T17:32:02.445653Z"},{"id":2,"original_url":"https://hexlet.io/courses/go-basics","short_name":"biwo-939568","short_url":"http://localhost:8080/r/biwo-939568","created_at":"2026-10-09T17:32:02.435831Z"}]
 ```
 
 The visit, with an RFC range header:
@@ -194,7 +194,7 @@ curl -i localhost:8080/api/link_visits -H 'Range: link_visits=0-9'
 HTTP/1.1 206 Partial Content
 Content-Range: link_visits 0-0/1
 
-[{"id":1,"link_id":1,"created_at":"2026-10-01T05:25:50.601725Z","ip":"::1","user_agent":"curl/8.7.1","reffer":"https://t.me/","status":302}]
+[{"id":1,"link_id":1,"created_at":"2026-10-09T17:32:02.480061Z","ip":"::1","user_agent":"curl/8.7.1","reffer":"https://t.me/","status":302}]
 ```
 
 The last link, with a suffix range:
@@ -207,7 +207,7 @@ curl -i localhost:8080/api/links -H 'Range: links=-1'
 HTTP/1.1 206 Partial Content
 Content-Range: links 2-2/3
 
-[{"id":3,"original_url":"https://pkg.go.dev/net/http","short_name":"xomuvi-480692","short_url":"http://localhost:8080/r/xomuvi-480692"}]
+[{"id":3,"original_url":"https://pkg.go.dev/net/http","short_name":"kowo-171768","short_url":"http://localhost:8080/r/kowo-171768","created_at":"2026-10-09T17:32:02.445653Z"}]
 ```
 
 A range past the end:

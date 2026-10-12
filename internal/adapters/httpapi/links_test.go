@@ -11,6 +11,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -57,6 +58,7 @@ func TestHandlerRedirectsWhenVisitFails(t *testing.T) {
 }
 
 func TestHandlerCreateLinkBuildsShortURL(t *testing.T) {
+	createdAt := time.Date(2026, time.October, 1, 5, 25, 50, 0, time.UTC)
 	linkService := NewMockUseCase(t)
 	linkService.EXPECT().
 		CreateLink(mock.Anything, application.LinkInput{
@@ -67,6 +69,7 @@ func TestHandlerCreateLinkBuildsShortURL(t *testing.T) {
 			ID:          7,
 			OriginalURL: testExampleURL,
 			ShortName:   "example",
+			CreatedAt:   createdAt,
 		}, nil).
 		Once()
 	handler := newTestHandler(linkService)
@@ -85,7 +88,8 @@ func TestHandlerCreateLinkBuildsShortURL(t *testing.T) {
 		"id": 7,
 		"original_url": "https://example.com",
 		"short_name": "example",
-		"short_url": "https://short.example/r/example"
+		"short_url": "https://short.example/r/example",
+		"created_at": "`+createdAt.Format(time.RFC3339Nano)+`"
 	}`, w.Body.String())
 }
 
@@ -372,6 +376,7 @@ func TestHandlerListLinksMapsResponseContract(t *testing.T) {
 		"original_url",
 		"short_name",
 		"short_url",
+		"created_at",
 	}
 	assert.ElementsMatch(t, wantKeys, slices.Collect(maps.Keys(items[0])))
 }

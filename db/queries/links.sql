@@ -35,20 +35,26 @@ RETURNING id, original_url, short_name, created_at;
 SELECT id, original_url, short_name, created_at
 FROM links
 ORDER BY
-    CASE WHEN sqlc.arg(sort_field)::text = 'short_name'
-        AND sqlc.arg(sort_asc)::boolean
+    CASE WHEN @sort_field::text = 'short_name'
+        AND @sort_asc::boolean
         THEN short_name END ASC,
-    CASE WHEN sqlc.arg(sort_field)::text = 'short_name'
-        AND NOT sqlc.arg(sort_asc)::boolean
+    CASE WHEN @sort_field::text = 'short_name'
+        AND NOT @sort_asc::boolean
         THEN short_name END DESC,
-    CASE WHEN sqlc.arg(sort_field)::text = 'original_url'
-        AND sqlc.arg(sort_asc)::boolean
+    CASE WHEN @sort_field::text = 'original_url'
+        AND @sort_asc::boolean
         THEN original_url END ASC,
-    CASE WHEN sqlc.arg(sort_field)::text = 'original_url'
-        AND NOT sqlc.arg(sort_asc)::boolean
+    CASE WHEN @sort_field::text = 'original_url'
+        AND NOT @sort_asc::boolean
         THEN original_url END DESC,
-    CASE WHEN sqlc.arg(sort_field)::text = 'id'
-        AND NOT sqlc.arg(sort_asc)::boolean
+    CASE WHEN @sort_field::text = 'created_at'
+        AND @sort_asc::boolean
+        THEN created_at END ASC,
+    CASE WHEN @sort_field::text = 'created_at'
+        AND NOT @sort_asc::boolean
+        THEN created_at END DESC,
+    CASE WHEN @sort_field::text = 'id'
+        AND NOT @sort_asc::boolean
         THEN id END DESC,
     id ASC
 OFFSET sqlc.arg('offset')::bigint

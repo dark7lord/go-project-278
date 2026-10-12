@@ -243,20 +243,18 @@ func assertSortsBothWays[T any](t *testing.T, tx *testDB, path, field string, co
 	assert.True(t, slices.IsSortedFunc(desc, descending), "DESC by %s: %+v", field, desc)
 }
 
-// TestLinksSortEveryField sorts by every links field, on seeds whose field
-// order differs from their insertion order.
+// TestLinksSortEveryField sorts by every links field,
+// on seeds whose order differs field by field and from their insertion (id) order.
 func TestLinksSortEveryField(t *testing.T) {
 	td := setupTestDB(t)
 	tx := setupTestTx(t, td)
 
-	for _, seed := range []struct{ url, name string }{
-		{url: "https://c.example", name: "banana"},
-		{url: "https://a.example", name: "cherry"},
-		{url: "https://b.example", name: "apple"},
-	} {
-		_, err := tx.linkRepo.CreateLink(t.Context(), seed.url, seed.name)
-		require.NoError(t, err)
-	}
+	_, err := tx.tx.Exec(t.Context(), `
+		INSERT INTO links (original_url, short_name, created_at) VALUES
+			('https://c.example', 'banana', '2026-01-03'),
+			('https://a.example', 'cherry', '2026-01-01'),
+			('https://b.example', 'apple',  '2026-01-02')`)
+	require.NoError(t, err)
 
 	for _, tt := range []struct {
 		field   string
@@ -266,6 +264,7 @@ func TestLinksSortEveryField(t *testing.T) {
 		{"short_name", func(a, b linkResponse) int { return cmp.Compare(a.ShortName, b.ShortName) }},
 		{"short_url", func(a, b linkResponse) int { return cmp.Compare(a.ShortURL, b.ShortURL) }},
 		{"original_url", func(a, b linkResponse) int { return cmp.Compare(a.OriginalURL, b.OriginalURL) }},
+		{"created_at", func(a, b linkResponse) int { return a.CreatedAt.Compare(b.CreatedAt) }},
 	} {
 		t.Run(tt.field, func(t *testing.T) {
 			assertSortsBothWays(t, tx, "/api/links", tt.field, tt.compare)

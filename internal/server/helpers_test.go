@@ -190,17 +190,21 @@ func assertFieldErrors(t *testing.T, w *httptest.ResponseRecorder, field string)
 }
 
 type linkResponse struct {
-	ID          int64  `json:"id"`
-	OriginalURL string `json:"original_url"`
-	ShortName   string `json:"short_name"`
-	ShortURL    string `json:"short_url"`
+	ID          int64     `json:"id"`
+	OriginalURL string    `json:"original_url"`
+	ShortName   string    `json:"short_name"`
+	ShortURL    string    `json:"short_url"`
+	CreatedAt   time.Time `json:"created_at"`
 }
 
+// appLink turns a response back into the link the store returned; JSON keeps
+// the instant but not the time zone, so CreatedAt is put back in time.Local.
 func (r linkResponse) appLink() application.Link {
 	return application.Link{
 		ID:          r.ID,
 		OriginalURL: r.OriginalURL,
 		ShortName:   r.ShortName,
+		CreatedAt:   r.CreatedAt.Local(),
 	}
 }
 

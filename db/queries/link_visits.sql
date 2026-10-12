@@ -19,44 +19,44 @@ SELECT
     status
 FROM link_visits
 ORDER BY
-    CASE WHEN sqlc.arg(sort_field)::text = 'link_id'
-        AND sqlc.arg(sort_asc)::boolean
+    CASE WHEN @sort_field::text = 'link_id'
+        AND @sort_asc::boolean
         THEN link_id END ASC,
-    CASE WHEN sqlc.arg(sort_field)::text = 'link_id'
-        AND NOT sqlc.arg(sort_asc)::boolean
+    CASE WHEN @sort_field::text = 'link_id'
+        AND NOT @sort_asc::boolean
         THEN link_id END DESC,
-    CASE WHEN sqlc.arg(sort_field)::text = 'created_at'
-        AND sqlc.arg(sort_asc)::boolean
+    CASE WHEN @sort_field::text = 'created_at'
+        AND @sort_asc::boolean
         THEN created_at END ASC,
-    CASE WHEN sqlc.arg(sort_field)::text = 'created_at'
-        AND NOT sqlc.arg(sort_asc)::boolean
+    CASE WHEN @sort_field::text = 'created_at'
+        AND NOT @sort_asc::boolean
         THEN created_at END DESC,
-    CASE WHEN sqlc.arg(sort_field)::text = 'ip'
-        AND sqlc.arg(sort_asc)::boolean
+    CASE WHEN @sort_field::text = 'ip'
+        AND @sort_asc::boolean
         THEN ip END ASC,
-    CASE WHEN sqlc.arg(sort_field)::text = 'ip'
-        AND NOT sqlc.arg(sort_asc)::boolean
+    CASE WHEN @sort_field::text = 'ip'
+        AND NOT @sort_asc::boolean
         THEN ip END DESC,
-    CASE WHEN sqlc.arg(sort_field)::text = 'user_agent'
-        AND sqlc.arg(sort_asc)::boolean
+    CASE WHEN @sort_field::text = 'user_agent'
+        AND @sort_asc::boolean
         THEN user_agent END ASC,
-    CASE WHEN sqlc.arg(sort_field)::text = 'user_agent'
-        AND NOT sqlc.arg(sort_asc)::boolean
+    CASE WHEN @sort_field::text = 'user_agent'
+        AND NOT @sort_asc::boolean
         THEN user_agent END DESC,
-    CASE WHEN sqlc.arg(sort_field)::text = 'status'
-        AND sqlc.arg(sort_asc)::boolean
+    CASE WHEN @sort_field::text = 'status'
+        AND @sort_asc::boolean
         THEN status END ASC,
-    CASE WHEN sqlc.arg(sort_field)::text = 'status'
-        AND NOT sqlc.arg(sort_asc)::boolean
+    CASE WHEN @sort_field::text = 'status'
+        AND NOT @sort_asc::boolean
         THEN status END DESC,
-    CASE WHEN sqlc.arg(sort_field)::text = 'referer'
-        AND sqlc.arg(sort_asc)::boolean
+    CASE WHEN @sort_field::text = 'referer'
+        AND @sort_asc::boolean
         THEN referer END ASC NULLS LAST,
-    CASE WHEN sqlc.arg(sort_field)::text = 'referer'
-        AND NOT sqlc.arg(sort_asc)::boolean
+    CASE WHEN @sort_field::text = 'referer'
+        AND NOT @sort_asc::boolean
         THEN referer END DESC NULLS LAST,
-    CASE WHEN sqlc.arg(sort_field)::text = 'id'
-        AND NOT sqlc.arg(sort_asc)::boolean
+    CASE WHEN @sort_field::text = 'id'
+        AND NOT @sort_asc::boolean
         THEN id END DESC,
     id ASC
 OFFSET sqlc.arg('offset')::bigint

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
@@ -28,6 +29,7 @@ func TestCreateLink(t *testing.T) {
 		assert.Equal(t, "my-link", created.ShortName)
 		assert.Equal(t, "http://localhost:8080/r/my-link", created.ShortURL)
 		assert.Greater(t, created.ID, int64(0))
+		assert.WithinDuration(t, time.Now(), created.CreatedAt, time.Minute)
 
 		stored, err := tx.queries.GetLinkByID(ctx, created.ID)
 		require.NoError(t, err)
@@ -85,6 +87,7 @@ func TestUpdateLink(t *testing.T) {
 		assert.Equal(t, "https://updated.com", got.OriginalURL)
 		assert.Equal(t, "updated-link", got.ShortName)
 		assert.Equal(t, "http://localhost:8080/r/updated-link", got.ShortURL)
+		assert.True(t, created.CreatedAt.Equal(got.CreatedAt), "update must keep created_at")
 
 		stored, err := tx.queries.GetLinkByID(ctx, created.ID)
 		require.NoError(t, err)
