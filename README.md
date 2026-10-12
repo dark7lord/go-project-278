@@ -294,7 +294,8 @@ make db-status         # every file should be "applied"
 make db-gen            # when the queries in db/queries use the new schema
 ```
 
-`TestMigrationsRoundTrip` also runs every Down and Up on a fresh database in `make test`.
+`TestMigrationsRoundTrip` rolls a fresh database back version by version to an empty schema
+and applies everything again in `make test`.
 
 - Never edit a migration that is committed or deployed: databases that applied it will not
   run it again. Fix it with a new migration.
